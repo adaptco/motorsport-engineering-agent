@@ -1,10 +1,11 @@
 # Changelog
 
-## v3.3.1 / 0.3.4
-- normalized the v3.3 runtime-correctness release into a single bundle
-- aligned embedded version metadata across VERSION.json, pyproject.toml, README, and release artifacts
-- preserved the v3.3 patch set without changing runtime contracts
-- verified the packaged tree against the test suite before sealing the release
+## v3.4 / 0.3.4
+- reissued the unified runtime-correctness kernel as the coherent V3.4 release
+- aligned kernel release naming to the repo versioning specification: kernel V3.4 paired with package 0.3.4
+- preserved the validated v3.3 runtime patch set without changing package semver
+- sealed a single-source release bundle for Git import, validation, and promotion
+
 
 ## v3.3.0 / 0.3.3
 - integrated runtime-correctness patch set into the v3.2 kernel
