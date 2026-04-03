@@ -1,7 +1,7 @@
 {
   "kernel_version": "3.4",
   "package_version": "0.3.4",
-  "git_commit": "1f7c593b12806aa6c2dee96ca636af9c3e03e251",
+  "git_commit": "resolve-from-tag:v3.4",
   "git_tag": "v3.4",
   "source_lineage": {
     "based_on_artifact": "Root-Kernel-V3.3-source.zip",
