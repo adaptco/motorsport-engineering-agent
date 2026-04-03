@@ -1,0 +1,65 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: mea-postgres
+    environment:
+      POSTGRES_DB: mea
+      POSTGRES_USER: mea
+      POSTGRES_PASSWORD: mea
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+
+  redis:
+    image: redis:7
+    container_name: mea-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  control_plane:
+    build:
+      context: .
+      dockerfile: ./control_plane/Dockerfile
+    container_name: mea-control-plane
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+      - mcp_server
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: ./worker/Dockerfile
+    container_name: mea-worker
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+      - control_plane
+    restart: unless-stopped
+
+  mcp_server:
+    build:
+      context: .
+      dockerfile: ./mcp_server/Dockerfile
+    container_name: mea-mcp-server
+    env_file:
+      - .env
+    ports:
+      - "7000:7000"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

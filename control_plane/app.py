@@ -1,0 +1,46 @@
+from fastapi import FastAPI, HTTPException
+
+from control_plane.queue import enqueue
+from control_plane.repository import create_job, get_job, list_trace
+from control_plane.routes.replay import router as replay_router
+from control_plane.routes.session import router as session_router
+from control_plane.routes.verifier import router as verifier_router
+from control_plane.webhooks import router as github_router
+from shared.models import FixCIRequest
+
+app = FastAPI(title="MEA Control Plane")
+app.include_router(github_router)
+app.include_router(session_router)
+app.include_router(replay_router)
+app.include_router(verifier_router)
+
+
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok", "kernel_version": "3.2"}
+
+
+@app.post("/repos/fix-ci")
+def fix_ci(req: FixCIRequest):
+    if not req.patch.strip():
+        raise HTTPException(status_code=400, detail="Patch is empty")
+    payload = req.model_dump()
+    job_id = create_job("fix-ci", req.repo, req.branch, payload)
+    enqueue({"job_id": job_id, **payload})
+    return {"job_id": job_id, "status": "queued"}
+
+
+@app.get("/jobs/{job_id}")
+def job_status(job_id: str):
+    job = get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="job_not_found")
+    return job
+
+
+@app.get("/jobs/{job_id}/trace")
+def job_trace(job_id: str):
+    trace = list_trace(job_id)
+    if not trace:
+        raise HTTPException(status_code=404, detail="trace_not_found")
+    return trace

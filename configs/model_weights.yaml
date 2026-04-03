@@ -1,0 +1,15 @@
+
+supervisor_reward_weights:
+  evidence_traceability: 0.30
+  deterministic_replay_match: 0.25
+  uncertainty_honesty: 0.15
+  command_safety: 0.15
+  latency_budget: 0.10
+  driver_message_quality: 0.05
+
+fine_tune_example_weights:
+  abstain_without_evidence: 1.40
+  preserve_backend_ids: 1.30
+  prefer_do_nothing_on_ambiguity: 1.20
+  penalize_invented_telemetry: 1.60
+  penalize_unsafe_commands: 1.50

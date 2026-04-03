@@ -1,0 +1,21 @@
+{
+  "name": "MEA Control Plane",
+  "url": "https://example.invalid/mea",
+  "hook_attributes": {
+    "url": "https://example.invalid/github/webhook"
+  },
+  "redirect_url": "https://example.invalid/github/callback",
+  "default_events": [
+    "workflow_run",
+    "check_suite",
+    "pull_request",
+    "push"
+  ],
+  "default_permissions": {
+    "actions": "write",
+    "checks": "write",
+    "contents": "write",
+    "metadata": "read",
+    "pull_requests": "write"
+  }
+}

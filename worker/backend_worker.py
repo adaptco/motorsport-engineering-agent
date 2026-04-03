@@ -1,0 +1,120 @@
+import hashlib
+import os
+import subprocess
+import tempfile
+from pathlib import Path
+import requests
+
+from control_plane.queue import dequeue
+from worker.github_app_client import get_installation_token
+from worker.repository import add_span, complete_job, get_job_identity, set_job_phase
+
+GITHUB_API_URL = "https://api.github.com"
+ALLOWED_REPOS = {r.strip() for r in os.environ.get("GITHUB_ALLOWED_REPOS", "").split(",") if r.strip()}
+MAX_PATCH_LINES = int(os.environ.get("MAX_PATCH_LINES", "1000"))
+ALLOW_WORKFLOW_CHANGES = os.environ.get("ALLOW_WORKFLOW_CHANGES", "false").lower() == "true"
+
+def run(cmd: list[str], cwd: Path) -> None:
+    subprocess.run(cmd, cwd=cwd, check=True)
+
+def validate_patch(patch: str) -> None:
+    if not patch.strip():
+        raise ValueError("Patch is empty")
+    if patch.count("\n") > MAX_PATCH_LINES:
+        raise ValueError("Patch too large")
+    sensitive_markers = ["GITHUB_TOKEN", "BEGIN PRIVATE KEY", "AWS_SECRET_ACCESS_KEY"]
+    if any(marker in patch for marker in sensitive_markers):
+        raise ValueError("Patch contains sensitive markers")
+    if not ALLOW_WORKFLOW_CHANGES and ".github/workflows" in patch:
+        raise ValueError("Workflow edits disabled")
+
+def worker_loop():
+    while True:
+        job = dequeue()
+        if not job:
+            continue
+        process_fix_ci_job(job)
+
+def process_fix_ci_job(job: dict) -> None:
+    job_id = job["job_id"]
+    identity = get_job_identity(job_id)
+    if not identity:
+        return
+    trace_id = identity["trace_id"]
+    repo_slug = job["repo"]
+    base_branch = job["branch"]
+    patch = job["patch"]
+
+    try:
+        if repo_slug not in ALLOWED_REPOS:
+            raise ValueError("Repo not allowlisted")
+
+        validate_patch(patch)
+        add_span(job_id, trace_id, "policy_check", "ok", {"repo": repo_slug})
+        set_job_phase(job_id, "running", "policy_check")
+
+        installation_token = get_installation_token(job.get("installation_id"))
+        add_span(job_id, trace_id, "issue_installation_token", "ok", {})
+        set_job_phase(job_id, "running", "token_issued")
+
+        with tempfile.TemporaryDirectory() as tmpdir_str:
+            tmpdir = Path(tmpdir_str)
+            clone_url = f"https://x-access-token:{installation_token}@github.com/{repo_slug}.git"
+            run(["git", "clone", "--depth", "1", "--branch", base_branch, clone_url, "."], cwd=tmpdir)
+            add_span(job_id, trace_id, "clone_repo", "ok", {"branch": base_branch})
+            set_job_phase(job_id, "running", "cloned")
+
+            fix_branch = f"fix-ci/{job.get('run_id') or job_id}"
+            run(["git", "checkout", "-b", fix_branch], cwd=tmpdir)
+
+            patch_file = tmpdir / "patch.diff"
+            patch_file.write_text(patch, encoding="utf-8")
+            run(["git", "apply", "patch.diff"], cwd=tmpdir)
+            add_span(job_id, trace_id, "apply_patch", "ok", {"patch_hash": hashlib.sha256(patch.encode()).hexdigest()})
+            set_job_phase(job_id, "running", "patched")
+
+            tests_ok = True
+            try:
+                run(["pytest"], cwd=tmpdir)
+            except Exception:
+                tests_ok = False
+            add_span(job_id, trace_id, "test_suite", "ok" if tests_ok else "warning", {"tests_ok": tests_ok})
+            set_job_phase(job_id, "running", "validated", {"tests_ok": tests_ok})
+
+            run(["git", "config", "user.name", "mea-ci-bot[app]"], cwd=tmpdir)
+            run(["git", "config", "user.email", "mea-ci-bot@example.com"], cwd=tmpdir)
+            run(["git", "add", "."], cwd=tmpdir)
+            run(["git", "commit", "-m", f"Fix CI run {job.get('run_id') or job_id}"], cwd=tmpdir)
+            run(["git", "push", "origin", fix_branch], cwd=tmpdir)
+            add_span(job_id, trace_id, "push_branch", "ok", {"fix_branch": fix_branch})
+            set_job_phase(job_id, "running", "pushed")
+
+            owner, repo_name = repo_slug.split("/")
+            resp = requests.post(
+                f"{GITHUB_API_URL}/repos/{owner}/{repo_name}/pulls",
+                headers={
+                    "Authorization": f"Bearer {installation_token}",
+                    "Accept": "application/vnd.github+json",
+                },
+                json={
+                    "title": f"[MEA CI Bot] Fix CI for {job.get('run_id') or job_id}",
+                    "head": fix_branch,
+                    "base": base_branch,
+                    "body": "Automated CI fix created by the MEA backend worker.",
+                    "maintainer_can_modify": True,
+                },
+                timeout=30,
+            )
+            resp.raise_for_status()
+            pr = resp.json()
+            pr_url = pr["html_url"]
+            add_span(job_id, trace_id, "create_pr", "ok", {"pr_url": pr_url})
+            complete_job(job_id, fix_branch, pr_url, {"summary": "PR opened", "tests_ok": tests_ok, "pr_url": pr_url})
+
+    except Exception as e:
+        set_job_phase(job_id, "failed", "error", error_message=str(e))
+        if identity:
+            add_span(job_id, trace_id, "job_error", "error", {"error": str(e)})
+
+if __name__ == "__main__":
+    worker_loop()
