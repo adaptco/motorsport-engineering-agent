@@ -1,7 +1,9 @@
 {
-  "kernel_version": "3.2",
-  "package_version": "0.3.2",
+  "kernel_version": "3.3.0",
+  "package_version": "0.3.3",
   "release_channel": "stable",
-  "supersedes": ["3.1-zip", "3.1-source"],
-  "notes": "Unified release that merges the divergent 0.3.1 artifacts into a single monorepo-safe codebase."
+  "compatibility": {
+    "replay_schema": 1,
+    "forensic_ledger_schema": 1
+  }
 }

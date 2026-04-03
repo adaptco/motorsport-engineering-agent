@@ -1,11 +1,14 @@
 # Changelog
 
-## V3.2 / 0.3.2
+## v3.3.0 / 0.3.3
+- integrated runtime-correctness patch set into the v3.2 kernel
+- added `PolicyEngine` logical clock and deterministic queue semantics
+- added time-domain separation helpers (`DATA` vs `WALL`)
+- added JSONL validation layer with monotonic timestamp and required-field checks
+- extended replay service to use strict validation tasks
+- added `POST /agent/decision` supervisor loop hook with paired forensic receipts
+- added `evidence_packets` DB migration scaffold
+- updated model weights and performance task manifests for sentry validation
 
-- unified the divergent `0.3.1` zip and source artifacts into one canonical tree
-- kept the SQLite forensic ledger and job-space verifier from the zip line
-- merged the replay-ledger endpoint and session evidence hashing behavior from the source line
-- added versioning and release specification docs
-- added GitHub App manifest scaffold and provider API key docs for MCP/A2A
-- added GitHub Actions workflow to run tests and build service images
-- added API tests for verifier/session replay and MCP scaffold endpoints
+## v3.2 / 0.3.2
+- unified divergent v3.1 artifacts into a monorepo-safe release

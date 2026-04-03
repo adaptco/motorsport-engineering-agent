@@ -1,23 +1,13 @@
-
-direct_iracing_stream:
-  target_sampling_hz: 60
-  acceptance:
-    max_tick_gap: 1
-    max_duplicate_timestamps: 0
-    min_average_hz: 55
-    max_average_hz: 65
-    required_channels:
-      - Throttle
-      - Brake
-      - Speed
-  tasks:
-    - id: stream_connectivity
-      name: Verify direct iRacing stream initializes and produces frames
-    - id: stream_rate
-      name: Validate live sampling rate stays within tolerance under load
-    - id: channel_fidelity
-      name: Compare live Speed, Brake, Throttle against iRacing UI or MoTeC export
-    - id: soak_30m
-      name: Run 30 minute capture and confirm no memory growth or stalled frames
-    - id: replay_parity
-      name: Replay dumped JSONL and compare deterministic EvidencePacket outputs
+tasks:
+  - name: replay_determinism
+    metric: identical_outputs
+    threshold: 1.0
+  - name: policy_latency
+    metric: processing_time_ms
+    threshold: 5
+  - name: jsonl_schema_valid
+    metric: invalid_lines
+    threshold: 0
+  - name: supervisor_loop_acceptance
+    metric: paired_receipts
+    threshold: 2

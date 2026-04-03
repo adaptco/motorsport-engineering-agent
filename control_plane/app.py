@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 
 from control_plane.queue import enqueue
+from control_plane.routes.agent import router as agent_router
 from control_plane.repository import create_job, get_job, list_trace
 from control_plane.routes.replay import router as replay_router
 from control_plane.routes.session import router as session_router
@@ -13,11 +14,12 @@ app.include_router(github_router)
 app.include_router(session_router)
 app.include_router(replay_router)
 app.include_router(verifier_router)
+app.include_router(agent_router)
 
 
 @app.get("/healthz")
 def healthz():
-    return {"status": "ok", "kernel_version": "3.2"}
+    return {"status": "ok", "kernel_version": "3.3"}
 
 
 @app.post("/repos/fix-ci")

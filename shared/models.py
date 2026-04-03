@@ -77,6 +77,8 @@ class Recommendation(BaseModel):
     trigger: Optional[str] = None
     action: Optional[str] = None
     expected_effect: Optional[str] = None
+    created_at_ns: int = Field(default=0, ge=0)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class SessionEvidenceRequest(BaseModel):
@@ -156,6 +158,42 @@ class DirectStreamProbeResult(BaseModel):
     metrics: ReplayMetrics
     tasks: List[ReplayTask]
     notes: List[str] = Field(default_factory=list)
+
+
+class JSONLValidationResult(BaseModel):
+    artifact_path: str
+    lines_seen: int = 0
+    valid_lines: int = 0
+    invalid_lines: int = 0
+    monotonic_timestamp_ns: bool = True
+    monotonic_tick: bool = True
+    missing_fields: List[str] = Field(default_factory=list)
+    violations: List[str] = Field(default_factory=list)
+
+
+class AgentDecisionRequest(BaseModel):
+    session_id: str
+    run_id: str
+    trace_id: str
+    principal_id: str = "supervisor"
+    policy_version: str = "rbac.v1"
+    authz_scope: str = "agent:decision"
+    evidence_packet_id: Optional[str] = None
+    prompt: str
+    provider: Literal["openai", "anthropic", "google", "openrouter"] = "openai"
+    model: str = "gpt-4.1"
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AgentDecisionResponse(BaseModel):
+    status: Literal["accepted", "scaffolded"]
+    session_id: str
+    run_id: str
+    trace_id: str
+    queued_job: str
+    required_env: str
+    supervisor_prompt_ref: str
+
 
 
 class MCPToolCall(BaseModel):
