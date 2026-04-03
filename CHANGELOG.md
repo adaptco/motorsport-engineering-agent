@@ -1,5 +1,11 @@
 # Changelog
 
+## v3.3.1 / 0.3.4
+- normalized the v3.3 runtime-correctness release into a single bundle
+- aligned embedded version metadata across VERSION.json, pyproject.toml, README, and release artifacts
+- preserved the v3.3 patch set without changing runtime contracts
+- verified the packaged tree against the test suite before sealing the release
+
 ## v3.3.0 / 0.3.3
 - integrated runtime-correctness patch set into the v3.2 kernel
 - added `PolicyEngine` logical clock and deterministic queue semantics

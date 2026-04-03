@@ -1,6 +1,6 @@
 {
-  "kernel_version": "3.3.0",
-  "package_version": "0.3.3",
+  "kernel_version": "3.3.1",
+  "package_version": "0.3.4",
   "release_channel": "stable",
   "compatibility": {
     "replay_schema": 1,
