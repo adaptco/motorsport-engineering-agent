@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI, HTTPException
 
 from control_plane.queue import enqueue
@@ -6,7 +8,7 @@ from control_plane.repository import create_job, get_job, list_trace
 from control_plane.routes.replay import router as replay_router
 from control_plane.routes.session import router as session_router
 from control_plane.routes.verifier import router as verifier_router
-from control_plane.webhooks import router as github_router
+from control_plane.webhooks import get_webhook_secret, router as github_router
 from shared.models import FixCIRequest
 
 app = FastAPI(title="MEA Control Plane")
@@ -15,6 +17,19 @@ app.include_router(session_router)
 app.include_router(replay_router)
 app.include_router(verifier_router)
 app.include_router(agent_router)
+
+@app.on_event("startup")
+def validate_webhook_config() -> None:
+    webhook_secret = get_webhook_secret()
+    app.state.github_webhook_configured = bool(webhook_secret)
+
+    webhook_required = os.environ.get("GITHUB_WEBHOOK_REQUIRED", "false").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    if webhook_required and not webhook_secret:
+        raise RuntimeError("GITHUB_WEBHOOK_SECRET must be set when GITHUB_WEBHOOK_REQUIRED is true")
 
 
 @app.get("/healthz")
