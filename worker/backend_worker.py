@@ -14,8 +14,10 @@ ALLOWED_REPOS = {r.strip() for r in os.environ.get("GITHUB_ALLOWED_REPOS", "").s
 MAX_PATCH_LINES = int(os.environ.get("MAX_PATCH_LINES", "1000"))
 ALLOW_WORKFLOW_CHANGES = os.environ.get("ALLOW_WORKFLOW_CHANGES", "false").lower() == "true"
 
+
 def run(cmd: list[str], cwd: Path) -> None:
     subprocess.run(cmd, cwd=cwd, check=True)
+
 
 def validate_patch(patch: str) -> None:
     if not patch.strip():
@@ -28,12 +30,14 @@ def validate_patch(patch: str) -> None:
     if not ALLOW_WORKFLOW_CHANGES and ".github/workflows" in patch:
         raise ValueError("Workflow edits disabled")
 
+
 def worker_loop():
     while True:
         job = dequeue()
         if not job:
             continue
         process_fix_ci_job(job)
+
 
 def process_fix_ci_job(job: dict) -> None:
     job_id = job["job_id"]
@@ -73,13 +77,16 @@ def process_fix_ci_job(job: dict) -> None:
             add_span(job_id, trace_id, "apply_patch", "ok", {"patch_hash": hashlib.sha256(patch.encode()).hexdigest()})
             set_job_phase(job_id, "running", "patched")
 
-            tests_ok = True
+            # Fail-closed guard: validation failures must block commit/push/PR creation.
             try:
                 run(["pytest"], cwd=tmpdir)
-            except Exception:
-                tests_ok = False
-            add_span(job_id, trace_id, "test_suite", "ok" if tests_ok else "warning", {"tests_ok": tests_ok})
-            set_job_phase(job_id, "running", "validated", {"tests_ok": tests_ok})
+            except Exception as validation_error:
+                add_span(job_id, trace_id, "test_suite", "error", {"error": str(validation_error)})
+                set_job_phase(job_id, "failed", "validation_failed", error_message=str(validation_error))
+                return
+
+            add_span(job_id, trace_id, "test_suite", "ok", {"tests_ok": True})
+            set_job_phase(job_id, "running", "validated", {"tests_ok": True})
 
             run(["git", "config", "user.name", "mea-ci-bot[app]"], cwd=tmpdir)
             run(["git", "config", "user.email", "mea-ci-bot@example.com"], cwd=tmpdir)
@@ -109,12 +116,13 @@ def process_fix_ci_job(job: dict) -> None:
             pr = resp.json()
             pr_url = pr["html_url"]
             add_span(job_id, trace_id, "create_pr", "ok", {"pr_url": pr_url})
-            complete_job(job_id, fix_branch, pr_url, {"summary": "PR opened", "tests_ok": tests_ok, "pr_url": pr_url})
+            complete_job(job_id, fix_branch, pr_url, {"summary": "PR opened", "tests_ok": True, "pr_url": pr_url})
 
     except Exception as e:
         set_job_phase(job_id, "failed", "error", error_message=str(e))
         if identity:
             add_span(job_id, trace_id, "job_error", "error", {"error": str(e)})
+
 
 if __name__ == "__main__":
     worker_loop()

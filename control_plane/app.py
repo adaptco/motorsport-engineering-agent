@@ -8,6 +8,7 @@ from control_plane.routes.session import router as session_router
 from control_plane.routes.verifier import router as verifier_router
 from control_plane.webhooks import router as github_router
 from shared.models import FixCIRequest
+from shared.version import load_version_info
 
 app = FastAPI(title="MEA Control Plane")
 app.include_router(github_router)
@@ -19,7 +20,12 @@ app.include_router(agent_router)
 
 @app.get("/healthz")
 def healthz():
-    return {"status": "ok", "kernel_version": "3.3"}
+    version_info = load_version_info()
+    return {
+        "status": "ok",
+        "kernel_version": version_info.kernel_version,
+        "package_version": version_info.package_version,
+    }
 
 
 @app.post("/repos/fix-ci")

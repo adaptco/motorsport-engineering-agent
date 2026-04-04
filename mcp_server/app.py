@@ -4,6 +4,7 @@ from fastapi import FastAPI, Header, HTTPException
 
 from mcp_tools.mea_ci_guardrail import run_mea_ci_guardrail
 from shared.models import A2AInvokeRequest, A2AInvokeResponse, MCPProviderStatus, MCPToolCall
+from shared.version import load_version_info
 
 app = FastAPI(title="MEA MCP Server")
 
@@ -23,7 +24,12 @@ def _check_shared_token(authorization: str | None):
 
 @app.get("/healthz")
 def healthz():
-    return {"status": "ok", "kernel_version": "3.2"}
+    version_info = load_version_info()
+    return {
+        "status": "ok",
+        "kernel_version": version_info.kernel_version,
+        "package_version": version_info.package_version,
+    }
 
 
 @app.get("/providers", response_model=list[MCPProviderStatus])
