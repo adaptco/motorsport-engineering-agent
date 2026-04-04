@@ -1,7 +1,9 @@
 import hashlib
+import logging
 import os
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 import requests
 
@@ -13,6 +15,10 @@ GITHUB_API_URL = "https://api.github.com"
 ALLOWED_REPOS = {r.strip() for r in os.environ.get("GITHUB_ALLOWED_REPOS", "").split(",") if r.strip()}
 MAX_PATCH_LINES = int(os.environ.get("MAX_PATCH_LINES", "1000"))
 ALLOW_WORKFLOW_CHANGES = os.environ.get("ALLOW_WORKFLOW_CHANGES", "false").lower() == "true"
+EMPTY_POLL_BACKOFF_SECONDS_MIN = 0.1
+EMPTY_POLL_BACKOFF_SECONDS_MAX = 2.0
+
+logger = logging.getLogger(__name__)
 
 def run(cmd: list[str], cwd: Path) -> None:
     subprocess.run(cmd, cwd=cwd, check=True)
@@ -29,10 +35,32 @@ def validate_patch(patch: str) -> None:
         raise ValueError("Workflow edits disabled")
 
 def worker_loop():
+    consecutive_empty_polls = 0
     while True:
         job = dequeue()
         if not job:
+            consecutive_empty_polls += 1
+            sleep_seconds = min(
+                EMPTY_POLL_BACKOFF_SECONDS_MAX,
+                EMPTY_POLL_BACKOFF_SECONDS_MIN * consecutive_empty_polls,
+            )
+            if consecutive_empty_polls == 1 or consecutive_empty_polls % 10 == 0:
+                logger.info(
+                    "backend_worker_empty_poll",
+                    extra={
+                        "consecutive_empty_polls": consecutive_empty_polls,
+                        "sleep_seconds": sleep_seconds,
+                    },
+                )
+            time.sleep(sleep_seconds)
             continue
+
+        if consecutive_empty_polls:
+            logger.debug(
+                "backend_worker_poll_recovered",
+                extra={"empty_polls_before_job": consecutive_empty_polls},
+            )
+        consecutive_empty_polls = 0
         process_fix_ci_job(job)
 
 def process_fix_ci_job(job: dict) -> None:
