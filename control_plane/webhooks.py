@@ -1,19 +1,32 @@
 import hashlib
 import hmac
 import os
+
 from fastapi import APIRouter, Header, HTTPException, Request
+
 from control_plane.repository import correlate_workflow_run, store_webhook
 
 router = APIRouter(prefix="/github", tags=["github"])
 
-SECRET = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
 
-def verify_signature(body: bytes, signature: str | None):
+def get_webhook_secret() -> str | None:
+    secret = os.environ.get("GITHUB_WEBHOOK_SECRET", "").strip()
+    return secret or None
+
+
+def verify_signature(body: bytes, signature: str | None) -> None:
+    secret = get_webhook_secret()
+    if not secret:
+        raise HTTPException(
+            status_code=503,
+            detail="webhook configuration error: GITHUB_WEBHOOK_SECRET is not set",
+        )
     if not signature:
         raise HTTPException(status_code=401, detail="missing signature")
-    digest = "sha256=" + hmac.new(SECRET.encode(), body, hashlib.sha256).hexdigest()
+    digest = "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
     if not hmac.compare_digest(digest, signature):
         raise HTTPException(status_code=401, detail="invalid signature")
+
 
 @router.post("/webhook")
 async def github_webhook(

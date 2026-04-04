@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, HTTPException
 
 from control_plane.queue import enqueue
@@ -6,8 +7,19 @@ from control_plane.repository import create_job, get_job, list_trace
 from control_plane.routes.replay import router as replay_router
 from control_plane.routes.session import router as session_router
 from control_plane.routes.verifier import router as verifier_router
-from control_plane.webhooks import router as github_router
+from control_plane.webhooks import get_webhook_secret, router as github_router
 from shared.models import FixCIRequest
+from shared.version import load_version_info
+
+def _is_truthy(value: str | None) -> bool:
+    return (value or "").strip().lower() in {"1", "true", "yes"}
+
+
+def validate_webhook_startup_config(*, webhook_secret: str | None, webhook_required: bool) -> bool:
+    if webhook_required and not webhook_secret:
+        raise RuntimeError("GITHUB_WEBHOOK_SECRET must be set when GITHUB_WEBHOOK_REQUIRED is true")
+    return bool(webhook_secret)
+
 
 app = FastAPI(title="MEA Control Plane")
 app.include_router(github_router)
@@ -17,9 +29,24 @@ app.include_router(verifier_router)
 app.include_router(agent_router)
 
 
+@app.on_event("startup")
+def validate_webhook_config() -> None:
+    webhook_secret = get_webhook_secret()
+    webhook_required = _is_truthy(os.environ.get("GITHUB_WEBHOOK_REQUIRED"))
+    app.state.github_webhook_configured = validate_webhook_startup_config(
+        webhook_secret=webhook_secret,
+        webhook_required=webhook_required,
+    )
+
+
 @app.get("/healthz")
 def healthz():
-    return {"status": "ok", "kernel_version": "3.3"}
+    version_info = load_version_info()
+    return {
+        "status": "ok",
+        "kernel_version": version_info.kernel_version,
+        "package_version": version_info.package_version,
+    }
 
 
 @app.post("/repos/fix-ci")
