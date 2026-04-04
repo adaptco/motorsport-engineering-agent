@@ -57,8 +57,8 @@ def worker_loop():
 
         if consecutive_empty_polls:
             logger.debug(
-                "backend_worker_poll_recovered",
-                extra={"empty_polls_before_job": consecutive_empty_polls},
+                f"backend_worker_poll_recovered after {consecutive_empty_polls} empty polls",
+                extra={"consecutive_empty_polls": consecutive_empty_polls},
             )
         consecutive_empty_polls = 0
         process_fix_ci_job(job)
