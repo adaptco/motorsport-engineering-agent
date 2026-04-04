@@ -77,8 +77,8 @@ Archive command output and response payload in this log for auditable PR-state r
 
 ### Instruction-to-execution mapping
 1. **Fetch authoritative branches from remote:** `git fetch --all --prune`.
-2. **If remote has `origin/main`, create local tracking branch:** `git checkout -b main --track origin/main`.
-3. **If remote does not have `main`, create it from agreed baseline commit and push with branch protections enabled**.
+2. If remote has origin/main, create local tracking branch: git checkout -B main origin/main.
+3. If remote does not have main, create it from agreed baseline commit and push with branch protections enabled.
 4. **Define branch protection requirements (required checks/reviews) in platform governance docs**.
 
 ### Verified execution receipts (2026-04-04 UTC)
