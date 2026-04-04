@@ -21,7 +21,20 @@ app.include_router(agent_router)
 @app.on_event("startup")
 def validate_webhook_config() -> None:
     webhook_secret = get_webhook_secret()
-    app.state.github_webhook_configured = bool(webhook_secret)
+app.include_router(verifier_router)
+app.include_router(agent_router)
+
+@app.on_event("startup")
+def validate_webhook_config() -> None:
+    webhook_secret = get_webhook_secret()
+
+    webhook_required = os.environ.get("GITHUB_WEBHOOK_REQUIRED", "false").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    if webhook_required and not webhook_secret:
+        raise RuntimeError("GITHUB_WEBHOOK_SECRET must be set when GITHUB_WEBHOOK_REQUIRED is true")
 
     webhook_required = os.environ.get("GITHUB_WEBHOOK_REQUIRED", "false").strip().lower() in {
         "1",
