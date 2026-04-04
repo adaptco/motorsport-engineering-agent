@@ -40,7 +40,12 @@ def test_process_fix_ci_job_validation_success(monkeypatch, tmp_path: Path) -> N
         return _FakeResponse()
 
     monkeypatch.setattr(backend_worker, "run", _run)
-    monkeypatch.setattr(backend_worker.requests, "post", _post)
+    monkeypatch.setattr(
+        backend_worker,
+        "requests",
+        type("RequestsStub", (), {"post": staticmethod(_post)}),
+        raising=False,
+    )
 
     backend_worker.process_fix_ci_job(
         {
@@ -90,7 +95,12 @@ def test_process_fix_ci_job_missing_pytest_fails_closed(monkeypatch, tmp_path: P
         return _FakeResponse()
 
     monkeypatch.setattr(backend_worker, "run", _run)
-    monkeypatch.setattr(backend_worker.requests, "post", _post)
+    monkeypatch.setattr(
+        backend_worker,
+        "requests",
+        type("RequestsStub", (), {"post": staticmethod(_post)}),
+        raising=False,
+    )
 
     backend_worker.process_fix_ci_job(
         {
