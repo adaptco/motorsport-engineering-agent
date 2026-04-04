@@ -130,7 +130,7 @@ Apply immediately after initial `main` push and before merge traffic is enabled:
    - Require linear history.
    - Disallow force-pushes.
    - Disallow branch deletions.
-   - Require squash merges only (disable merge-commit and rebase merge methods).
+   - Restrict merge methods to require squash merges.
 
 4. **Promotion integrity controls**
    - Require signed commits (if org policy supports signing enforcement).
