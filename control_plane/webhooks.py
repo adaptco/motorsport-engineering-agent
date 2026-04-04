@@ -18,7 +18,7 @@ def verify_signature(body: bytes, signature: str | None) -> None:
     secret = get_webhook_secret()
     if not secret:
         raise HTTPException(
-            status_code=503,
+            status_code=500,
             detail="webhook configuration error: GITHUB_WEBHOOK_SECRET is not set",
         )
     if not signature:
