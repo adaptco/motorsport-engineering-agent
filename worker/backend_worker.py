@@ -25,6 +25,10 @@ def _validation_command() -> list[str]:
     return shlex.split(VALIDATION_CMD)
 
 
+def _is_default_validation_cmd() -> bool:
+    return VALIDATION_CMD.strip() == "pytest"
+
+
 def create_pull_request(repo_slug: str, installation_token: str, fix_branch: str, base_branch: str, job_id: str, run_id: str | None) -> str:
     owner, repo_name = repo_slug.split("/")
     resp = requests.post(
@@ -116,14 +120,38 @@ def process_fix_ci_job(job: dict) -> None:
                 add_span(job_id, trace_id, "test_suite", "error", {"error": error_message})
                 set_job_phase(job_id, "failed", "validation_failed", error_message=error_message)
                 return
+            except FileNotFoundError as validation_error:
+                if _is_default_validation_cmd():
+                    skip_reason = (
+                        "Validation command skipped: default pytest command is unavailable in worker runtime "
+                        f"({validation_error})"
+                    )
+                    add_span(
+                        job_id,
+                        trace_id,
+                        "test_suite",
+                        "ok",
+                        {"tests_ok": None, "validation_skipped": True, "reason": skip_reason},
+                    )
+                    set_job_phase(
+                        job_id,
+                        "running",
+                        "validation_skipped",
+                        {"tests_ok": None, "validation_skipped": True},
+                    )
+                else:
+                    error_message = f"Validation command error: {' '.join(validation_cmd)} ({validation_error})"
+                    add_span(job_id, trace_id, "test_suite", "error", {"error": error_message})
+                    set_job_phase(job_id, "failed", "validation_failed", error_message=error_message)
+                    return
             except Exception as validation_error:
                 error_message = f"Validation command error: {' '.join(validation_cmd)} ({validation_error})"
                 add_span(job_id, trace_id, "test_suite", "error", {"error": error_message})
                 set_job_phase(job_id, "failed", "validation_failed", error_message=error_message)
                 return
-
-            add_span(job_id, trace_id, "test_suite", "ok", {"tests_ok": True})
-            set_job_phase(job_id, "running", "validated", {"tests_ok": True})
+            else:
+                add_span(job_id, trace_id, "test_suite", "ok", {"tests_ok": True})
+                set_job_phase(job_id, "running", "validated", {"tests_ok": True})
 
             run(["git", "config", "user.name", "mea-ci-bot[app]"], cwd=tmpdir)
             run(["git", "config", "user.email", "mea-ci-bot@example.com"], cwd=tmpdir)
