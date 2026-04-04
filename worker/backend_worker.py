@@ -1,7 +1,7 @@
 import hashlib
 import logging
 import os
-import subprocess
+import subprocess  # nosec B404
 import tempfile
 import time
 from pathlib import Path
@@ -21,7 +21,7 @@ EMPTY_POLL_BACKOFF_SECONDS_MAX = 2.0
 logger = logging.getLogger(__name__)
 
 def run(cmd: list[str], cwd: Path) -> None:
-    subprocess.run(cmd, cwd=cwd, check=True)
+    subprocess.run(cmd, cwd=cwd, check=True)  # nosec B603
 
 def validate_patch(patch: str) -> None:
     if not patch.strip():

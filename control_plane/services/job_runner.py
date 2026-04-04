@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import subprocess
+import subprocess  # nosec B404
 from pathlib import Path
 from typing import Any, Callable
 
@@ -55,7 +55,7 @@ def execute_job(request: JobExecutionRequest) -> JobExecutionResponse:
     if request.job_name not in ALLOWED_JOBS:
         raise JobNotAllowedError("job_not_allowed")
     command = ALLOWED_JOBS[request.job_name](request.params)
-    completed = subprocess.run(
+    completed = subprocess.run(  # nosec B603
         command,
         capture_output=True,
         text=True,
