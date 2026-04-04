@@ -18,7 +18,14 @@ app.include_router(replay_router)
 app.include_router(verifier_router)
 app.include_router(agent_router)
 
-@app.on_event("startup")
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    validate_webhook_config()
+    yield
+
+app = FastAPI(title="MEA Control Plane", lifespan=lifespan)
 def validate_webhook_config() -> None:
     webhook_secret = get_webhook_secret()
 app.include_router(verifier_router)
