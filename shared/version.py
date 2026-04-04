@@ -58,7 +58,7 @@ def load_version_info() -> VersionInfo:
                 manifest_info = _coerce_manifest_version_info(version_data)
                 if manifest_info is not None:
                     return manifest_info
-        except (OSError, json.JSONDecodeError):
+        except (OSError, ValueError):
             pass
 
     try:
