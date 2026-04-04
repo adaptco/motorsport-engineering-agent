@@ -1,4 +1,6 @@
 import hashlib
+import json as jsonlib
+import logging
 import os
 import subprocess  # nosec B404
 import time
@@ -22,6 +24,7 @@ WORKDIR_ROOT = Path(os.environ.get("MEA_BACKEND_WORKDIR_ROOT", ".tmp_backend_wor
 
 EMPTY_POLL_BACKOFF_SECONDS_MIN = 1.0
 EMPTY_POLL_BACKOFF_SECONDS_MAX = 60.0
+WORKER_TEMP_ROOT = Path(os.environ.get("MEA_WORKER_TEMP_ROOT", str(Path.cwd() / ".mea_tmp")))
 
 def run(cmd: list[str], cwd: Path) -> None:
     """
@@ -145,7 +148,7 @@ def process_fix_ci_job(job: dict) -> None:
             tests_ok = True
             try:
                 run(["pytest"], cwd=tmpdir)
-            except Exception:
+            except subprocess.CalledProcessError:
                 tests_ok = False
             add_span(job_id, trace_id, "test_suite", "ok" if tests_ok else "warning", {"tests_ok": tests_ok})
             if not tests_ok:
