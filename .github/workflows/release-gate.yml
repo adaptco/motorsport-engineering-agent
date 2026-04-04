@@ -3,7 +3,7 @@ name: release-gate
 on:
   push:
     branches: [main, master]
-    tags: ['v*']
+    tags: ["v*"]
   pull_request:
 
 permissions:
@@ -17,49 +17,64 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Validate version alignment
         shell: bash
         run: |
           set -euo pipefail
-          pkg_version=$(python - <<'PY'
+
+          pkg_version="$(python - <<'PY'
           import tomllib
           from pathlib import Path
-          print(tomllib.loads(Path('pyproject.toml').read_text())['project']['version'])
-          PY
-          )
-          version_json_pkg=$(python - <<'PY'
-          import json
-          from pathlib import Path
-          print(json.loads(Path('VERSION.json').read_text())['package_version'])
-          PY
-          )
-          version_json_kernel=$(python - <<'PY'
-          import json
-          from pathlib import Path
-          print(json.loads(Path('VERSION.json').read_text())['kernel_version'])
-          PY
-          )
 
-          changelog_header=$(python - <<'PY'
+          data = tomllib.loads(Path("pyproject.toml").read_text())
+          print(data["project"]["version"])
+          PY
+          )"
+
+          version_json_pkg="$(python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(Path("VERSION.json").read_text())
+          print(data["package_version"])
+          PY
+          )"
+
+          version_json_kernel="$(python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(Path("VERSION.json").read_text())
+          print(data["kernel_version"])
+          PY
+          )"
+
+          changelog_header="$(python - <<'PY'
           import re
           from pathlib import Path
-          text = Path('CHANGELOG.md').read_text()
-          match = re.search(r'^##\s+v[^\n]+$', text, re.MULTILINE)
+
+          text = Path("CHANGELOG.md").read_text()
+          match = re.search(r"^##\\s+v[^\\n]+$", text, re.MULTILINE)
           if not match:
-              raise SystemExit('No changelog version heading found')
+              raise SystemExit("No changelog version heading found")
           print(match.group(0))
           PY
-          )
+          )"
 
           expected_header="## v${version_json_kernel} / ${pkg_version}"
 
-          test "$pkg_version" = "$version_json_pkg" || {
-            echo "Mismatch: pyproject version ($pkg_version) != VERSION.json package_version ($version_json_pkg)"
+          test "${pkg_version}" = "${version_json_pkg}" || {
+            echo "Mismatch: pyproject version (${pkg_version}) != VERSION.json package_version (${version_json_pkg})"
             exit 1
           }
 
-          test "$changelog_header" = "$expected_header" || {
-            echo "Mismatch: first changelog heading '$changelog_header' != '$expected_header'"
+          test "${changelog_header}" = "${expected_header}" || {
+            echo "Mismatch: first changelog heading '${changelog_header}' != '${expected_header}'"
             exit 1
           }
 
@@ -85,7 +100,12 @@ jobs:
               const byName = new Map();
               for (const run of runs) {
                 const existing = byName.get(run.name);
-                if (!existing || new Date(run.started_at ?? run.created_at) > new Date(existing.started_at ?? existing.created_at)) {
+                const runTime = new Date(run.started_at ?? run.created_at);
+                const existingTime = existing
+                  ? new Date(existing.started_at ?? existing.created_at)
+                  : null;
+
+                if (!existing || runTime > existingTime) {
                   byName.set(run.name, run);
                 }
               }
@@ -125,16 +145,22 @@ jobs:
               }
 
               if (failures.length > 0) {
+                console.log("Traceability Check Failure Summary:");
+                failures.forEach((f) => console.log(`- ${f}`));
                 core.setFailed(failures.join("\n"));
                 return;
               }
 
               if (pending.length === 0) {
-                core.info("All required checks completed successfully.");
+                core.info(
+                  "All required checks completed successfully. Traceability chain verified."
+                );
                 return;
               }
 
-              core.info(`${pending.join("; ")}. Retrying in ${pollIntervalMs / 1000}s...`);
+              core.info(
+                `${pending.join("; ")}. Retrying in ${pollIntervalMs / 1000}s...`
+              );
               await sleep(pollIntervalMs);
             }
 
@@ -148,7 +174,9 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: Deploy gate passed
-        run: echo "Deploy preconditions satisfied on main branch."
+        run: |
+          echo "Deploy preconditions satisfied on main branch."
+          echo "Traceability Audit: $(date -u)"
 
   publish:
     runs-on: ubuntu-latest
@@ -156,4 +184,6 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
     steps:
       - name: Publish gate passed
-        run: echo "Publish preconditions satisfied for release tag."
+        run: |
+          echo "Publish preconditions satisfied for release tag."
+          echo "Traceability Audit: $(date -u)"

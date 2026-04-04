@@ -1,16 +1,22 @@
+<!-- markdownlint-disable MD013 MD024 MD025 MD036 MD040 -->
+
 # MEA Codebase Review Report
 
 ## Executive Summary
+
 The Motorsport Engineering Agent (MEA) is a containerized Python-based system that integrates AI decision-making with telemetry ingestion and GitHub automation. It combines a FastAPI control plane, an MCP server for multi-provider LLM tool orchestration, and a worker backend for job execution and audit logging. The system is designed to process iRacing simulator telemetry, make engineering recommendations, and automate CI and repository workflows with secure, auditable operations.
 
 ## Architecture Overview
+
 MEA follows a multi-service architecture with clear separation of concerns:
+
 - **Control Plane**: FastAPI application exposing REST APIs for agent decisions, session evidence ingestion, job verification, replay, and GitHub webhook handling.
 - **MCP Server**: Model Context Protocol server supporting LLM provider integration, tool execution, and agent-to-agent invocations.
 - **Worker**: Background job processor handling Redis-queued jobs, GitHub operations, and forensic ledger writing.
 - **Data Layer**: PostgreSQL for structured persistence, Redis for queueing, and SQLite-based forensic ledger for audit trails.
 
 ### High-Level Data Flow
+
 1. **Telemetry ingestion** from the iRacing simulator enters through the session evidence API.
 2. **Evidence validation and processing** convert raw telemetry into structured packets and recommendations.
 3. **AI analysis** is performed by the supervisor/policy engine using MCP server tools and LLM providers.
@@ -20,6 +26,7 @@ MEA follows a multi-service architecture with clear separation of concerns:
 ## Component Descriptions
 
 ### Control Plane
+
 - `control_plane/app.py`: Main FastAPI application that wires routers and core middleware.
 - `control_plane/routes/agent.py`: Agent decision API for queuing, validating, and processing AI decision requests.
 - `control_plane/routes/session.py`: Session evidence ingestion, session ledger replay, and session management.
@@ -30,21 +37,25 @@ MEA follows a multi-service architecture with clear separation of concerns:
 - `control_plane/repository.py`: Database access layer for jobs, evidence, traces, and session persistence.
 
 ### MCP Server
+
 - `mcp_server/app.py`: MCP server application handling provider orchestration and tool calls.
 - `mcp_tools/__init__.py`: Entry point used by the Docker image.
 - `mea_ci_guardrail.py`: CI quality and patch safety tool used by the MCP server.
 
 ### Worker Backend
+
 - `worker/backend_worker.py`: Main worker loop and job processing orchestration.
 - `worker/github_app_client.py`: GitHub App client for installation token generation and API calls.
 - `worker/repository.py`: Worker-specific repository helpers for job lifecycle management.
 
 ### Ingestion and Telemetry
+
 - `ingest/iracing_stream.py`: iRacing telemetry ingestion and stream processing.
 - `shared/models.py`: Telemetry and replay data models used across the system.
 - `shared/jsonl_validator.py`: JSONL validation utilities for telemetry data ingestion.
 
 ### Shared Infrastructure
+
 - `shared/db.py`: Database connection and session management.
 - `shared/forensic_ledger.py`: Immutable audit trail mechanisms.
 - `shared/models.py`: Shared domain models and schemas.
@@ -52,24 +63,28 @@ MEA follows a multi-service architecture with clear separation of concerns:
 ## Key Workflows
 
 ### Telemetry Ingestion Workflow
+
 - Telemetry data is submitted via `POST /session/evidence`.
 - JSONL frames are validated and stored in PostgreSQL.
 - Evidence packets are enriched and persisted in `evidence_packets`.
 - Recommendations are generated and stored in `recommendations_runtime`.
 
 ### Decision Workflow
+
 - Decision requests enter via `POST /agent/decision`.
 - Supervisor service validates and queues decisions.
 - Jobs are enqueued into Redis and processed asynchronously.
 - Worker execution results are logged in the forensic ledger and persisted.
 
 ### GitHub Automation Workflow
+
 - GitHub webhooks are received at `POST /github/webhook`.
 - HMAC verification protects webhook payload authenticity.
 - Worker backend uses GitHub App authentication to create PRs, reviews, and manage repos.
 - CI guardrails inspect patches before application.
 
 ### Job Execution Workflow
+
 - Jobs created with UUIDs are stored in `jobs`.
 - Worker dequeues jobs from Redis and advances job phases.
 - Execution traces are stored for audit and replay.
@@ -78,6 +93,7 @@ MEA follows a multi-service architecture with clear separation of concerns:
 ## Technology Assessment
 
 ### Core Stack
+
 - **Python**: Primary language, required version >= 3.11, verified with 3.13.7.
 - **FastAPI**: Main web framework for the control plane.
 - **Uvicorn**: ASGI server used in the Docker runtime.
@@ -87,6 +103,7 @@ MEA follows a multi-service architecture with clear separation of concerns:
 - **Docker**: Containerization of control plane, MCP server, and worker.
 
 ### Dependencies and Tools
+
 - **Pydantic**: Data validation and serialization.
 - **psycopg[binary]**: PostgreSQL driver.
 - **redis**: Redis client.
@@ -96,6 +113,7 @@ MEA follows a multi-service architecture with clear separation of concerns:
 - **Typer**: CLI tooling.
 
 ## Security Considerations
+
 - Secure webhook handling with HMAC SHA256 signature verification.
 - GitHub App authentication via JWT and installation tokens.
 - Input validation through Pydantic models to reduce injection risk.
@@ -104,6 +122,7 @@ MEA follows a multi-service architecture with clear separation of concerns:
 - Sensitive data handling should remain isolated from patch generation logic.
 
 ## Recommendations
+
 - Add a dedicated architecture diagram file to complement the review report.
 - Expand the MCP server documentation with provider configuration and authentication flows.
 - Add example telemetry ingestion payloads and session evidence API usage docs.
@@ -112,6 +131,7 @@ MEA follows a multi-service architecture with clear separation of concerns:
 - Include monitoring guidance for Redis queue health and PostgreSQL performance.
 
 ## Conclusion
+
 The MEA codebase is a well-structured system that combines telemetry ingestion, AI-driven decision workflows, and GitHub automation. The architecture supports secure, auditable operations and is extensible to additional LLM providers and telemetry sources. Incremental documentation improvements and more explicit workflow diagrams will strengthen long-term maintainability.
 
 ---
@@ -128,36 +148,42 @@ The MEA codebase is a well-structured system that combines telemetry ingestion, 
 ### Component Isolation Assessment
 
 **Control Plane (control_plane/)**
+
 - **Responsibility**: REST API orchestration, webhook handling, job queueing, session management
 - **Boundaries**: Cleanly separated from worker and data processing logic
 - **Files**: app.py, routes/, services/, webhooks.py, queue.py, repository.py
 - **Status**: ✅ Well-isolated. Clear entry point in app.py, modular route handlers
 
 **MCP Server (mcp_server/)**
+
 - **Responsibility**: LLM provider gateway, tool execution orchestration
 - **Boundaries**: Standalone service with minimal dependencies
 - **Files**: app.py, tool definitions
 - **Status**: ✅ Properly isolated. Scaffold-based design allows provider injection without code changes
 
 **Worker Backend (worker/)**
+
 - **Responsibility**: Asynchronous job processing, GitHub operations, forensic logging
 - **Boundaries**: Decoupled from control plane except for queue and models
 - **Files**: backend_worker.py, github_app_client.py, repository.py
 - **Status**: ✅ Clean separation. Independent polling loop, handles job state transitions
 
 **Data Layer (shared/)**
+
 - **Responsibility**: Database connections, forensic ledger, shared models and validation
 - **Boundaries**: Utility library used by all components
 - **Files**: db.py, forensic_ledger.py, models.py, jsonl_validator.py
 - **Status**: ✅ Appropriate shared layer. Stateless utilities prevent coupling
 
 **Reasoning Engine (mea/reasoning/)**
+
 - **Responsibility**: Policy decisions, recommendation prioritization
 - **Boundaries**: Self-contained logic with thread-safe queue operations
 - **Files**: policy_engine.py, time_domains.py
 - **Status**: ✅ Isolated reasoning logic. No cross-component dependencies
 
 **Telemetry Ingestion (ingest/)**
+
 - **Responsibility**: Stream processing from iRacing simulator
 - **Boundaries**: Source adapter pattern, feeds into control plane
 - **Files**: iracing_stream.py
@@ -202,15 +228,16 @@ The MEA codebase is a well-structured system that combines telemetry ingestion, 
 
 ### Dependency Verification
 
-| Component | Imports | Imported By | Circular? |
-|-----------|---------|------------|-----------|
-| shared/* | stdlib, pydantic, psycopg | ALL | ❌ NO |
-| control_plane/* | shared.*, FastAPI, psycopg | main app | ❌ NO |
-| worker/* | shared.*, control_plane.queue, requests | main loop | ❌ NO |
-| mcp_server/* | shared.*, FastAPI | standalone | ❌ NO |
-| mea/reasoning/* | shared.models, threading | policy logic | ❌ NO |
+| Component        | Imports                                  | Imported By  | Circular? |
+| ---------------- | ---------------------------------------- | ------------ | --------- |
+| shared/\*        | stdlib, pydantic, psycopg                | ALL          | ❌ NO     |
+| control_plane/\* | shared.\*, FastAPI, psycopg              | main app     | ❌ NO     |
+| worker/\*        | shared.\*, control_plane.queue, requests | main loop    | ❌ NO     |
+| mcp_server/\*    | shared.\*, FastAPI                       | standalone   | ❌ NO     |
+| mea/reasoning/\* | shared.models, threading                 | policy logic | ❌ NO     |
 
 **Finding**: ✅ **NO CIRCULAR DEPENDENCIES DETECTED**
+
 - All dependencies flow downward to shared layer (DAG structure)
 - Worker depends on control_plane.queue but not control_plane routes (clean separation)
 - MCP server is standalone and can be deployed independently
@@ -221,6 +248,7 @@ The MEA codebase is a well-structured system that combines telemetry ingestion, 
 ### Critical Integration Points
 
 #### 1. Control Plane ↔ Worker (via Redis Queue)
+
 - **Interface**: `control_plane/queue.py` (enqueue/dequeue)
 - **File**: control_plane/app.py:58 → `enqueue({"job_id": job_id, **payload})`
 - **Protocol**: JSON-serialized job objects in Redis list
@@ -229,6 +257,7 @@ The MEA codebase is a well-structured system that combines telemetry ingestion, 
 - **Status**: ✅ Clean abstraction, graceful degradation
 
 #### 2. Control Plane ↔ PostgreSQL (Jobs & Evidence)
+
 - **Interface**: `shared/db.py` (get_conn context manager)
 - **Files**: control_plane/repository.py (25 SQL operations)
 - **Protocol**: psycopg3 connections with auto-commit
@@ -237,6 +266,7 @@ The MEA codebase is a well-structured system that combines telemetry ingestion, 
 - **Status**: ⚠️ Functional but tightly coupled; see recommendations
 
 #### 3. Control Plane ↔ Forensic Ledger (SQLite)
+
 - **Interface**: `shared/forensic_ledger.py` (append_receipt)
 - **File**: control_plane/routes/agent.py:17,32 (paired receipt logging)
 - **Protocol**: Canonical JSON hashing, SQLite WAL mode
@@ -245,6 +275,7 @@ The MEA codebase is a well-structured system that combines telemetry ingestion, 
 - **Status**: ✅ Clean contract, implementation issue (not architecture)
 
 #### 4. Control Plane ↔ MCP Server (HTTP)
+
 - **Interface**: HTTP POST to mcp_server/app.py:/tools/call
 - **File**: control_plane/services/supervisor_service.py (scaffolded)
 - **Protocol**: A2AInvokeRequest/Response models
@@ -253,6 +284,7 @@ The MEA codebase is a well-structured system that combines telemetry ingestion, 
 - **Status**: ✅ Good separation, missing operational hardening (see YELLOW-003)
 
 #### 5. Worker ↔ GitHub API
+
 - **Interface**: worker/github_app_client.py (GitHub App JWT)
 - **Files**: worker/backend_worker.py:88 → GitHub operations
 - **Protocol**: GitHub API v3 REST, JWT app auth
@@ -261,6 +293,7 @@ The MEA codebase is a well-structured system that combines telemetry ingestion, 
 - **Status**: ✅ Well-isolated, proper credential handling
 
 #### 6. Policy Engine ↔ Recommendations Queue
+
 - **Interface**: mea/reasoning/policy_engine.py (submit/decide)
 - **Files**: Recommendation model, heap-based priority queue
 - **Protocol**: Thread-safe with RLock
@@ -269,6 +302,7 @@ The MEA codebase is a well-structured system that combines telemetry ingestion, 
 - **Status**: ✅ Clean design, appropriate for decision-time operations
 
 #### 7. Webhook Handler ↔ Job Creation
+
 - **Interface**: control_plane/webhooks.py → control_plane/repository.py
 - **File**: control_plane/app.py:25 (included router)
 - **Protocol**: GitHub webhook HMAC verification → job creation
@@ -396,13 +430,13 @@ TELEMETRY INGESTION PATH
 
 ### Data Flow Properties
 
-| Flow Path | Start | End | Async? | Fallback? | Status |
-|-----------|-------|-----|--------|-----------|--------|
-| Telemetry | iRacing | PostgreSQL | Yes | ✅ | ✅ Complete |
-| Decision | REST API | Forensic Ledger | Yes | ✅ | ✅ Complete |
-| Job Queue | Control Plane | Worker | Yes | ✅ Memory Queue | ✅ Complete |
-| GitHub | Webhook | GitHub API | Yes | ✅ Retry | ✅ Complete |
-| Policy | Evidence | Recommendations | Sync | Memory Q | ✅ Complete |
+| Flow Path | Start         | End             | Async? | Fallback?       | Status      |
+| --------- | ------------- | --------------- | ------ | --------------- | ----------- |
+| Telemetry | iRacing       | PostgreSQL      | Yes    | ✅              | ✅ Complete |
+| Decision  | REST API      | Forensic Ledger | Yes    | ✅              | ✅ Complete |
+| Job Queue | Control Plane | Worker          | Yes    | ✅ Memory Queue | ✅ Complete |
+| GitHub    | Webhook       | GitHub API      | Yes    | ✅ Retry        | ✅ Complete |
+| Policy    | Evidence      | Recommendations | Sync   | Memory Q        | ✅ Complete |
 
 **Status**: ✅ **COMPLETE AND WELL-DESIGNED**
 
@@ -411,14 +445,16 @@ TELEMETRY INGESTION PATH
 ### Pattern Analysis
 
 #### 1. REST API Pattern (Control Plane)
+
 - **Usage**: POST /agent/decision, POST /session/evidence, etc.
-- **File**: control_plane/app.py, routes/*
+- **File**: control_plane/app.py, routes/\*
 - **Characteristics**: Request-response, synchronous, HTTP
 - **Validation**: ✅ Request models validated with Pydantic (models.py)
 - **Error Handling**: ✅ HTTPException with specific status codes
 - **Status**: ✅ SOUND
 
 #### 2. Job Queue Pattern (Control Plane ↔ Worker)
+
 - **Usage**: Job distribution and execution
 - **File**: control_plane/queue.py
 - **Characteristics**: Async, fire-and-forget, JSON-serialized
@@ -427,6 +463,7 @@ TELEMETRY INGESTION PATH
 - **Status**: ✅ SOUND with note on idempotency
 
 #### 3. Forensic Ledger Pattern (Audit Trail)
+
 - **Usage**: Paired receipts for decision intent and result
 - **File**: shared/forensic_ledger.py (append_receipt)
 - **Characteristics**: Write-append-only, immutable, chain-hashed
@@ -435,6 +472,7 @@ TELEMETRY INGESTION PATH
 - **Status**: ⚠️ SOUND PATTERN, IMPLEMENTATION ISSUE (storage location)
 
 #### 4. Event-Driven Pattern (GitHub Webhooks)
+
 - **Usage**: GitHub event ingestion
 - **File**: control_plane/webhooks.py
 - **Characteristics**: Push-based, HMAC-verified, async processing
@@ -442,6 +480,7 @@ TELEMETRY INGESTION PATH
 - **Status**: ✅ SOUND with minor deduplication concern
 
 #### 5. Provider Gateway Pattern (MCP Server)
+
 - **Usage**: LLM provider abstraction
 - **File**: mcp_server/app.py
 - **Characteristics**: Stateless, bearer token auth, scaffold design
@@ -449,6 +488,7 @@ TELEMETRY INGESTION PATH
 - **Status**: ✅ SOUND
 
 #### 6. Policy Engine Pattern (In-Process Reasoning)
+
 - **Usage**: Recommendation prioritization and delivery
 - **File**: mea/reasoning/policy_engine.py
 - **Characteristics**: Thread-safe, logical clock, TTL/cooldown
@@ -463,6 +503,7 @@ TELEMETRY INGESTION PATH
 ### Horizontal Scalability
 
 #### Control Plane
+
 - **Current Design**: Single FastAPI instance
 - **Horizontal Scaling**: ✅ READY - Stateless request handlers
 - **Limitation**: PostgreSQL connection pool must be sized for N instances
@@ -471,6 +512,7 @@ TELEMETRY INGESTION PATH
 - **Status**: ✅ Can scale with database tuning
 
 #### Worker Backend
+
 - **Current Design**: Single polling loop
 - **Horizontal Scaling**: ✅ READY - Multiple workers can dequeue from same Redis
 - **Limitation**: Exponential backoff not coordinated across workers (fine)
@@ -478,12 +520,14 @@ TELEMETRY INGESTION PATH
 - **Status**: ✅ Can scale with API rate limit management
 
 #### MCP Server
+
 - **Current Design**: Stateless HTTP service
 - **Horizontal Scaling**: ✅ READY - No shared state
 - **Limitation**: Provider API rate limits at runtime
 - **Status**: ✅ Can scale freely
 
 #### Data Layer
+
 - **PostgreSQL**: ⚠️ SINGLE INSTANCE - Central bottleneck
 - **Redis**: ✅ Single instance, can be clustered
 - **SQLite Ledger**: ⚠️ LOCAL INSTANCE - Must be shared or replicated for HA
@@ -491,18 +535,19 @@ TELEMETRY INGESTION PATH
 
 ### Vertical Scalability
 
-| Component | Current | Limiting Factor | Scalable To |
-|-----------|---------|-----------------|-------------|
-| Control Plane | 1 instance | DB connections | 10+ instances |
-| Worker | 1 instance | GitHub API rate limit | 5-10 instances |
-| MCP Server | 1 instance | Provider API limits | Unlimited |
-| PostgreSQL | 1 server | Hardware | Moderate |
-| Redis | 1 server | Hardware | Moderate |
-| Forensic Ledger | 1 SQLite | I/O contention | Limited |
+| Component       | Current    | Limiting Factor       | Scalable To    |
+| --------------- | ---------- | --------------------- | -------------- |
+| Control Plane   | 1 instance | DB connections        | 10+ instances  |
+| Worker          | 1 instance | GitHub API rate limit | 5-10 instances |
+| MCP Server      | 1 instance | Provider API limits   | Unlimited      |
+| PostgreSQL      | 1 server   | Hardware              | Moderate       |
+| Redis           | 1 server   | Hardware              | Moderate       |
+| Forensic Ledger | 1 SQLite   | I/O contention        | Limited        |
 
 **Assessment**: ✅ **APPLICATION LAYER SCALES WELL; INFRASTRUCTURE LAYER NEEDS PLANNING**
 
 **Recommendations**:
+
 1. ✅ Keep stateless control plane and worker
 2. ⚠️ Add PostgreSQL connection pooling (YELLOW-002)
 3. ⚠️ Plan Redis HA/clustering for production
@@ -516,6 +561,7 @@ TELEMETRY INGESTION PATH
 #### CRITICAL RISKS (RED)
 
 **RED-002: Forensic Ledger Non-Persistent (/tmp)**
+
 - **Location**: shared/forensic_ledger.py:79, control_plane/routes/agent.py:12
 - **Issue**: SQLite ledger created at `/tmp/mea-session-ledger.db`
 - **Impact**: Audit trail lost on container restart; compliance violation
@@ -526,6 +572,7 @@ TELEMETRY INGESTION PATH
 #### HIGH RISKS (YELLOW)
 
 **YELLOW-001: Missing Connection Pooling**
+
 - **Location**: shared/db.py (psycopg connection management)
 - **Issue**: New connection per operation, no pooling
 - **Impact**: Connection exhaustion under load, database unavailability
@@ -534,6 +581,7 @@ TELEMETRY INGESTION PATH
 - **Effort**: Low (configuration change)
 
 **YELLOW-002: No Circuit Breakers for External Services**
+
 - **Location**: worker/github_app_client.py, mcp_server interaction paths
 - **Issue**: GitHub API and MCP server failures cascade to job failures
 - **Impact**: Cascading failures, no graceful degradation
@@ -542,6 +590,7 @@ TELEMETRY INGESTION PATH
 - **Effort**: Medium (new utility module)
 
 **YELLOW-003: Event Deduplication Not Implemented**
+
 - **Location**: control_plane/webhooks.py
 - **Issue**: GitHub webhook X-GitHub-Delivery-ID not persisted/checked
 - **Impact**: Duplicate job processing on webhook retry
@@ -550,6 +599,7 @@ TELEMETRY INGESTION PATH
 - **Effort**: Low (schema + query change)
 
 **YELLOW-004: Idempotency Not Guaranteed at Service Boundary**
+
 - **Location**: worker/backend_worker.py job processing
 - **Issue**: Job ID uniqueness exists but no idempotency key in headers
 - **Impact**: Double-processing of GitHub operations if network retry occurs
@@ -560,6 +610,7 @@ TELEMETRY INGESTION PATH
 #### MEDIUM RISKS (YELLOW)
 
 **YELLOW-005: Redis Fallback to Memory Queue**
+
 - **Location**: control_plane/queue.py:25-28
 - **Issue**: If Redis unavailable, jobs stored in memory only; lost on restart
 - **Impact**: Job loss during control plane restart
@@ -568,6 +619,7 @@ TELEMETRY INGESTION PATH
 - **Effort**: Medium (new queue backend)
 
 **YELLOW-006: Forensic Ledger Chain Not Verified on Read**
+
 - **Location**: shared/forensic_ledger.py (verify_chain function exists but unused)
 - **Issue**: Chain integrity not validated when reading ledger
 - **Impact**: Undetected ledger corruption
@@ -576,6 +628,7 @@ TELEMETRY INGESTION PATH
 - **Effort**: Low (add verification checks)
 
 **YELLOW-007: No Observability for Job Failure Root Cause**
+
 - **Location**: worker/backend_worker.py exception handling
 - **Issue**: Job failures stored but no structured error context
 - **Impact**: Difficult troubleshooting of failed jobs
@@ -585,11 +638,11 @@ TELEMETRY INGESTION PATH
 
 ### Architectural Risk Summary
 
-| Risk Level | Count | Impact | Status |
-|-----------|-------|--------|--------|
-| 🔴 RED | 1 (RED-002) | Audit trail loss | Blocker |
-| 🟡 YELLOW | 6 (001-007) | Operational issues | Manageable |
-| 🟢 GREEN | — | — | Cleared |
+| Risk Level | Count       | Impact             | Status     |
+| ---------- | ----------- | ------------------ | ---------- |
+| 🔴 RED     | 1 (RED-002) | Audit trail loss   | Blocker    |
+| 🟡 YELLOW  | 6 (001-007) | Operational issues | Manageable |
+| 🟢 GREEN   | —           | —                  | Cleared    |
 
 **Overall Risk Assessment**: ⚠️ **1 RED BLOCKER, 6 YELLOW ITEMS**
 
@@ -598,6 +651,7 @@ TELEMETRY INGESTION PATH
 ### Decision Criteria Evaluation
 
 #### Criterion 1: Component Isolation (15 points)
+
 - **Requirement**: Are responsibilities clearly separated?
 - **Evaluation**:
   - ✅ Control plane ≠ Worker: Clean via queue abstraction
@@ -608,6 +662,7 @@ TELEMETRY INGESTION PATH
 - **Decision**: ✅ PASS
 
 #### Criterion 2: Coupling Analysis (15 points)
+
 - **Requirement**: Are there circular dependencies?
 - **Evaluation**:
   - ✅ No circular imports detected
@@ -618,6 +673,7 @@ TELEMETRY INGESTION PATH
 - **Decision**: ✅ PASS
 
 #### Criterion 3: Scalability (15 points)
+
 - **Requirement**: Can components scale independently?
 - **Evaluation**:
   - ✅ Control plane: Stateless, can horizontal scale (with DB tuning)
@@ -628,6 +684,7 @@ TELEMETRY INGESTION PATH
 - **Decision**: ✅ PASS
 
 #### Criterion 4: Failure Isolation (15 points)
+
 - **Requirement**: Do failures cascade or remain isolated?
 - **Evaluation**:
   - ✅ MCP server failure: Job queued, worker retries (isolated)
@@ -638,6 +695,7 @@ TELEMETRY INGESTION PATH
 - **Decision**: ✅ PASS
 
 #### Criterion 5: Operational Hardening (15 points)
+
 - **Requirement**: Are operational concerns addressed?
 - **Evaluation**:
   - ✅ Health checks: /healthz endpoints on all services
@@ -649,6 +707,7 @@ TELEMETRY INGESTION PATH
 - **Decision**: ⚠️ PASS with note
 
 #### Criterion 6: Data Consistency (15 points)
+
 - **Requirement**: Are data flows consistent and auditable?
 - **Evaluation**:
   - ✅ Forensic ledger: Pair receipts for all decisions
@@ -659,6 +718,7 @@ TELEMETRY INGESTION PATH
 - **Decision**: ⚠️ PASS with critical note
 
 #### Criterion 7: Extension Capability (10 points)
+
 - **Requirement**: Is the architecture extensible?
 - **Evaluation**:
   - ✅ MCP server: Provider-agnostic design, easy to add new LLM providers
@@ -670,16 +730,16 @@ TELEMETRY INGESTION PATH
 
 ### DMN Scoring Summary
 
-| Criterion | Weight | Score | Result |
-|-----------|--------|-------|--------|
-| Component Isolation | 15% | 15/15 | ✅ |
-| No Circular Dependencies | 15% | 15/15 | ✅ |
-| Scalability | 15% | 13/15 | ✅ |
-| Failure Isolation | 15% | 13/15 | ✅ |
-| Operational Hardening | 15% | 10/15 | ⚠️ |
-| Data Consistency | 15% | 13/15 | ⚠️ |
-| Extension Capability | 10% | 10/10 | ✅ |
-| **TOTAL** | **100%** | **99/105** | **94%** |
+| Criterion                | Weight   | Score      | Result  |
+| ------------------------ | -------- | ---------- | ------- |
+| Component Isolation      | 15%      | 15/15      | ✅      |
+| No Circular Dependencies | 15%      | 15/15      | ✅      |
+| Scalability              | 15%      | 13/15      | ✅      |
+| Failure Isolation        | 15%      | 13/15      | ✅      |
+| Operational Hardening    | 15%      | 10/15      | ⚠️      |
+| Data Consistency         | 15%      | 13/15      | ⚠️      |
+| Extension Capability     | 10%      | 10/10      | ✅      |
+| **TOTAL**                | **100%** | **99/105** | **94%** |
 
 ### Final DMN Decision
 

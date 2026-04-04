@@ -1,4 +1,7 @@
+<!-- markdownlint-disable MD013 MD036 -->
+
 # Product Requirements Document (PRD)
+
 ## Motorsport Engineering Agent - Comprehensive Codebase Review
 
 **Document Version:** 1.0  
@@ -11,15 +14,19 @@
 ## 1. Executive Summary
 
 ### Project
+
 **Motorsport Engineering Agent - Codebase Production Readiness Review**
 
 ### Objective
+
 Conduct a comprehensive review of the motorsport engineering agent codebase to assess production readiness across seven key domains: architecture, security, testing, dependencies, documentation, database operations, and type safety.
 
 ### Current Status
+
 🔴 **NOT READY FOR PRODUCTION** - RED blockers identified in documentation and database operational readiness
 
 **Key Findings:**
+
 - ❌ Missing root README.md (blocks onboarding)
 - ❌ SQLite ledger on /tmp (non-persistent, security risk)
 - ❌ No deployment guide or operational runbook
@@ -29,6 +36,7 @@ Conduct a comprehensive review of the motorsport engineering agent codebase to a
 - ✅ Strong: Type safety (full mypy), versioning discipline, forensic traceability
 
 ### Expected Outcome
+
 - Detailed findings report across 7 domains (RED/YELLOW/GREEN assessment)
 - Actionable remediation steps for all RED blockers
 - Prioritized roadmap for YELLOW items
@@ -39,6 +47,7 @@ Conduct a comprehensive review of the motorsport engineering agent codebase to a
 ## 2. Review Scope
 
 ### In Scope ✅
+
 - **Architecture Validation**: Component boundaries, dependency graphs, integration patterns
 - **Security Audit**: Patch validation logic, webhook HMAC verification, secrets management, input validation
 - **Test Coverage Assessment**: Unit, integration, E2E coverage; test infrastructure quality
@@ -49,6 +58,7 @@ Conduct a comprehensive review of the motorsport engineering agent codebase to a
 - **Operational Hardening**: Health checks, circuit breakers, error handling, graceful degradation
 
 ### Out of Scope ❌
+
 - iRacing platform-specific bugs or tuning
 - Performance optimization (benchmarking, profiling)
 - Cosmetic code style issues (covered by ruff linter)
@@ -60,6 +70,7 @@ Conduct a comprehensive review of the motorsport engineering agent codebase to a
 ## 3. Success Criteria
 
 ### Acceptance Criteria for Full Review Completion
+
 - [ ] **All 7 review domains completed** with clear findings and recommendations
 - [ ] **RED blockers documented** with specific remediation steps and priority
 - [ ] **YELLOW items prioritized** into actionable sprints with owners
@@ -69,7 +80,9 @@ Conduct a comprehensive review of the motorsport engineering agent codebase to a
 - [ ] **Clear production readiness path** established with timeline and checkpoints
 
 ### Definition of Done
+
 A domain is considered **COMPLETE** when:
+
 1. All files/directories in scope have been reviewed
 2. Findings documented with specific code examples or file references
 3. Decision criteria applied (GREEN/YELLOW/RED) with justification
@@ -84,7 +97,8 @@ A domain is considered **COMPLETE** when:
 
 **Objective:** Validate system architecture, component design, and integration patterns to ensure sound foundation for production deployment
 
-**Scope:** 
+**Scope:**
+
 - `control_plane/` - FastAPI orchestration hub
 - `worker/` - Background job processor
 - `mcp_server/` - LLM provider gateway
@@ -94,6 +108,7 @@ A domain is considered **COMPLETE** when:
 - `docs/supervisor-loop.md` - Architecture reference
 
 **Acceptance Criteria:**
+
 - [ ] Component boundaries documented and verified
 - [ ] Dependency graph created (no circular dependencies)
 - [ ] Integration points between components identified
@@ -104,6 +119,7 @@ A domain is considered **COMPLETE** when:
 - [ ] Findings documented in architecture section of review report
 
 **Key Files to Review:**
+
 - `docs/supervisor-loop.md` - Supervisor loop architecture
 - `control_plane/app.py` - Main application with routers
 - `worker/backend_worker.py` - Worker loop implementation
@@ -111,12 +127,14 @@ A domain is considered **COMPLETE** when:
 - `shared/forensic_ledger.py` - Audit trail architecture
 
 **DMN Decision Criteria:**
+
 - Component isolation: Are responsibilities clearly separated?
 - Coupling: Are there circular dependencies?
 - Scalability: Can components scale independently?
 - Failure isolation: Do failures in one component cascade?
 
 **Expected Deliverables:**
+
 - Architecture diagram or graph visualization
 - Component interaction matrix
 - Potential bottlenecks or risks identified
@@ -129,6 +147,7 @@ A domain is considered **COMPLETE** when:
 **Objective:** Assess security posture including authentication, secrets management, patch validation, and vulnerability controls
 
 **Scope:**
+
 - All authentication and authorization mechanisms
 - Webhook HMAC verification (`control_plane/webhooks.py`)
 - Patch validation logic (`worker/backend_worker.py`, `control_plane/services/job_runner.py`)
@@ -138,6 +157,7 @@ A domain is considered **COMPLETE** when:
 - GitHub App integration
 
 **Acceptance Criteria:**
+
 - [ ] Patch allowlist validation logic reviewed (size limits, sensitivity markers, workflow restrictions)
 - [ ] Webhook HMAC-SHA256 verification confirmed in code
 - [ ] Webhook secret requirement enforcement verified (GITHUB_WEBHOOK_SECRET)
@@ -150,6 +170,7 @@ A domain is considered **COMPLETE** when:
 - [ ] Decision: Security posture (GREEN/YELLOW/RED) with specific vulnerabilities or strengths noted
 
 **Key Files to Review:**
+
 - `control_plane/webhooks.py` - GitHub webhook HMAC validation
 - `worker/backend_worker.py` - Patch validation logic
 - `control_plane/services/job_runner.py` - Sandboxed execution allowlist
@@ -159,6 +180,7 @@ A domain is considered **COMPLETE** when:
 - `.env.example` - Secrets documentation
 
 **DMN Decision Criteria:**
+
 - Are secrets properly externalized (no hardcoding)?
 - Is webhook validation cryptographically sound?
 - Is patch validation comprehensive (allowlist-based)?
@@ -166,6 +188,7 @@ A domain is considered **COMPLETE** when:
 - Is SQL injection prevention in place?
 
 **Expected Deliverables:**
+
 - Vulnerability assessment with severity levels
 - Security control verification checklist
 - Recommendations for patch validation improvements
@@ -178,6 +201,7 @@ A domain is considered **COMPLETE** when:
 **Objective:** Evaluate test infrastructure, coverage metrics, and quality of test implementation across unit, integration, and end-to-end tests
 
 **Scope:**
+
 - `tests/` directory - All test files
 - `.github/workflows/ci.yml` - CI/CD testing pipeline
 - Test coverage metrics and reports
@@ -185,6 +209,7 @@ A domain is considered **COMPLETE** when:
 - Test data and seeding
 
 **Acceptance Criteria:**
+
 - [ ] Test types identified and categorized (unit, integration, E2E, performance)
 - [ ] Overall test coverage percentage determined and documented
 - [ ] Coverage gaps identified and prioritized
@@ -196,6 +221,7 @@ A domain is considered **COMPLETE** when:
 - [ ] Decision: Test readiness (GREEN/YELLOW/RED) with coverage details
 
 **Key Files to Review:**
+
 - `tests/` - All test files
 - `tests/conftest.py` - Fixtures and shared setup
 - `.github/workflows/ci.yml` - CI testing stage
@@ -203,6 +229,7 @@ A domain is considered **COMPLETE** when:
 - `.coverage` - Coverage report
 
 **DMN Decision Criteria:**
+
 - What is unit test coverage? (Target: ≥85%)
 - Are integration tests covering DB/external service interactions?
 - Is critical path covered by E2E tests?
@@ -210,6 +237,7 @@ A domain is considered **COMPLETE** when:
 - Is test execution deterministic (no flakiness)?
 
 **Expected Deliverables:**
+
 - Coverage report with per-module breakdown
 - List of untested critical paths
 - E2E test strategy recommendations
@@ -222,6 +250,7 @@ A domain is considered **COMPLETE** when:
 **Objective:** Validate dependency declarations, versions, and consistency; establish single source of truth for package management
 
 **Scope:**
+
 - `pyproject.toml` - Primary dependency specification
 - `requirements.txt` - Current dependency pinning (if exists)
 - Lock file strategy (uv.lock, poetry.lock, requirements.lock)
@@ -229,6 +258,7 @@ A domain is considered **COMPLETE** when:
 - Transitive dependency analysis
 
 **Acceptance Criteria:**
+
 - [ ] Source of truth identified (pyproject.toml vs requirements.txt)
 - [ ] Version inconsistencies between files documented
 - [ ] Lock file strategy recommended or implemented
@@ -241,12 +271,14 @@ A domain is considered **COMPLETE** when:
 - [ ] Decision: Dependency management (GREEN/YELLOW/RED) with action items
 
 **Key Files to Review:**
+
 - `pyproject.toml` - Main dependency source
 - `requirements.txt` - Legacy requirements file
 - `.github/workflows/ci.yml` - CI tool version specifications
 - `pyproject.toml [tool.poetry]` or `[project]` - Dependency sections
 
 **DMN Decision Criteria:**
+
 - Is there a single source of truth?
 - Are versions locked or pinned appropriately?
 - Are there CVE vulnerabilities in dependencies?
@@ -254,6 +286,7 @@ A domain is considered **COMPLETE** when:
 - Is there dependency version drift between environments?
 
 **Expected Deliverables:**
+
 - Dependency audit report with CVE assessment
 - Recommendation to eliminate requirements.txt or use as lock file
 - Lock file generation command/strategy
@@ -266,6 +299,7 @@ A domain is considered **COMPLETE** when:
 **Objective:** Assess documentation completeness, quality, and usability for developers, operators, and contributors
 
 **Scope:**
+
 - `README.md` - Root repository documentation
 - `docs/` - Architecture and deployment guides
 - API documentation (FastAPI docstrings)
@@ -275,6 +309,7 @@ A domain is considered **COMPLETE** when:
 - Configuration documentation
 
 **Acceptance Criteria:**
+
 - [ ] README.md completeness checked (exists, includes architecture, quick-start, Docker, contributing link)
 - [ ] Architecture documentation verified (supervisor-loop.md, component descriptions)
 - [ ] Deployment guide documented or missing flagged (env vars, database setup, scaling)
@@ -286,6 +321,7 @@ A domain is considered **COMPLETE** when:
 - [ ] Decision: Documentation readiness (GREEN/YELLOW/RED) with gaps
 
 **Key Files to Review:**
+
 - `README.md` - Root documentation (or note if missing)
 - `docs/supervisor-loop.md` - Architecture reference
 - `docs/` - All documentation files
@@ -295,6 +331,7 @@ A domain is considered **COMPLETE** when:
 - `CONTRIBUTING.md` - (if exists)
 
 **DMN Decision Criteria:**
+
 - Does README exist and cover architecture, quick-start, Docker?
 - Are API endpoints documented with examples?
 - Is deployment process documented?
@@ -302,6 +339,7 @@ A domain is considered **COMPLETE** when:
 - Is contributing process documented?
 
 **Expected Deliverables:**
+
 - Documentation completeness assessment report
 - README template or improvements if needed
 - Missing documentation checklist with priority
@@ -314,6 +352,7 @@ A domain is considered **COMPLETE** when:
 **Objective:** Validate database schema, migrations, connection pooling, persistence strategy, and transaction handling for production readiness
 
 **Scope:**
+
 - Database schema and migrations (`db/migrations/`)
 - Connection pooling strategy
 - Transaction handling and ACID compliance
@@ -322,6 +361,7 @@ A domain is considered **COMPLETE** when:
 - State management patterns
 
 **Acceptance Criteria:**
+
 - [ ] Migration strategy reviewed and documented
 - [ ] Migration files verified with UP and DOWN steps
 - [ ] Schema evolution tested locally
@@ -335,6 +375,7 @@ A domain is considered **COMPLETE** when:
 - [ ] Decision: Database readiness (GREEN/YELLOW/RED) with specific issues
 
 **Key Files to Review:**
+
 - `db/migrations/` - All migration files
 - `shared/forensic_ledger.py` - Ledger implementation and storage location
 - `shared/db.py` - Database connection setup
@@ -343,6 +384,7 @@ A domain is considered **COMPLETE** when:
 - `pyproject.toml` - Database dependency versions
 
 **DMN Decision Criteria:**
+
 - Are migrations versioned and reversible?
 - Is connection pooling implemented?
 - Is ledger persistence durable (not /tmp)?
@@ -350,6 +392,7 @@ A domain is considered **COMPLETE** when:
 - Are queries parameterized?
 
 **Expected Deliverables:**
+
 - Database readiness assessment
 - Migration strategy recommendations
 - Connection pooling implementation guidance
@@ -363,6 +406,7 @@ A domain is considered **COMPLETE** when:
 **Objective:** Evaluate production readiness for monitoring, error handling, graceful degradation, and observability
 
 **Scope:**
+
 - Health check endpoints (`control_plane/routes/`, `mcp_server/`)
 - Error handling patterns throughout codebase
 - Circuit breaker patterns for external services
@@ -372,6 +416,7 @@ A domain is considered **COMPLETE** when:
 - Timeout and retry logic
 
 **Acceptance Criteria:**
+
 - [ ] Health check endpoints identified (`/healthz` coverage)
 - [ ] Health check response format verified (includes all critical services)
 - [ ] Circuit breaker patterns assessed for Redis, PostgreSQL, external APIs
@@ -385,6 +430,7 @@ A domain is considered **COMPLETE** when:
 - [ ] Decision: Operational readiness (GREEN/YELLOW/RED) with hardening gaps
 
 **Key Files to Review:**
+
 - `control_plane/routes/` - API endpoints including `/healthz`
 - `control_plane/queue.py` - Redis fallback and error handling
 - `control_plane/services/` - Service layer error handling
@@ -394,6 +440,7 @@ A domain is considered **COMPLETE** when:
 - `control_plane/config.py` - Timeout and retry configuration
 
 **DMN Decision Criteria:**
+
 - Do health checks cover all critical dependencies?
 - Are external service failures handled gracefully?
 - Is retry logic with backoff in place?
@@ -401,6 +448,7 @@ A domain is considered **COMPLETE** when:
 - Are rate limits implemented?
 
 **Expected Deliverables:**
+
 - Operational hardening report
 - Health check verification and improvements
 - Circuit breaker implementation recommendations
@@ -414,6 +462,7 @@ A domain is considered **COMPLETE** when:
 **Objective:** Validate type checking coverage, correctness, and identify any unchecked dynamic code patterns
 
 **Scope:**
+
 - mypy configuration and CI integration
 - Type hints coverage across codebase
 - Pydantic model type definitions
@@ -422,6 +471,7 @@ A domain is considered **COMPLETE** when:
 - Generic type usage (List, Dict, Optional)
 
 **Acceptance Criteria:**
+
 - [ ] mypy coverage percentage determined from CI
 - [ ] mypy configuration reviewed (`pyproject.toml` [tool.mypy])
 - [ ] Type errors documented (if any exist)
@@ -434,6 +484,7 @@ A domain is considered **COMPLETE** when:
 - [ ] Decision: Type safety level (GREEN/YELLOW/RED) with assessment
 
 **Key Files to Review:**
+
 - `pyproject.toml` - mypy configuration
 - `.github/workflows/ci.yml` - mypy execution in CI
 - `shared/models.py` - Pydantic model definitions
@@ -442,12 +493,14 @@ A domain is considered **COMPLETE** when:
 - `mea/` - Reasoning engine type coverage
 
 **DMN Decision Criteria:**
+
 - What is the mypy coverage %? (Target: 100% with --strict or clear baseline)
 - Are there any type: ignore comments without justification?
 - Are Pydantic models properly typed?
 - Is dynamic code minimized?
 
 **Expected Deliverables:**
+
 - Type safety assessment report
 - mypy configuration recommendations
 - Coverage metrics and gaps
@@ -461,16 +514,16 @@ A domain is considered **COMPLETE** when:
 
 Each task produces a **decision output** mapped to the DMN (Decision Management Network) framework:
 
-| Task | Domain | Input Criteria | Output Decision | Risk Level |
-|------|--------|----------------|-----------------|-----------|
-| Task-001 | Architecture | Component boundaries, dependency graph, scalability | SOUND / NEEDS_REFACTOR | GREEN/YELLOW/RED |
-| Task-002 | Security | Vulnerability findings, auth verification, secrets audit | SECURE / ISSUES_FOUND | GREEN/YELLOW/RED |
-| Task-003 | Testing | Coverage %, test types, E2E coverage | ADEQUATE / GAPS | GREEN/YELLOW/RED |
-| Task-004 | Dependencies | Version alignment, lock file, CVEs | MANAGED / DRIFT | GREEN/YELLOW/RED |
-| Task-005 | Documentation | README, API docs, deployment guide | COMPLETE / INCOMPLETE | GREEN/YELLOW/RED |
-| Task-006 | Database | Migrations, pooling, persistence, transactions | READY / HARDENING_NEEDED | GREEN/YELLOW/RED |
-| Task-007 | Operational | Health checks, circuit breakers, error handling | HARDENED / GAPS | GREEN/YELLOW/RED |
-| Task-008 | Type Safety | mypy %, type errors, type ignores | SAFE / PARTIAL | GREEN/YELLOW/RED |
+| Task     | Domain        | Input Criteria                                           | Output Decision          | Risk Level       |
+| -------- | ------------- | -------------------------------------------------------- | ------------------------ | ---------------- |
+| Task-001 | Architecture  | Component boundaries, dependency graph, scalability      | SOUND / NEEDS_REFACTOR   | GREEN/YELLOW/RED |
+| Task-002 | Security      | Vulnerability findings, auth verification, secrets audit | SECURE / ISSUES_FOUND    | GREEN/YELLOW/RED |
+| Task-003 | Testing       | Coverage %, test types, E2E coverage                     | ADEQUATE / GAPS          | GREEN/YELLOW/RED |
+| Task-004 | Dependencies  | Version alignment, lock file, CVEs                       | MANAGED / DRIFT          | GREEN/YELLOW/RED |
+| Task-005 | Documentation | README, API docs, deployment guide                       | COMPLETE / INCOMPLETE    | GREEN/YELLOW/RED |
+| Task-006 | Database      | Migrations, pooling, persistence, transactions           | READY / HARDENING_NEEDED | GREEN/YELLOW/RED |
+| Task-007 | Operational   | Health checks, circuit breakers, error handling          | HARDENED / GAPS          | GREEN/YELLOW/RED |
+| Task-008 | Type Safety   | mypy %, type errors, type ignores                        | SAFE / PARTIAL           | GREEN/YELLOW/RED |
 
 ### Escalation Path for RED Items
 
@@ -523,8 +576,9 @@ Each task produces a **decision output** mapped to the DMN (Decision Management 
 ### Task Execution Model
 
 **All tasks are INDEPENDENT and can run in PARALLEL:**
+
 - Task-001 (Architecture) ⫶ Independent
-- Task-002 (Security) ⫶ Independent  
+- Task-002 (Security) ⫶ Independent
 - Task-003 (Testing) ⫶ Independent
 - Task-004 (Dependencies) ⫶ Independent
 - Task-005 (Documentation) ⫶ Independent
@@ -533,18 +587,19 @@ Each task produces a **decision output** mapped to the DMN (Decision Management 
 - Task-008 (Type Safety) ⫶ Independent
 
 **Execution Timeline:**
+
 - **Estimated Duration**: 2-5 days (depending on executor availability and findings complexity)
 - **Parallel Execution**: All 8 tasks can be worked simultaneously by different reviewers
 - **Sequential Only**: DMN decision consolidation and production readiness conclusion
 
 ### Review Checkpoint Gates
 
-| Phase | Gate | Criteria | Owner |
-|-------|------|----------|-------|
-| **Phase 1: Initial Review** (Days 1-2) | All tasks complete | All 8 tasks submitted findings | Executor |
-| **Phase 2: DMN Evaluation** (Day 3) | Risk assessment | GREEN/YELLOW/RED decisions on each domain | Reviewer |
-| **Phase 3: Remediation Plan** (Days 4-5) | Action items prioritized | RED blockers have remediation owners and timeline | Manager |
-| **Phase 4: Production Ready** | Final gate | All RED resolved, YELLOW prioritized, deployment approval | Engineering Lead |
+| Phase                                    | Gate                     | Criteria                                                  | Owner            |
+| ---------------------------------------- | ------------------------ | --------------------------------------------------------- | ---------------- |
+| **Phase 1: Initial Review** (Days 1-2)   | All tasks complete       | All 8 tasks submitted findings                            | Executor         |
+| **Phase 2: DMN Evaluation** (Day 3)      | Risk assessment          | GREEN/YELLOW/RED decisions on each domain                 | Reviewer         |
+| **Phase 3: Remediation Plan** (Days 4-5) | Action items prioritized | RED blockers have remediation owners and timeline         | Manager          |
+| **Phase 4: Production Ready**            | Final gate               | All RED resolved, YELLOW prioritized, deployment approval | Engineering Lead |
 
 ---
 
@@ -567,6 +622,7 @@ The PRD is considered **COMPLETE** and ready for Ralph Loop execution when:
 ## 9. References
 
 ### Key Documents
+
 - `.github/codebase-assessment.md` - Detailed technical assessment
 - `.github/dmn-manager-decisions.md` - Decision management framework
 - `.github/review-checklist.md` - Practical review checklist
@@ -574,12 +630,14 @@ The PRD is considered **COMPLETE** and ready for Ralph Loop execution when:
 - `VERSION.json` - Version tracking (kernel + package)
 
 ### Related Requirements
+
 - Python 3.11+ for type safety validation
 - PostgreSQL for database review
 - Redis for cache/queue patterns
 - FastAPI/Uvicorn for HTTP endpoint verification
 
 ### Success Metrics
+
 - **Production Ready**: All domains GREEN or YELLOW with mitigation plans
 - **NOT Ready**: Any RED domain blocks deployment
 - **Documentation**: README, deployment guide, API docs completed
@@ -603,6 +661,7 @@ The PRD is considered **COMPLETE** and ready for Ralph Loop execution when:
 **Estimated Iterations**: 1-2
 
 **Acceptance Criteria**:
+
 - [ ] Project dependencies and versions documented (from pyproject.toml)
 - [ ] Docker configuration reviewed (Dockerfile, compose files)
 - [ ] Database schema understood (migrations/)
@@ -610,6 +669,7 @@ The PRD is considered **COMPLETE** and ready for Ralph Loop execution when:
 - [ ] Build and deployment scripts reviewed (Makefile, scripts/)
 
 **Verification**:
+
 ```bash
 # Check if project builds successfully
 make build
@@ -623,6 +683,7 @@ docker build -t mea-test .
 **Estimated Iterations**: 2-3
 
 **Acceptance Criteria**:
+
 - [ ] Main FastAPI application structure documented (control_plane/app.py)
 - [ ] API routes analyzed (agent, replay, session, verifier, github)
 - [ ] Job management system understood (queue.py, repository.py)
@@ -630,6 +691,7 @@ docker build -t mea-test .
 - [ ] Health check endpoints verified
 
 **Verification**:
+
 ```bash
 # Test control plane health endpoint
 curl http://localhost:8000/healthz
@@ -643,6 +705,7 @@ python -c "from control_plane.app import app; print('Routes loaded successfully'
 **Estimated Iterations**: 2-3
 
 **Acceptance Criteria**:
+
 - [ ] MCP server purpose and role documented
 - [ ] Supported LLM providers identified (OpenAI, Anthropic, Google, OpenRouter)
 - [ ] Tool implementations reviewed (mea_ci_guardrail)
@@ -650,6 +713,7 @@ python -c "from control_plane.app import app; print('Routes loaded successfully'
 - [ ] A2A invoke functionality analyzed
 
 **Verification**:
+
 ```bash
 # Check MCP server health
 curl http://localhost:8001/healthz
@@ -663,6 +727,7 @@ curl http://localhost:8001/providers
 **Estimated Iterations**: 2-3
 
 **Acceptance Criteria**:
+
 - [ ] Worker loop logic documented (backend_worker.py)
 - [ ] Job processing pipeline understood
 - [ ] GitHub integration reviewed (github_app_client.py)
@@ -670,6 +735,7 @@ curl http://localhost:8001/providers
 - [ ] Error handling and logging reviewed
 
 **Verification**:
+
 ```bash
 # Test worker can import without errors
 python -c "from worker.backend_worker import worker_loop; print('Worker imports successfully')"
@@ -683,6 +749,7 @@ python -c "from worker.github_app_client import get_installation_token; print('G
 **Estimated Iterations**: 2-3
 
 **Acceptance Criteria**:
+
 - [ ] iRacing integration documented (iracing_stream.py)
 - [ ] Telemetry data models understood (shared/models.py)
 - [ ] Data streaming mechanisms analyzed
@@ -690,6 +757,7 @@ python -c "from worker.github_app_client import get_installation_token; print('G
 - [ ] Error handling for simulator unavailability
 
 **Verification**:
+
 ```bash
 # Test telemetry models can be imported
 python -c "from shared.models import TelemetryFrame, ReplayMetrics; print('Models import successfully')"
@@ -703,6 +771,7 @@ python -c "from ingest.iracing_stream import load_pyirsdk; print('iRacing adapte
 **Estimated Iterations**: 3-4
 
 **Acceptance Criteria**:
+
 - [ ] Agent decision API reviewed (routes/agent.py)
 - [ ] Reasoning engine analyzed (mea/reasoning/)
 - [ ] Policy engine functionality understood
@@ -710,6 +779,7 @@ python -c "from ingest.iracing_stream import load_pyirsdk; print('iRacing adapte
 - [ ] Supervisor loop documented
 
 **Verification**:
+
 ```bash
 # Test agent routes import
 python -c "from control_plane.routes.agent import router; print('Agent routes available')"
@@ -723,6 +793,7 @@ python -c "from mea.reasoning.policy_engine import PolicyEngine; print('Policy e
 **Estimated Iterations**: 2-3
 
 **Acceptance Criteria**:
+
 - [ ] Database models reviewed (shared/models.py)
 - [ ] Migration scripts analyzed (db/migrations/)
 - [ ] Forensic ledger functionality understood
@@ -730,6 +801,7 @@ python -c "from mea.reasoning.policy_engine import PolicyEngine; print('Policy e
 - [ ] Data validation mechanisms examined
 
 **Verification**:
+
 ```bash
 # Test database connection (requires running DB)
 python -c "from shared.db import get_db; print('DB module available')"
@@ -743,6 +815,7 @@ python -c "from shared.forensic_ledger import ForensicLedger; print('Ledger avai
 **Estimated Iterations**: 2-3
 
 **Acceptance Criteria**:
+
 - [ ] Test structure analyzed (tests/ directory)
 - [ ] Unit and integration tests reviewed
 - [ ] Test coverage assessed
@@ -750,6 +823,7 @@ python -c "from shared.forensic_ledger import ForensicLedger; print('Ledger avai
 - [ ] Validation utilities understood (jsonl_validator.py)
 
 **Verification**:
+
 ```bash
 # Run test suite
 pytest --collect-only
@@ -763,6 +837,7 @@ pytest --cov=shared --cov-report=term-missing
 **Estimated Iterations**: 3-4
 
 **Acceptance Criteria**:
+
 - [ ] End-to-end data flow mapped (telemetry → processing → decisions)
 - [ ] Component interaction diagram created
 - [ ] API communication patterns documented
@@ -770,6 +845,7 @@ pytest --cov=shared --cov-report=term-missing
 - [ ] External integrations mapped (GitHub, iRacing, LLM providers)
 
 **Verification**:
+
 ```bash
 # Verify all components can be imported together
 python -c "
@@ -787,6 +863,7 @@ print('All main components import successfully')
 **Estimated Iterations**: 2-3
 
 **Acceptance Criteria**:
+
 - [ ] Core features documented (CI fixing, replay analysis, session management)
 - [ ] AI decision-making capabilities listed
 - [ ] Telemetry processing features identified
@@ -794,6 +871,7 @@ print('All main components import successfully')
 - [ ] Performance metrics and monitoring understood
 
 **Verification**:
+
 ```bash
 # Review metrics configuration
 cat metrics/performance_tasks.yaml
@@ -807,12 +885,14 @@ cat release/RELEASE_MANIFEST.json
 **Estimated Iterations**: 1-2
 
 **Acceptance Criteria**:
+
 - [ ] Python version and key libraries documented
 - [ ] Infrastructure dependencies identified (Redis, PostgreSQL)
 - [ ] External API integrations listed
 - [ ] Development tools and frameworks reviewed
 
 **Verification**:
+
 ```bash
 # Check Python version compatibility
 python --version
@@ -826,6 +906,7 @@ python -c "import fastapi, uvicorn, pydantic, psycopg, redis; print('Core depend
 **Estimated Iterations**: 2-3
 
 **Acceptance Criteria**:
+
 - [ ] Executive summary of system purpose
 - [ ] Architecture overview with diagrams
 - [ ] Component descriptions and responsibilities
@@ -835,6 +916,7 @@ python -c "import fastapi, uvicorn, pydantic, psycopg, redis; print('Core depend
 - [ ] Security considerations noted
 
 **Verification**:
+
 ```bash
 # Create review report file
 echo "# MEA Codebase Review Report" > REVIEW_REPORT.md
@@ -842,6 +924,7 @@ echo "Report created successfully"
 ```
 
 ## Technical Constraints
+
 - Language: Python 3.11+
 - Framework: FastAPI for web services
 - Database: PostgreSQL with psycopg
@@ -851,6 +934,7 @@ echo "Report created successfully"
 - Containerization: Docker
 
 ## Architecture Notes
+
 - Microservices architecture with separate control plane, MCP server, and worker
 - Event-driven job processing with queue system
 - AI agent integration for decision making in motorsport context
@@ -858,6 +942,7 @@ echo "Report created successfully"
 - GitHub App integration for CI/CD automation
 
 ## Out of Scope
+
 - Detailed performance benchmarking
 - Security vulnerability assessment
 - Production deployment configuration
