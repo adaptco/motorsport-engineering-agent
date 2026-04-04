@@ -1,15 +1,56 @@
 import hashlib
+import json as jsonlib
+import logging
 import os
 import subprocess
 import tempfile
 import time
-import logging
+import urllib.error
+import urllib.request
 from pathlib import Path
-import requests
+
+try:
+    import requests
+except ModuleNotFoundError:
+    class _FallbackResponse:
+        def __init__(self, status_code: int, payload: dict):
+            self.status_code = status_code
+            self._payload = payload
+
+        def raise_for_status(self) -> None:
+            if self.status_code >= 400:
+                raise RuntimeError(f"HTTP {self.status_code}: {self._payload}")
+
+        def json(self) -> dict:
+            return self._payload
+
+    class _FallbackRequests:
+        @staticmethod
+        def post(url: str, headers: dict | None = None, json: dict | None = None, timeout: int = 30) -> _FallbackResponse:
+            body = None if json is None else str.encode(jsonlib.dumps(json), "utf-8")
+            req = urllib.request.Request(
+                url,
+                data=body,
+                headers=headers or {},
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                    payload_bytes = resp.read()
+                    payload = jsonlib.loads(payload_bytes.decode("utf-8")) if payload_bytes else {}
+                    status_code = getattr(resp, "status", resp.getcode())
+                    return _FallbackResponse(status_code, payload)
+            except urllib.error.HTTPError as http_error:
+                payload = {}
+                if http_error.fp:
+                    payload = jsonlib.loads(http_error.fp.read().decode("utf-8"))
+                return _FallbackResponse(http_error.code, payload)
+
+    requests = _FallbackRequests()
 
 from control_plane.queue import dequeue
 from worker.github_app_client import get_installation_token
-from worker.repository import add_span, complete_job, get_job_identity, set_job_phase as update_job_phase
+from worker.repository import add_span, complete_job, get_job_identity, set_job_phase
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +153,7 @@ def process_fix_ci_job(job: dict) -> None:
         # Step 2: Validate patch
         validate_patch(patch)
         add_span(job_id, trace_id, "policy_check", "ok", {"repo": repo_slug})
-        update_job_phase(job_id, "running", "policy_check")
+        set_job_phase(job_id, "running", "policy_check")
 
         # Step 3: Get GitHub installation token
         installation_token = get_installation_token(job.get("installation_id"))
@@ -135,16 +176,25 @@ def process_fix_ci_job(job: dict) -> None:
             patch_file.write_text(patch, encoding="utf-8")
             run(["git", "apply", "patch.diff"], cwd=tmpdir)
             add_span(job_id, trace_id, "apply_patch", "ok", {"patch_hash": hashlib.sha256(patch.encode()).hexdigest()})
-            update_job_phase(job_id, "running", "patched")
+            set_job_phase(job_id, "running", "patched")
 
             # Step 6: Run tests
             tests_ok = True
             try:
                 run(["pytest"], cwd=tmpdir)
-            except Exception:
+            except subprocess.CalledProcessError:
                 tests_ok = False
             add_span(job_id, trace_id, "test_suite", "ok" if tests_ok else "warning", {"tests_ok": tests_ok})
-            update_job_phase(job_id, "running", "validated", {"tests_ok": tests_ok})
+            if not tests_ok:
+                set_job_phase(
+                    job_id,
+                    "failed",
+                    "validation_failed",
+                    {"tests_ok": False},
+                    error_message="Validation failed: test suite failed",
+                )
+                return
+            set_job_phase(job_id, "running", "validated", {"tests_ok": True})
 
             run(["git", "config", "user.name", "mea-ci-bot[app]"], cwd=tmpdir)
             run(["git", "config", "user.email", "mea-ci-bot@example.com"], cwd=tmpdir)
@@ -152,7 +202,7 @@ def process_fix_ci_job(job: dict) -> None:
             run(["git", "commit", "-m", f"Fix CI run {job.get('run_id') or job_id}"], cwd=tmpdir)
             run(["git", "push", "origin", fix_branch], cwd=tmpdir)
             add_span(job_id, trace_id, "push_branch", "ok", {"fix_branch": fix_branch})
-            update_job_phase(job_id, "running", "pushed")
+            set_job_phase(job_id, "running", "pushed")
 
             # Step 8: Create pull request
             owner, repo_name = repo_slug.split("/")
@@ -179,7 +229,7 @@ def process_fix_ci_job(job: dict) -> None:
 
     except Exception as e:
         # Error handling: Mark job as failed and log error
-        update_job_phase(job_id, "failed", "error", error_message=str(e))
+        set_job_phase(job_id, "failed", "error", error_message=str(e))
         if identity:
             add_span(job_id, trace_id, "job_error", "error", {"error": str(e)})
 
