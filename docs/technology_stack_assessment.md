@@ -41,6 +41,24 @@ From docker-compose.yml:
 - Uvicorn (Server)
 - Typer (CLI tools)
 
+## Security Considerations
+- Cryptography library for secure operations (encryption, hashing)
+- PyJWT for JSON Web Token handling in authentication
+- HTTPS enforcement via Uvicorn and FastAPI
+- GitHub App authentication with JWT tokens
+- Input validation through Pydantic models
+- Secure API key management for LLM providers
+- Forensic ledger for audit trails and evidence collection
+
+## Performance Considerations
+- Asynchronous FastAPI for high-concurrency API handling
+- Redis for caching and message queuing to reduce latency
+- PostgreSQL for persistent data storage with efficient querying
+- Docker containerization for consistent deployment and resource isolation
+- Streaming telemetry processing to handle real-time data
+- Background job processing via worker to offload heavy computations
+- Connection pooling in psycopg for database efficiency
+
 ## Verification
 - Python version check: PASSED
 - Core dependencies import: PASSED
