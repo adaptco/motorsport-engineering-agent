@@ -9,7 +9,7 @@ prune_local() {
     if [[ "$branch" != "main" && "$branch" != "$current_branch" ]]; then
       if [[ "$branch" == codex/* || "$branch" == fix/* ]]; then
         echo "Deleting local branch: $branch"
-        git branch -d "$branch" || true
+        git branch -D "$branch" || true
       fi
     fi
   done
