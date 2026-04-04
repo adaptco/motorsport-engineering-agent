@@ -41,7 +41,7 @@ def load_version_info() -> VersionInfo:
                 package_version=version_data["package_version"],
                 release_channel=version_data["release_channel"],
             )
-        except (json.JSONDecodeError, KeyError, OSError) as e:
+        except (json.JSONDecodeError, KeyError, Exception) as e:
             logger.warning(f"Failed to load VERSION.json: {e}. Falling back to package metadata.")
 
     try:
