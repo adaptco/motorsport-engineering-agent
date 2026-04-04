@@ -46,7 +46,7 @@ def worker_loop():
             )
             if consecutive_empty_polls == 1 or consecutive_empty_polls % 10 == 0:
                 logger.info(
-                    "backend_worker_empty_poll",
+                    f"backend_worker_empty_poll: {consecutive_empty_polls} consecutive empty polls, sleeping for {sleep_seconds:.1f}s",
                     extra={
                         "consecutive_empty_polls": consecutive_empty_polls,
                         "sleep_seconds": sleep_seconds,
