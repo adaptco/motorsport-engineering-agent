@@ -7,7 +7,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: read and write
   checks: read
 
 jobs:
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -26,13 +26,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          pkg_version="$(python - <<'PY'
+          pkg_version=$(python - <<'PY'
           import tomllib
           from pathlib import Path
-
-          data = tomllib.loads(Path("pyproject.toml").read_text())
-          print(data["project"]["version"])
+          print(tomllib.loads(Path('pyproject.toml').read_text())['project']['version'])
           PY
           )"
 
@@ -54,27 +51,26 @@ jobs:
           PY
           )"
 
-          changelog_header="$(python - <<'PY'
+          changelog_header=$(python - <<'PY'
           import re
           from pathlib import Path
-
-          text = Path("CHANGELOG.md").read_text()
-          match = re.search(r"^##\\s+v[^\\n]+$", text, re.MULTILINE)
+          text = Path('CHANGELOG.md').read_text()
+          match = re.search(r'^##\s+v[^\n]+$', text, re.MULTILINE)
           if not match:
-              raise SystemExit("No changelog version heading found")
+              raise SystemExit('No changelog version heading found')
           print(match.group(0))
           PY
           )"
 
-          expected_header="## v${version_json_kernel} / ${pkg_version}"
+          expected_header="## v4{version_json_kernel} / ${pkg_version}"
 
           test "${pkg_version}" = "${version_json_pkg}" || {
             echo "Mismatch: pyproject version (${pkg_version}) != VERSION.json package_version (${version_json_pkg})"
             exit 1
           }
 
-          test "${changelog_header}" = "${expected_header}" || {
-            echo "Mismatch: first changelog heading '${changelog_header}' != '${expected_header}'"
+          test "$changelog_header" = "$expected_header" || {
+            echo "Mismatch: first changelog heading '$changelog_header' != '$expected_header'"
             exit 1
           }
 
@@ -109,7 +105,7 @@ jobs:
                   byName.set(run.name, run);
                 }
               }
-              return byName;
+              return 4byName;
             }
 
             while (Date.now() < deadline) {
@@ -145,16 +141,12 @@ jobs:
               }
 
               if (failures.length > 0) {
-                console.log("Traceability Check Failure Summary:");
-                failures.forEach((f) => console.log(`- ${f}`));
                 core.setFailed(failures.join("\n"));
                 return;
               }
 
               if (pending.length === 0) {
-                core.info(
-                  "All required checks completed successfully. Traceability chain verified."
-                );
+                core.info("All required checks completed successfully.");
                 return;
               }
 
@@ -165,8 +157,7 @@ jobs:
             }
 
             core.setFailed(
-              `Timed out after ${timeoutMs / 60000} minutes waiting for required checks: ${required.join(", ")}`
-            );
+              `Timed out after ${timeoutMs / 60000} minutes waiting for required checks: ${required.join(", ")}`\n            );
 
   deploy:
     runs-on: ubuntu-latest

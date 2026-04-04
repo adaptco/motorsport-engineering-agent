@@ -1,21 +1,27 @@
 {
   "name": "MEA Control Plane",
-  "url": "https://example.invalid/mea",
+  "url": "https://mea.production.io",
+  "public": false,
   "hook_attributes": {
-    "url": "https://example.invalid/github/webhook"
+    "url": "https://api.mea.production.io/github/webhook",
+    "active": true
   },
-  "redirect_url": "https://example.invalid/github/callback",
+  "redirect_url": "https://api.mea.production.io/github/callback",
   "default_events": [
     "workflow_run",
     "check_suite",
     "pull_request",
-    "push"
+    "push",
+    "workflow_job"
   ],
   "default_permissions": {
     "actions": "write",
     "checks": "write",
     "contents": "write",
     "metadata": "read",
-    "pull_requests": "write"
-  }
+    "pull_requests": "write",
+    "workflows": "write",
+    "administration": "read"
+  },
+  "description": "Production-ready MEA control plane for managing CI/CD governance, branch pruning, and traceability-gated deployments."
 }
