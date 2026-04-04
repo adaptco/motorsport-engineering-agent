@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
 import uuid
 from typing import Any
 
@@ -12,7 +13,7 @@ from shared.db import get_conn
 from shared.forensic_ledger import append_receipt, get_session_head, verify_chain
 from shared.models import SessionEvidenceRequest, SessionLedgerReplayResponse, SessionLedgerReplayResult
 
-SESSION_LEDGER_DB_PATH = os.environ.get("SESSION_LEDGER_DB_PATH", "/tmp/mea-session-ledger.db")
+SESSION_LEDGER_DB_PATH = os.environ.get("SESSION_LEDGER_DB_PATH", os.path.join(tempfile.gettempdir(), "mea-session-ledger.db"))
 
 
 def create_job(job_type: str, repo_slug: str, base_branch: str, payload: dict) -> str:

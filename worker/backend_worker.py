@@ -1,15 +1,16 @@
 import hashlib
 import os
-import subprocess
-import tempfile
+import subprocess  # nosec B404
 import time
 import logging
+import shutil
 from pathlib import Path
+from uuid import uuid4
 import requests
 
 from control_plane.queue import dequeue
 from worker.github_app_client import get_installation_token
-from worker.repository import add_span, complete_job, get_job_identity, set_job_phase as update_job_phase
+from worker.repository import add_span, complete_job, get_job_identity, set_job_phase
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,7 @@ GITHUB_API_URL = "https://api.github.com"
 ALLOWED_REPOS = {r.strip() for r in os.environ.get("GITHUB_ALLOWED_REPOS", "").split(",") if r.strip()}
 MAX_PATCH_LINES = int(os.environ.get("MAX_PATCH_LINES", "1000"))
 ALLOW_WORKFLOW_CHANGES = os.environ.get("ALLOW_WORKFLOW_CHANGES", "false").lower() == "true"
+WORKDIR_ROOT = Path(os.environ.get("MEA_BACKEND_WORKDIR_ROOT", ".tmp_backend_worker"))
 
 EMPTY_POLL_BACKOFF_SECONDS_MIN = 1.0
 EMPTY_POLL_BACKOFF_SECONDS_MAX = 60.0
@@ -112,7 +114,7 @@ def process_fix_ci_job(job: dict) -> None:
         # Step 2: Validate patch
         validate_patch(patch)
         add_span(job_id, trace_id, "policy_check", "ok", {"repo": repo_slug})
-        update_job_phase(job_id, "running", "policy_check")
+        set_job_phase(job_id, "running", "policy_check")
 
         # Step 3: Get GitHub installation token
         installation_token = get_installation_token(job.get("installation_id"))
@@ -120,8 +122,10 @@ def process_fix_ci_job(job: dict) -> None:
         set_job_phase(job_id, "running", "token_issued")
 
         # Step 4: Clone repository
-        with tempfile.TemporaryDirectory() as tmpdir_str:
-            tmpdir = Path(tmpdir_str)
+        WORKDIR_ROOT.mkdir(parents=True, exist_ok=True)
+        tmpdir = WORKDIR_ROOT / f"{job_id}-{uuid4().hex[:8]}"
+        tmpdir.mkdir(parents=True, exist_ok=False)
+        try:
             clone_url = f"https://x-access-token:{installation_token}@github.com/{repo_slug}.git"
             run(["git", "clone", "--depth", "1", "--branch", base_branch, clone_url, "."], cwd=tmpdir)
             add_span(job_id, trace_id, "clone_repo", "ok", {"branch": base_branch})
@@ -135,7 +139,7 @@ def process_fix_ci_job(job: dict) -> None:
             patch_file.write_text(patch, encoding="utf-8")
             run(["git", "apply", "patch.diff"], cwd=tmpdir)
             add_span(job_id, trace_id, "apply_patch", "ok", {"patch_hash": hashlib.sha256(patch.encode()).hexdigest()})
-            update_job_phase(job_id, "running", "patched")
+            set_job_phase(job_id, "running", "patched")
 
             # Step 6: Run tests
             tests_ok = True
@@ -144,7 +148,10 @@ def process_fix_ci_job(job: dict) -> None:
             except Exception:
                 tests_ok = False
             add_span(job_id, trace_id, "test_suite", "ok" if tests_ok else "warning", {"tests_ok": tests_ok})
-            update_job_phase(job_id, "running", "validated", {"tests_ok": tests_ok})
+            if not tests_ok:
+                set_job_phase(job_id, "failed", "validation_failed")
+                return
+            set_job_phase(job_id, "running", "validated", {"tests_ok": tests_ok})
 
             run(["git", "config", "user.name", "mea-ci-bot[app]"], cwd=tmpdir)
             run(["git", "config", "user.email", "mea-ci-bot@example.com"], cwd=tmpdir)
@@ -152,7 +159,7 @@ def process_fix_ci_job(job: dict) -> None:
             run(["git", "commit", "-m", f"Fix CI run {job.get('run_id') or job_id}"], cwd=tmpdir)
             run(["git", "push", "origin", fix_branch], cwd=tmpdir)
             add_span(job_id, trace_id, "push_branch", "ok", {"fix_branch": fix_branch})
-            update_job_phase(job_id, "running", "pushed")
+            set_job_phase(job_id, "running", "pushed")
 
             # Step 8: Create pull request
             owner, repo_name = repo_slug.split("/")
@@ -176,10 +183,12 @@ def process_fix_ci_job(job: dict) -> None:
             pr_url = pr["html_url"]
             add_span(job_id, trace_id, "create_pr", "ok", {"pr_url": pr_url})
             complete_job(job_id, fix_branch, pr_url, {"summary": "PR opened", "tests_ok": tests_ok, "pr_url": pr_url})
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
 
     except Exception as e:
         # Error handling: Mark job as failed and log error
-        update_job_phase(job_id, "failed", "error", error_message=str(e))
+        set_job_phase(job_id, "failed", "error", error_message=str(e))
         if identity:
             add_span(job_id, trace_id, "job_error", "error", {"error": str(e)})
 
