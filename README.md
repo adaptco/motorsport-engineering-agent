@@ -2,7 +2,7 @@
 
 MEA Root Kernel v3.4 builds on the governed v3.2 core and integrates the runtime-correctness patch set required for temporally correct replay, policy determinism, and supervisor-loop readiness.
 
-## What v3.3 adds
+## What v3.4 adds
 - PolicyEngine logical clock with deterministic queue behavior
 - DATA vs WALL time-domain helpers
 - strict JSONL validation for replay artifacts
