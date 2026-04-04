@@ -9,6 +9,9 @@ from control_plane.repository import correlate_workflow_run, store_webhook
 router = APIRouter(prefix="/github", tags=["github"])
 
 
+from functools import lru_cache
+
+@lru_cache(maxsize=1)
 def get_webhook_secret() -> str | None:
     secret = os.environ.get("GITHUB_WEBHOOK_SECRET", "").strip()
     return secret or None
