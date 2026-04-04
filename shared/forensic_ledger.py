@@ -196,6 +196,8 @@ def append_receipt(
                 created_at,
             ),
         )
+        if cursor.lastrowid is None:
+            raise RuntimeError("failed_to_persist_receipt")
         receipt_id = int(cursor.lastrowid)
         last_operational_state_hash = state_hash if status == "ACCEPTED" else (None if head is None else head["last_operational_state_hash"])
         conn.execute(
