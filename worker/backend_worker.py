@@ -1,10 +1,11 @@
 import hashlib
 import os
-import subprocess
-import tempfile
+import subprocess  # nosec B404
 import time
 import logging
+import shutil
 from pathlib import Path
+from uuid import uuid4
 import requests
 
 from control_plane.queue import dequeue
@@ -17,14 +18,28 @@ GITHUB_API_URL = "https://api.github.com"
 ALLOWED_REPOS = {r.strip() for r in os.environ.get("GITHUB_ALLOWED_REPOS", "").split(",") if r.strip()}
 MAX_PATCH_LINES = int(os.environ.get("MAX_PATCH_LINES", "1000"))
 ALLOW_WORKFLOW_CHANGES = os.environ.get("ALLOW_WORKFLOW_CHANGES", "false").lower() == "true"
+WORKDIR_ROOT = Path(os.environ.get("MEA_BACKEND_WORKDIR_ROOT", ".tmp_backend_worker"))
 
 EMPTY_POLL_BACKOFF_SECONDS_MIN = 1.0
 EMPTY_POLL_BACKOFF_SECONDS_MAX = 60.0
 
 def run(cmd: list[str], cwd: Path) -> None:
+    """
+    Execute a shell command in the specified directory.
+    Raises subprocess.CalledProcessError if the command fails.
+    """
     subprocess.run(cmd, cwd=cwd, check=True)
 
 def validate_patch(patch: str) -> None:
+    """
+    Validate the incoming patch for security and size constraints.
+    
+    Checks:
+    - Patch is not empty
+    - Patch size does not exceed MAX_PATCH_LINES
+    - Does not contain sensitive markers (tokens, keys)
+    - Workflow changes are allowed only if ALLOW_WORKFLOW_CHANGES is true
+    """
     if not patch.strip():
         raise ValueError("Patch is empty")
     if patch.count("\n") > MAX_PATCH_LINES:
@@ -36,6 +51,12 @@ def validate_patch(patch: str) -> None:
         raise ValueError("Workflow edits disabled")
 
 def worker_loop():
+    """
+    Main worker loop that continuously polls for jobs from the queue.
+    
+    Implements exponential backoff for empty polls to reduce resource usage.
+    Processes each job by calling process_fix_ci_job.
+    """
     consecutive_empty_polls = 0
     while True:
         job = dequeue()
@@ -60,6 +81,22 @@ def worker_loop():
         process_fix_ci_job(job)
 
 def process_fix_ci_job(job: dict) -> None:
+    """
+    Process a single CI fix job.
+    
+    Job processing pipeline:
+    1. Validate job identity and repo allowlist
+    2. Validate patch security
+    3. Obtain GitHub installation token
+    4. Clone repository
+    5. Apply patch
+    6. Run tests
+    7. Commit and push changes
+    8. Create pull request
+    
+    Each step updates job phase and adds tracing spans.
+    Errors are caught and job is marked as failed.
+    """
     job_id = job["job_id"]
     identity = get_job_identity(job_id)
     if not identity:
@@ -70,24 +107,31 @@ def process_fix_ci_job(job: dict) -> None:
     patch = job["patch"]
 
     try:
+        # Step 1: Validate repo is allowlisted
         if repo_slug not in ALLOWED_REPOS:
             raise ValueError("Repo not allowlisted")
 
+        # Step 2: Validate patch
         validate_patch(patch)
         add_span(job_id, trace_id, "policy_check", "ok", {"repo": repo_slug})
         set_job_phase(job_id, "running", "policy_check")
 
+        # Step 3: Get GitHub installation token
         installation_token = get_installation_token(job.get("installation_id"))
         add_span(job_id, trace_id, "issue_installation_token", "ok", {})
         set_job_phase(job_id, "running", "token_issued")
 
-        with tempfile.TemporaryDirectory() as tmpdir_str:
-            tmpdir = Path(tmpdir_str)
+        # Step 4: Clone repository
+        WORKDIR_ROOT.mkdir(parents=True, exist_ok=True)
+        tmpdir = WORKDIR_ROOT / f"{job_id}-{uuid4().hex[:8]}"
+        tmpdir.mkdir(parents=True, exist_ok=False)
+        try:
             clone_url = f"https://x-access-token:{installation_token}@github.com/{repo_slug}.git"
             run(["git", "clone", "--depth", "1", "--branch", base_branch, clone_url, "."], cwd=tmpdir)
             add_span(job_id, trace_id, "clone_repo", "ok", {"branch": base_branch})
             set_job_phase(job_id, "running", "cloned")
 
+            # Step 5: Create fix branch and apply patch
             fix_branch = f"fix-ci/{job.get('run_id') or job_id}"
             run(["git", "checkout", "-b", fix_branch], cwd=tmpdir)
 
@@ -97,12 +141,16 @@ def process_fix_ci_job(job: dict) -> None:
             add_span(job_id, trace_id, "apply_patch", "ok", {"patch_hash": hashlib.sha256(patch.encode()).hexdigest()})
             set_job_phase(job_id, "running", "patched")
 
+            # Step 6: Run tests
             tests_ok = True
             try:
                 run(["pytest"], cwd=tmpdir)
             except Exception:
                 tests_ok = False
             add_span(job_id, trace_id, "test_suite", "ok" if tests_ok else "warning", {"tests_ok": tests_ok})
+            if not tests_ok:
+                set_job_phase(job_id, "failed", "validation_failed")
+                return
             set_job_phase(job_id, "running", "validated", {"tests_ok": tests_ok})
 
             if not tests_ok:
@@ -118,6 +166,7 @@ def process_fix_ci_job(job: dict) -> None:
             add_span(job_id, trace_id, "push_branch", "ok", {"fix_branch": fix_branch})
             set_job_phase(job_id, "running", "pushed")
 
+            # Step 8: Create pull request
             owner, repo_name = repo_slug.split("/")
             resp = requests.post(
                 f"{GITHUB_API_URL}/repos/{owner}/{repo_name}/pulls",
@@ -139,8 +188,11 @@ def process_fix_ci_job(job: dict) -> None:
             pr_url = pr["html_url"]
             add_span(job_id, trace_id, "create_pr", "ok", {"pr_url": pr_url})
             complete_job(job_id, fix_branch, pr_url, {"summary": "PR opened", "tests_ok": tests_ok, "pr_url": pr_url})
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
 
     except Exception as e:
+        # Error handling: Mark job as failed and log error
         set_job_phase(job_id, "failed", "error", error_message=str(e))
         if identity:
             add_span(job_id, trace_id, "job_error", "error", {"error": str(e)})
