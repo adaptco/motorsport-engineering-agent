@@ -2,11 +2,12 @@ import hashlib
 import json as jsonlib
 import logging
 import os
+import shutil
 import subprocess
-import tempfile
 import time
 import urllib.error
 import urllib.request
+import uuid
 from pathlib import Path
 
 try:
@@ -61,6 +62,7 @@ ALLOW_WORKFLOW_CHANGES = os.environ.get("ALLOW_WORKFLOW_CHANGES", "false").lower
 
 EMPTY_POLL_BACKOFF_SECONDS_MIN = 1.0
 EMPTY_POLL_BACKOFF_SECONDS_MAX = 60.0
+WORKER_TEMP_ROOT = Path(os.environ.get("MEA_WORKER_TEMP_ROOT", str(Path.cwd() / ".mea_tmp")))
 
 def run(cmd: list[str], cwd: Path) -> None:
     """
@@ -161,8 +163,10 @@ def process_fix_ci_job(job: dict) -> None:
         set_job_phase(job_id, "running", "token_issued")
 
         # Step 4: Clone repository
-        with tempfile.TemporaryDirectory() as tmpdir_str:
-            tmpdir = Path(tmpdir_str)
+        WORKER_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
+        tmpdir = WORKER_TEMP_ROOT / f"job-{job_id}-{uuid.uuid4().hex[:8]}"
+        tmpdir.mkdir(parents=True, exist_ok=False)
+        try:
             clone_url = f"https://x-access-token:{installation_token}@github.com/{repo_slug}.git"
             run(["git", "clone", "--depth", "1", "--branch", base_branch, clone_url, "."], cwd=tmpdir)
             add_span(job_id, trace_id, "clone_repo", "ok", {"branch": base_branch})
@@ -226,6 +230,8 @@ def process_fix_ci_job(job: dict) -> None:
             pr_url = pr["html_url"]
             add_span(job_id, trace_id, "create_pr", "ok", {"pr_url": pr_url})
             complete_job(job_id, fix_branch, pr_url, {"summary": "PR opened", "tests_ok": tests_ok, "pr_url": pr_url})
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
 
     except Exception as e:
         # Error handling: Mark job as failed and log error
