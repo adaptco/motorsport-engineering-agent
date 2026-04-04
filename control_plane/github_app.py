@@ -76,7 +76,7 @@ class GitHubAppClient:
         """Retrieves a valid installation token, refreshing if necessary."""
         # Refresh token 5 minutes before expiration
         if not self._token or time.time() > self._token_expires_at - 300:
-            self._token = create_installation_token(self.installation_id)
+            self._token = await asyncio.to_thread(create_installation_token, self.installation_id)
             # In a real scenario, we would parse the 'expires_at' from the response.
             # Defaulting to 1 hour for now.
             self._token_expires_at = time.time() + 3600
