@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     steps:
-      - name: Ensure required checks succeeded on this commit
+      - name: Wait for required checks to complete successfully
         uses: actions/github-script@v7
         with:
           script: |
@@ -75,34 +75,72 @@ jobs:
             const repo = context.repo.repo;
             const ref = context.sha;
             const required = ["quality-gate", "build-images"];
+            const pollIntervalMs = 15000;
+            const timeoutMs = 20 * 60 * 1000;
+            const deadline = Date.now() + timeoutMs;
 
-            const response = await github.rest.checks.listForRef({
-              owner,
-              repo,
-              ref,
-              per_page: 100,
-            });
+            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-            const runs = response.data.check_runs;
-            const byName = new Map(runs.map((run) => [run.name, run]));
-            const failures = [];
-
-            for (const name of required) {
-              const run = byName.get(name);
-              if (!run) {
-                failures.push(`Missing required check run: ${name}`);
-                continue;
+            function selectLatestRunsByName(runs) {
+              const byName = new Map();
+              for (const run of runs) {
+                const existing = byName.get(run.name);
+                if (!existing || new Date(run.started_at ?? run.created_at) > new Date(existing.started_at ?? existing.created_at)) {
+                  byName.set(run.name, run);
+                }
               }
-              if (run.status !== "completed" || run.conclusion !== "success") {
-                failures.push(
-                  `Check '${name}' not successful (status=${run.status}, conclusion=${run.conclusion})`
-                );
-              }
+              return byName;
             }
 
-            if (failures.length > 0) {
-              core.setFailed(failures.join("\n"));
+            while (Date.now() < deadline) {
+              const response = await github.rest.checks.listForRef({
+                owner,
+                repo,
+                ref,
+                per_page: 100,
+              });
+
+              const runs = response.data.check_runs;
+              const byName = selectLatestRunsByName(runs);
+              const pending = [];
+              const failures = [];
+
+              for (const name of required) {
+                const run = byName.get(name);
+                if (!run) {
+                  pending.push(`Check '${name}' has not started yet`);
+                  continue;
+                }
+
+                if (run.status !== "completed") {
+                  pending.push(`Check '${name}' still ${run.status}`);
+                  continue;
+                }
+
+                if (run.conclusion !== "success") {
+                  failures.push(
+                    `Check '${name}' completed with conclusion=${run.conclusion}`
+                  );
+                }
+              }
+
+              if (failures.length > 0) {
+                core.setFailed(failures.join("\n"));
+                return;
+              }
+
+              if (pending.length === 0) {
+                core.info("All required checks completed successfully.");
+                return;
+              }
+
+              core.info(`${pending.join("; ")}. Retrying in ${pollIntervalMs / 1000}s...`);
+              await sleep(pollIntervalMs);
             }
+
+            core.setFailed(
+              `Timed out after ${timeoutMs / 60000} minutes waiting for required checks: ${required.join(", ")}`
+            );
 
   deploy:
     runs-on: ubuntu-latest
