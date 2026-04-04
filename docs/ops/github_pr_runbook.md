@@ -6,8 +6,9 @@ This runbook defines the exact operator commands for secure pull-request operati
 ## 0) One-time tool install (Ubuntu/Debian)
 ```bash
 apt-get update
-apt-get install -y gh
+apt-get install -y gh jq
 gh --version
+jq --version
 ```
 
 ## 1) Authentication (least privilege)
@@ -36,10 +37,11 @@ scripts/pr_preflight.sh
 Validated conditions:
 1. `git` installed
 2. `gh` installed
-3. `gh` authenticated
-4. `origin` remote configured
-5. `origin` reachable
-6. `origin/main` exists
+3. `jq` installed
+4. `gh` authenticated
+5. `origin` remote configured
+6. `origin` reachable
+7. `origin/main` exists
 
 ## 3) PR operations via GitHub CLI
 ### List PRs

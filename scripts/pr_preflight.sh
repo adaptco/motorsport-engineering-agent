@@ -16,6 +16,9 @@ pass "git CLI detected"
 command -v gh >/dev/null 2>&1 || fail "gh CLI is not installed"
 pass "gh CLI detected"
 
+command -v jq >/dev/null 2>&1 || fail "jq CLI is not installed"
+pass "jq CLI detected"
+
 if ! gh auth status >/dev/null 2>&1; then
   fail "gh is not authenticated (run: gh auth login --with-token < <(printf '%s' \"\$GITHUB_TOKEN\"))"
 fi

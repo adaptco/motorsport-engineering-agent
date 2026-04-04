@@ -23,6 +23,36 @@ require_env() {
   }
 }
 
+require_cmd() {
+  local cmd="$1"
+  command -v "$cmd" >/dev/null 2>&1 || {
+    printf 'ERROR: required command not found: %s\n' "$cmd" >&2
+    exit 1
+  }
+}
+
+validate_list_state() {
+  local state="$1"
+  case "$state" in
+    open|closed|all) ;;
+    *)
+      printf 'ERROR: invalid list state: %s (expected: open|closed|all)\n' "$state" >&2
+      exit 1
+      ;;
+  esac
+}
+
+validate_merge_method() {
+  local method="$1"
+  case "$method" in
+    merge|squash|rebase) ;;
+    *)
+      printf 'ERROR: invalid merge method: %s (expected: merge|squash|rebase)\n' "$method" >&2
+      exit 1
+      ;;
+  esac
+}
+
 api() {
   local method="$1"
   local path="$2"
@@ -45,6 +75,8 @@ api() {
 }
 
 main() {
+  require_cmd curl
+  require_cmd jq
   require_env GITHUB_TOKEN
   require_env REPO_SLUG
 
@@ -52,6 +84,7 @@ main() {
   case "$action" in
     list)
       local state="${2:-open}"
+      validate_list_state "$state"
       api GET "/pulls?state=${state}&per_page=100" | jq '.[] | {number, title, state, head: .head.ref, base: .base.ref}'
       ;;
     review)
@@ -65,13 +98,18 @@ main() {
         request_changes) event="REQUEST_CHANGES" ;;
         *) printf 'ERROR: invalid review event\n' >&2; exit 1 ;;
       esac
-      api POST "/pulls/${pr_number}/reviews" "{\"event\":\"${event}\",\"body\":\"${body}\"}" | jq '{id, state, body}'
+      local payload
+      payload="$(jq -cn --arg event "$event" --arg body "$body" '{event: $event, body: $body}')"
+      api POST "/pulls/${pr_number}/reviews" "$payload" | jq '{id, state, body}'
       ;;
     merge)
       local pr_number="${2:-}"
       local method="${3:-squash}"
       [[ -n "$pr_number" ]] || { usage; exit 1; }
-      api PUT "/pulls/${pr_number}/merge" "{\"merge_method\":\"${method}\"}" | jq '{merged, message, sha}'
+      validate_merge_method "$method"
+      local payload
+      payload="$(jq -cn --arg merge_method "$method" '{merge_method: $merge_method}')"
+      api PUT "/pulls/${pr_number}/merge" "$payload" | jq '{merged, message, sha}'
       ;;
     close)
       local pr_number="${2:-}"
