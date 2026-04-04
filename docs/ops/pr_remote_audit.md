@@ -77,8 +77,8 @@ Archive command output and response payload in this log for auditable PR-state r
 
 ### Instruction-to-execution mapping
 1. **Fetch authoritative branches from remote:** `git fetch --all --prune`.
-2. **If remote has `origin/main`, create local tracking branch:** `git checkout -b main --track origin/main`.
-3. **If remote does not have `main`, create it from agreed baseline commit and push with branch protections enabled**.
+2. If remote has origin/main, create local tracking branch: git checkout -B main origin/main.
+3. If remote does not have main, create it from agreed baseline commit and push with branch protections enabled.
 4. **Define branch protection requirements (required checks/reviews) in platform governance docs**.
 
 ### Verified execution receipts (2026-04-04 UTC)
@@ -130,7 +130,7 @@ Apply immediately after initial `main` push and before merge traffic is enabled:
    - Require linear history.
    - Disallow force-pushes.
    - Disallow branch deletions.
-   - Restrict merge methods to the approved strategy (squash or merge-commit, pick one per repo policy).
+   - Require squash merges only (disable merge-commit and rebase merge methods).
 
 4. **Promotion integrity controls**
    - Require signed commits (if org policy supports signing enforcement).
@@ -165,7 +165,7 @@ Apply immediately after initial `main` push and before merge traffic is enabled:
 git fetch --all --prune
 
 if git ls-remote --heads origin main | grep -q 'refs/heads/main'; then
-  git checkout -B main --track origin/main
+  git checkout -B main origin/main
 else
   git checkout -B main <baseline-sha>
   git push -u origin main
