@@ -1,10 +1,12 @@
 import os
 import time
+import logging
 import jwt
 import requests
 
 GITHUB_API = "https://api.github.com"
 APP_ID = os.environ.get("GITHUB_APP_ID")
+# Ensure newline characters are correctly handled for the RSA private key
 PRIVATE_KEY = os.environ.get("GITHUB_APP_PRIVATE_KEY", "").replace("\\n", "\n")
 
 def build_app_jwt() -> str:
@@ -21,10 +23,14 @@ def build_app_jwt() -> str:
     now = int(time.time())
     payload = {
         "iat": now - 60,
-        "exp": now + 540,
+        "exp": now + 540,  # Max 10 minutes
         "iss": APP_ID,
     }
-    return jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
+    try:
+        return jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
+    except Exception as e:
+        logger.error(f"Failed to encode JWT: {e}")
+        raise
 
 def create_installation_token(installation_id: int) -> str:
     """
