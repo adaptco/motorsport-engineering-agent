@@ -165,9 +165,9 @@ Apply immediately after initial `main` push and before merge traffic is enabled:
 git fetch --all --prune
 
 if git ls-remote --heads origin main | grep -q 'refs/heads/main'; then
-  git checkout -b main --track origin/main
+  git checkout -B main --track origin/main
 else
-  git checkout -b main <baseline-sha>
+  git checkout -B main <baseline-sha>
   git push -u origin main
   # Apply branch protection via provider API or IaC ruleset toolchain.
 fi
