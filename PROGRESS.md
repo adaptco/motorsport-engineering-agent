@@ -7,24 +7,24 @@
 - [x] Task-003: Examine MCP Server Implementation (commit: 99d1a17)
 - [x] Task-004: Analyze Worker Backend Processing (commit: ac70cec) - Review passed
 - [x] Task-005: Review Telemetry Ingestion System (commit: 8ccf903)
+- [x] Task-006: Examine AI Agent and Reasoning Components (commit: f5aa646)
 
 ## Current Iteration
 
-- Iteration: 9
-- Working on: Task-006: Examine AI Agent and Reasoning Components
+- Iteration: 11
+- Working on: Task-007: Analyze Data Persistence and Storage
 - Status: Ready
-- Started: [TBD]
+- Started: 2026-04-04T18:30:00Z
 
 ## Last Completed
 
-- Task-005: Review Telemetry Ingestion System
+- Task-006: Examine AI Agent and Reasoning Components
 - Duration: ~30 minutes
-- Tests: ✅ Models import successfully, iRacing adapter available, test_iracing_stream_adapter.py passes
+- Tests: ✅ Agent routes available, Policy engine available, syntax checks pass
 - Key decisions/notes:
-  - iRacing integration uses pyirsdk library with IRSDK for real-time telemetry streaming
-  - TelemetryFrame model validates numeric channels and includes quality flags
-  - Streaming mechanism yields frames at configurable sampling rate (default 60Hz)
-  - Channel mapping translates iRacing variable names to canonical names
-  - Error handling includes IRacingUnavailableError and connection waiting logic
-  - No code changes needed - system is well-documented and functional
+  - Agent decision API logs intent/result to forensic ledger and queues via supervisor service
+  - PolicyEngine manages recommendations with priority heap, 2s TTL, 3s cooldown for non-critical
+  - Time domains distinguish DATA (simulator) from WALL (clock) time based on timestamp heuristics
+  - Supervisor loop documented with process flow, reasoning components, and integrations
+  - Updated docs/supervisor-loop.md with comprehensive documentation
 - Review: Passed
