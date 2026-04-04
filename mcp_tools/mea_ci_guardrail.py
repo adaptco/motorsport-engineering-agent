@@ -1,7 +1,6 @@
 from typing import Any, Dict
 
 def run_mea_ci_guardrail(args: Dict[str, Any]) -> Dict[str, Any]:
-    ci_state = args["ci_state"]
     proposed_patch = args.get("proposed_patch")
 
     if not proposed_patch:
