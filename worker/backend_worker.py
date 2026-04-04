@@ -3,7 +3,7 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
-import requests
+import httpx
 
 from control_plane.queue import dequeue
 from worker.github_app_client import get_installation_token
@@ -90,23 +90,23 @@ def process_fix_ci_job(job: dict) -> None:
             set_job_phase(job_id, "running", "pushed")
 
             owner, repo_name = repo_slug.split("/")
-            resp = requests.post(
-                f"{GITHUB_API_URL}/repos/{owner}/{repo_name}/pulls",
-                headers={
-                    "Authorization": f"Bearer {installation_token}",
-                    "Accept": "application/vnd.github+json",
-                },
-                json={
-                    "title": f"[MEA CI Bot] Fix CI for {job.get('run_id') or job_id}",
-                    "head": fix_branch,
-                    "base": base_branch,
-                    "body": "Automated CI fix created by the MEA backend worker.",
-                    "maintainer_can_modify": True,
-                },
-                timeout=30,
-            )
-            resp.raise_for_status()
-            pr = resp.json()
+            with httpx.Client(timeout=30.0) as client:
+                resp = client.post(
+                    f"{GITHUB_API_URL}/repos/{owner}/{repo_name}/pulls",
+                    headers={
+                        "Authorization": f"Bearer {installation_token}",
+                        "Accept": "application/vnd.github+json",
+                    },
+                    json={
+                        "title": f"[MEA CI Bot] Fix CI for {job.get('run_id') or job_id}",
+                        "head": fix_branch,
+                        "base": base_branch,
+                        "body": "Automated CI fix created by the MEA backend worker.",
+                        "maintainer_can_modify": True,
+                    },
+                )
+                resp.raise_for_status()
+                pr = resp.json()
             pr_url = pr["html_url"]
             add_span(job_id, trace_id, "create_pr", "ok", {"pr_url": pr_url})
             complete_job(job_id, fix_branch, pr_url, {"summary": "PR opened", "tests_ok": tests_ok, "pr_url": pr_url})
