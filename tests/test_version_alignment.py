@@ -57,3 +57,35 @@ def test_load_version_info_falls_back_when_manifest_missing(tmp_path: Path, monk
     assert version_info.kernel_version == "3.4"
     assert version_info.release_channel == "unknown"
     shared_version.load_version_info.cache_clear()
+
+
+def test_load_version_info_falls_back_when_manifest_invalid_json(tmp_path: Path, monkeypatch) -> None:
+    shared_version.load_version_info.cache_clear()
+    broken_manifest = tmp_path / "VERSION.json"
+    broken_manifest.write_text("{not-json", encoding="utf-8")
+
+    monkeypatch.setattr(shared_version, "_version_file_path", lambda: broken_manifest)
+    monkeypatch.setattr(shared_version, "package_version", lambda _name: "0.5.0")
+
+    version_info = shared_version.load_version_info()
+
+    assert version_info.package_version == "0.5.0"
+    assert version_info.kernel_version == "5.0"
+    assert version_info.release_channel == "unknown"
+    shared_version.load_version_info.cache_clear()
+
+
+def test_load_version_info_falls_back_when_manifest_missing_fields(tmp_path: Path, monkeypatch) -> None:
+    shared_version.load_version_info.cache_clear()
+    partial_manifest = tmp_path / "VERSION.json"
+    partial_manifest.write_text('{"kernel_version": "3.4"}', encoding="utf-8")
+
+    monkeypatch.setattr(shared_version, "_version_file_path", lambda: partial_manifest)
+    monkeypatch.setattr(shared_version, "package_version", lambda _name: "0.5.1")
+
+    version_info = shared_version.load_version_info()
+
+    assert version_info.package_version == "0.5.1"
+    assert version_info.kernel_version == "5.1"
+    assert version_info.release_channel == "unknown"
+    shared_version.load_version_info.cache_clear()
