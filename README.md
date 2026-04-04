@@ -22,3 +22,9 @@ uvicorn control_plane.app:app --reload
 
 ## Release authority
 Use `docs/versioning-spec.md` as the release authority for kernel and package revisions.
+
+## Environment
+- `GITHUB_WEBHOOK_SECRET` (**required for webhook processing**): shared secret used to verify `X-Hub-Signature-256` on `/github/webhook`. If this value is missing or blank, webhook requests are rejected with HTTP `503` fail-closed behavior.
+- `GITHUB_WEBHOOK_REQUIRED` (optional, default `false`): when set to `true`/`1`/`yes`, control-plane startup fails unless `GITHUB_WEBHOOK_SECRET` is configured.
+- `OPENAI_API_KEY` (required for supervisor/agent routes that call OpenAI-backed models).
+
