@@ -1,6 +1,6 @@
 
 from pathlib import Path
-import yaml  # type: ignore[import-untyped]
+import yaml
 
 
 def test_model_weights_sum_reasonably():

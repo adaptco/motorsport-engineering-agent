@@ -1,14 +1,8 @@
-from typing import Literal
-
 from mea.reasoning.policy_engine import PolicyEngine
 from shared.models import Recommendation
 
 
-def _rec(
-    created_at_ns: int,
-    rec_id: str = 'r1',
-    priority: Literal['CRITICAL', 'WARNING', 'ADVISORY', 'INFO', 'NONE'] = 'ADVISORY',
-) -> Recommendation:
+def _rec(created_at_ns: int, rec_id: str = 'r1', priority: str = 'ADVISORY') -> Recommendation:
     return Recommendation(
         recommendation_id=rec_id,
         evidence_packet_id='ep-1',
