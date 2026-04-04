@@ -5,6 +5,7 @@ COPY control_plane/ ./control_plane/
 COPY worker/ ./worker/
 COPY shared/ ./shared/
 COPY pyproject.toml ./
+COPY VERSION.json ./
 RUN pip install --no-cache-dir requests PyJWT cryptography psycopg[binary] redis typer PyYAML
 ENV PYTHONPATH=/app
 CMD ["python", "-m", "worker.backend_worker"]

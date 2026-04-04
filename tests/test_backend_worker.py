@@ -3,14 +3,6 @@ from pathlib import Path
 import worker.backend_worker as backend_worker
 
 
-class _FakeResponse:
-    def raise_for_status(self) -> None:
-        return None
-
-    def json(self) -> dict[str, str]:
-        return {"html_url": "https://example.com/pr/1"}
-
-
 def test_process_fix_ci_job_validation_success(monkeypatch, tmp_path: Path) -> None:
     commands: list[list[str]] = []
     phases: list[tuple] = []
@@ -35,16 +27,11 @@ def test_process_fix_ci_job_validation_success(monkeypatch, tmp_path: Path) -> N
         assert cwd == tmp_path
         commands.append(cmd)
 
-    def _post(url: str, **kwargs):
-        posts.append(url)
-        return _FakeResponse()
-
     monkeypatch.setattr(backend_worker, "run", _run)
     monkeypatch.setattr(
         backend_worker,
-        "requests",
-        type("RequestsStub", (), {"post": staticmethod(_post)}),
-        raising=False,
+        "create_pull_request",
+        lambda **_kwargs: (posts.append("pr"), "https://example.com/pr/1")[1],
     )
 
     backend_worker.process_fix_ci_job(
@@ -90,16 +77,11 @@ def test_process_fix_ci_job_missing_pytest_fails_closed(monkeypatch, tmp_path: P
         if cmd == ["pytest"]:
             raise FileNotFoundError("pytest not found")
 
-    def _post(url: str, **kwargs):
-        posts.append(url)
-        return _FakeResponse()
-
     monkeypatch.setattr(backend_worker, "run", _run)
     monkeypatch.setattr(
         backend_worker,
-        "requests",
-        type("RequestsStub", (), {"post": staticmethod(_post)}),
-        raising=False,
+        "create_pull_request",
+        lambda **_kwargs: (posts.append("pr"), "https://example.com/pr/1")[1],
     )
 
     backend_worker.process_fix_ci_job(

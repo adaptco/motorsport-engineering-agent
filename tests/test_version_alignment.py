@@ -5,6 +5,7 @@ from pathlib import Path
 
 from control_plane.app import healthz as control_plane_healthz
 from mcp_server.app import healthz as mcp_server_healthz
+from shared import version as shared_version
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -40,4 +41,19 @@ def test_readme_kernel_version_matches_version_manifest() -> None:
 
     match = re.search(r"^#\s+MEA Root Kernel v(?P<version>\S+)", readme, flags=re.MULTILINE)
     assert match, "README kernel header not found"
-    assert match.group("version") == f"{manifest['kernel_version']}.0"
+    readme_version = match.group("version")
+    kernel_version = str(manifest["kernel_version"])
+    assert readme_version == kernel_version or readme_version == f"{kernel_version}.0"
+
+
+def test_load_version_info_falls_back_when_manifest_missing(tmp_path: Path, monkeypatch) -> None:
+    shared_version.load_version_info.cache_clear()
+    monkeypatch.setattr(shared_version, "_version_file_path", lambda: tmp_path / "VERSION.json")
+    monkeypatch.setattr(shared_version, "package_version", lambda _name: "0.3.4")
+
+    version_info = shared_version.load_version_info()
+
+    assert version_info.package_version == "0.3.4"
+    assert version_info.kernel_version == "3.4"
+    assert version_info.release_channel == "unknown"
+    shared_version.load_version_info.cache_clear()

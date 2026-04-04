@@ -1,5 +1,6 @@
 import hashlib
 import os
+import shlex
 import subprocess
 import tempfile
 from pathlib import Path
@@ -13,10 +14,36 @@ GITHUB_API_URL = "https://api.github.com"
 ALLOWED_REPOS = {r.strip() for r in os.environ.get("GITHUB_ALLOWED_REPOS", "").split(",") if r.strip()}
 MAX_PATCH_LINES = int(os.environ.get("MAX_PATCH_LINES", "1000"))
 ALLOW_WORKFLOW_CHANGES = os.environ.get("ALLOW_WORKFLOW_CHANGES", "false").lower() == "true"
+VALIDATION_CMD = os.environ.get("VALIDATION_CMD", "pytest")
 
 
-def run(cmd: list[str], cwd: Path) -> None:
-    subprocess.run(cmd, cwd=cwd, check=True)
+def run(cmd: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(cmd, cwd=cwd, check=True, capture_output=True, text=True)
+
+
+def _validation_command() -> list[str]:
+    return shlex.split(VALIDATION_CMD)
+
+
+def create_pull_request(repo_slug: str, installation_token: str, fix_branch: str, base_branch: str, job_id: str, run_id: str | None) -> str:
+    owner, repo_name = repo_slug.split("/")
+    resp = requests.post(
+        f"{GITHUB_API_URL}/repos/{owner}/{repo_name}/pulls",
+        headers={
+            "Authorization": f"Bearer {installation_token}",
+            "Accept": "application/vnd.github+json",
+        },
+        json={
+            "title": f"[MEA CI Bot] Fix CI for {run_id or job_id}",
+            "head": fix_branch,
+            "base": base_branch,
+            "body": "Automated CI fix created by the MEA backend worker.",
+            "maintainer_can_modify": True,
+        },
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()["html_url"]
 
 
 def validate_patch(patch: str) -> None:
@@ -78,11 +105,21 @@ def process_fix_ci_job(job: dict) -> None:
             set_job_phase(job_id, "running", "patched")
 
             # Fail-closed guard: validation failures must block commit/push/PR creation.
+            validation_cmd = _validation_command()
             try:
-                run(["pytest"], cwd=tmpdir)
+                run(validation_cmd, cwd=tmpdir)
+            except subprocess.CalledProcessError as validation_error:
+                error_message = (
+                    f"Validation command failed: {' '.join(validation_cmd)} "
+                    f"(stdout={validation_error.stdout!r}, stderr={validation_error.stderr!r})"
+                )
+                add_span(job_id, trace_id, "test_suite", "error", {"error": error_message})
+                set_job_phase(job_id, "failed", "validation_failed", error_message=error_message)
+                return
             except Exception as validation_error:
-                add_span(job_id, trace_id, "test_suite", "error", {"error": str(validation_error)})
-                set_job_phase(job_id, "failed", "validation_failed", error_message=str(validation_error))
+                error_message = f"Validation command error: {' '.join(validation_cmd)} ({validation_error})"
+                add_span(job_id, trace_id, "test_suite", "error", {"error": error_message})
+                set_job_phase(job_id, "failed", "validation_failed", error_message=error_message)
                 return
 
             add_span(job_id, trace_id, "test_suite", "ok", {"tests_ok": True})
@@ -96,25 +133,14 @@ def process_fix_ci_job(job: dict) -> None:
             add_span(job_id, trace_id, "push_branch", "ok", {"fix_branch": fix_branch})
             set_job_phase(job_id, "running", "pushed")
 
-            owner, repo_name = repo_slug.split("/")
-            resp = requests.post(
-                f"{GITHUB_API_URL}/repos/{owner}/{repo_name}/pulls",
-                headers={
-                    "Authorization": f"Bearer {installation_token}",
-                    "Accept": "application/vnd.github+json",
-                },
-                json={
-                    "title": f"[MEA CI Bot] Fix CI for {job.get('run_id') or job_id}",
-                    "head": fix_branch,
-                    "base": base_branch,
-                    "body": "Automated CI fix created by the MEA backend worker.",
-                    "maintainer_can_modify": True,
-                },
-                timeout=30,
+            pr_url = create_pull_request(
+                repo_slug=repo_slug,
+                installation_token=installation_token,
+                fix_branch=fix_branch,
+                base_branch=base_branch,
+                job_id=job_id,
+                run_id=job.get("run_id"),
             )
-            resp.raise_for_status()
-            pr = resp.json()
-            pr_url = pr["html_url"]
             add_span(job_id, trace_id, "create_pr", "ok", {"pr_url": pr_url})
             complete_job(job_id, fix_branch, pr_url, {"summary": "PR opened", "tests_ok": True, "pr_url": pr_url})
 
