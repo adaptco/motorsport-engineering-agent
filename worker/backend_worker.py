@@ -83,7 +83,7 @@ def process_fix_ci_job(job: dict) -> None:
 
             if not tests_ok:
                 add_span(job_id, trace_id, "validation_failed", "error", {"tests_ok": tests_ok})
-                set_job_phase(job_id, "failed", "validation_failed", {"tests_ok": tests_ok})
+                set_job_phase(job_id, "failed", "validation_failed", {"tests_ok": tests_ok}, error_message="Validation tests failed")
                 return
 
             run(["git", "config", "user.name", "mea-ci-bot[app]"], cwd=tmpdir)
