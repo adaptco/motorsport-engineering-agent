@@ -3,7 +3,7 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
-import requests
+import requests  # type: ignore[import-untyped]
 
 from control_plane.queue import dequeue
 from worker.github_app_client import get_installation_token

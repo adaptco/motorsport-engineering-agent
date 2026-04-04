@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import uuid
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable, List, Literal
 
 from pydantic import ValidationError
 
@@ -71,7 +71,7 @@ def build_replay_metrics(path: Path, max_frames: int | None = None) -> ReplayMet
 def build_validation_tasks(metrics: ReplayMetrics, target_hz: int, validation: JSONLValidationResult | None = None) -> List[ReplayTask]:
     tasks: List[ReplayTask] = []
 
-    def add(name: str, status: str, detail: str) -> None:
+    def add(name: str, status: Literal["pass", "fail", "warn"], detail: str) -> None:
         tasks.append(ReplayTask(task_id=str(uuid.uuid4()), name=name, status=status, detail=detail))
 
     add(
@@ -85,7 +85,7 @@ def build_validation_tasks(metrics: ReplayMetrics, target_hz: int, validation: J
         f"Maximum tick gap was {metrics.max_tick_gap}",
     )
     if metrics.average_hz == 0:
-        hz_status = "fail"
+        hz_status: Literal["pass", "fail", "warn"] = "fail"
     elif abs(metrics.average_hz - target_hz) <= 5:
         hz_status = "pass"
     else:

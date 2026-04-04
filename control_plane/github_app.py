@@ -1,7 +1,7 @@
 import os
 import time
 import jwt
-import requests
+import requests  # type: ignore[import-untyped]
 
 GITHUB_API = "https://api.github.com"
 APP_ID = os.environ.get("GITHUB_APP_ID")

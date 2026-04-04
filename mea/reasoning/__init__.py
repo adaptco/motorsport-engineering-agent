@@ -1,2 +1,2 @@
-from .policy_engine import PolicyEngine
-from .time_domains import infer_time_domain, validate_time_domain_transition
+from .policy_engine import PolicyEngine as PolicyEngine
+from .time_domains import infer_time_domain as infer_time_domain, validate_time_domain_transition as validate_time_domain_transition
