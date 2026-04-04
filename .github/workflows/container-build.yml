@@ -1,0 +1,23 @@
+name: container-build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["**"]
+  pull_request:
+
+jobs:
+  build-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build control_plane image
+        run: docker build --file control_plane/Dockerfile --tag mea/control-plane:${{ github.sha }} .
+
+      - name: Build worker image
+        run: docker build --file worker/Dockerfile --tag mea/worker:${{ github.sha }} .
+
+      - name: Build mcp_server image
+        run: docker build --file mcp_server/Dockerfile --tag mea/mcp-server:${{ github.sha }} .
