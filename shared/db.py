@@ -13,9 +13,5 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://mea:mea@localhost:54
 def get_conn():
     if psycopg is None:
         raise RuntimeError("psycopg_not_installed")
-    conn = psycopg.connect(DATABASE_URL)
-    try:
+    with psycopg.connect(DATABASE_URL) as conn:
         yield conn
-        conn.commit()
-    finally:
-        conn.close()

@@ -17,3 +17,4 @@ ruff>=0.1.0
 mypy
 types-PyYAML>=6.0.12
 types-PyYAML
+types-requests

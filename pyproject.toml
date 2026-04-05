@@ -24,6 +24,7 @@ dev = [
   "mypy",
   "types-PyYAML>=6.0.12",
   "types-PyYAML",
+  "types-requests",
 ]
 
 [tool.setuptools]
