@@ -29,14 +29,7 @@ class FixCIRequest(BaseModel):
     def validate_branch(cls, v: str) -> str:
         if v.startswith("-"):
             raise ValueError("Branch must not start with a hyphen")
-        if not re.match(r"^[a-zA-Z0-9._/-]+$", v):
-            raise ValueError(f"Invalid branch characters: {v}")
-        return v
-
-    @field_validator("run_id")
-    @classmethod
-    def validate_run_id(cls, v: str | None) -> str | None:
-        if v is None:
+        
             return v
         if v.startswith("-"):
             raise ValueError("Run ID must not start with a hyphen")
