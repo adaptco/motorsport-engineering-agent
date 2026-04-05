@@ -11,7 +11,7 @@ import uuid
 from pathlib import Path
 from contextlib import asynccontextmanager
 
-# Use requests if available, otherwise use the internal urllib fallback
+# --- INFRASTRUCTURE: REQUESTS FALLBACK ---
 try:
     import requests
 except ModuleNotFoundError:
@@ -49,6 +49,7 @@ from worker.repository import add_span, complete_job, get_job_identity, set_job_
 
 logger = logging.getLogger(__name__)
 
+# --- CONFIGURATION ---
 GITHUB_API_URL = "https://api.github.com"
 ALLOWED_REPOS = {r.strip() for r in os.environ.get("GITHUB_ALLOWED_REPOS", "").split(",") if r.strip()}
 MAX_PATCH_LINES = int(os.environ.get("MAX_PATCH_LINES", "1000"))
@@ -71,7 +72,7 @@ def run_command(cmd: list[str], cwd: Path) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, check=True)
 
 def validate_patch_integrity(patch: str) -> None:
-    if not patch.strip():
+    if not patch:
         raise ValueError("Rejecting empty patch artifact")
     if patch.count("\n") > MAX_PATCH_LINES:
         raise ValueError(f"Patch length exceeds limit of {MAX_PATCH_LINES} lines")
@@ -88,7 +89,7 @@ def process_fix_ci_job(job: dict) -> None:
     trace_id = identity["trace_id"]
     repo_slug = job["repo"]
     base_branch = job.get("branch", "main")
-    patch_data = job.get("patch")
+    patch_data = job.get("patch", "")
 
     try:
         if repo_slug not in ALLOWED_REPOS:
@@ -96,9 +97,9 @@ def process_fix_ci_job(job: dict) -> None:
         
         validate_patch_integrity(patch_data)
 
-        # SIGNATURE FIX: (job_id, trace_id, span_name, status, attributes)
+        # FIXED: 5 args (job_id, trace_id, span_name, status, attributes)
         add_span(job_id, trace_id, "policy_check", "ok", {"repo": repo_slug})
-        # SIGNATURE FIX: (job_id, status, phase, payload, error_message)
+        # FIXED: 5 args (job_id, status, phase, payload, error_message)
         set_job_phase(job_id, "running", "policy_check", {"repo": repo_slug}, None)
 
         token = get_installation_token(job.get("installation_id"))
@@ -139,7 +140,7 @@ def process_fix_ci_job(job: dict) -> None:
             run_command(["git", "config", "user.name", "mea-bot"], cwd=job_dir)
             run_command(["git", "config", "user.email", "mea-bot@adaptco.ai"], cwd=job_dir)
             run_command(["git", "add", "."], cwd=job_dir)
-            run_command(["git", "commit", "-m", f"Deterministic fix for CI Job {job_id}"], cwd=job_dir)
+            run_command(["git", "commit", "-m", f"Fix for CI Job {job_id}"], cwd=job_dir)
             run_command(["git", "push", "origin", fix_branch], cwd=job_dir)
 
             owner, name = repo_slug.split("/")
@@ -152,7 +153,7 @@ def process_fix_ci_job(job: dict) -> None:
             pr_url = pr_resp.json()["html_url"]
 
             add_span(job_id, trace_id, "pr_submission", "ok", {"pr_url": pr_url})
-            # SIGNATURE FIX: (job_id, fix_branch, pr_url, result_payload)
+            # FIXED: 4 args (job_id, fix_branch, pr_url, result_payload)
             complete_job(job_id, fix_branch, pr_url, {"status": "success"})
 
         finally:
@@ -160,6 +161,7 @@ def process_fix_ci_job(job: dict) -> None:
 
     except Exception as e:
         logger.exception(f"Processing Failure for Job {job_id}")
+        # FIXED: 5 args (job_id, status, phase, payload, error_message)
         set_job_phase(job_id, "failed", "system_error", {"exception": str(e)}, str(e))
 
 def worker_main():
@@ -167,13 +169,17 @@ def worker_main():
     backoff = 0
     logger.info("MEA Backend Worker operational")
     while True:
-        job = dequeue()
-        if not job:
-            backoff = min(EMPTY_POLL_BACKOFF_SECONDS_MAX, backoff + 1)
-            time.sleep(backoff)
-            continue
-        backoff = 0
-        process_fix_ci_job(job)
+        try:
+            job = dequeue()
+            if not job:
+                backoff = min(EMPTY_POLL_BACKOFF_SECONDS_MAX, backoff + 1)
+                time.sleep(backoff)
+                continue
+            backoff = 0
+            process_fix_ci_job(job)
+        except Exception as e:
+            logger.error(f"Worker Loop Error: {e}")
+            time.sleep(5)
 
 if __name__ == "__main__":
     worker_main()
