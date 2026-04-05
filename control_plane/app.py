@@ -1,4 +1,5 @@
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 
 from control_plane.queue import enqueue
@@ -21,22 +22,23 @@ def validate_webhook_startup_config(*, webhook_secret: str | None, webhook_requi
     return bool(webhook_secret)
 
 
-app = FastAPI(title="MEA Control Plane")
-app.include_router(github_router)
-app.include_router(session_router)
-app.include_router(replay_router)
-app.include_router(verifier_router)
-app.include_router(agent_router)
-
-
-@app.on_event("startup")
-def validate_webhook_config() -> None:
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     webhook_secret = get_webhook_secret()
     webhook_required = _is_truthy(os.environ.get("GITHUB_WEBHOOK_REQUIRED"))
     app.state.github_webhook_configured = validate_webhook_startup_config(
         webhook_secret=webhook_secret,
         webhook_required=webhook_required,
     )
+    yield
+
+
+app = FastAPI(title="MEA Control Plane", lifespan=lifespan)
+app.include_router(github_router)
+app.include_router(session_router)
+app.include_router(replay_router)
+app.include_router(verifier_router)
+app.include_router(agent_router)
 
 
 @app.get("/healthz")

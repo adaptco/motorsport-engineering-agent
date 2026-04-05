@@ -21,9 +21,15 @@ def _find_step_for_action(steps: list[dict], action: str) -> dict:
 def _action_major_version(step: dict) -> int:
     uses = step.get("uses")
     assert isinstance(uses, str), "Workflow step is missing a valid 'uses' value"
-    match = re.search(r"@v(\d+)", uses)
+    match = re.search(r"@v(\d+)(?:\.\d+){0,2}", uses)
     assert match, f"Unable to parse action major version from '{uses}'"
     return int(match.group(1))
+
+
+def test_action_major_version_supports_semver_tags() -> None:
+    assert _action_major_version({"uses": "actions/checkout@v4"}) == 4
+    assert _action_major_version({"uses": "actions/checkout@v4.2"}) == 4
+    assert _action_major_version({"uses": "actions/checkout@v4.2.2"}) == 4
 
 
 def test_mea_kernel_ci_uses_latest_runtime_toolchain() -> None:
