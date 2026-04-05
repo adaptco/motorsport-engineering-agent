@@ -27,7 +27,7 @@ Ralph Loop autonomous execution phase completed successfully. All 8 domain revie
 | **Task-004** | Dependency Management Review | 🟢 DONE | YELLOW | Alignment drift (FastAPI 0.109 vs 0.115, 9 missing deps), lock file missing | 100% |
 | **Task-005** | Documentation Audit | 🟢 DONE | **RED** | **README/Deployment/Runbook MISSING (blocker)** | 100% |
 | **Task-006** | Database & State Management Review | 🟢 DONE | YELLOW | Ledger on /tmp (blocker), no pooling | 100% |
-| **Task-007** | Operational Hardening Assessment | 🟢 DONE | YELLOW | Missing circuit breakers, rate limiting | 100% |
+| **Task-007** | Operational Hardening Assessment | 🟢 DONE | 🟡 YELLOW | Circuit breakers/rate limiting/graceful shutdown MISSING | 100% |
 | **Task-008** | Type Safety Verification | 🟢 DONE | GREEN | ~95%+ coverage, production ready | 100% |
 
 **Legend:**  
@@ -324,25 +324,114 @@ See `TASK-006_DATABASE_STATE_MANAGEMENT_FINDINGS.md` (18KB comprehensive assessm
 **Status:** 🟡 YELLOW (Multiple gaps)  
 **Key Findings:**
 - ✅ Health checks: Present in control_plane/routes/health.py and mcp_server/
-- ✅ Error handling: Comprehensive try/catch patterns
-- ❌ **Circuit Breakers: MISSING** - No fallback for external service failures
-- 🟡 Graceful degradation: Partial (health checks exist, shutdown handling unclear)
-- ✅ Logging & Observability: Structured logging present
-- ❌ **Rate Limiting: MISSING** - No webhook request throttling
+- ✅ Error handling: Comprehensive try/catch patterns, database context logging
+- ❌ **Circuit Breakers: MISSING** - No protection against cascading failures (pybreaker not installed)
+- ❌ **Rate Limiting: MISSING** - No endpoint throttling (slowapi not installed)
+- ❌ **Graceful Shutdown: MISSING** - No SIGTERM handlers, in-flight job cleanup unclear
+- ✅ **Logging & Observability:** Structured logging present (worker backoff), database traces comprehensive
+- ⚠️ **Timeouts:** Present but inconsistent (GitHub 30s, Redis 5s, DB ∞)
+- ⚠️ **Retry Logic:** Linear backoff for queue polling only, no API retry strategies
+- ⚠️ **Request Correlation:** No X-Request-ID middleware, trace IDs only in DB context
 
-**Operational Gaps:**
-1. External services (GitHub API, MCP) lack circuit breaker patterns
-2. No rate limiting for webhook processing (replay attack vector)
-3. Graceful shutdown procedure for in-flight jobs unclear
-4. No monitoring dashboard documented
+**Operational Gaps (Severity):**
+1. 🔴 **Circuit Breaker Protection:** External services (GitHub API, MCP) can cascade failures
+   - GitHub API calls have no retry, fail immediately on rate limit (429)
+   - MCP tool calls have no availability checks
+   - PostgreSQL has no connection circuit breaker
+   - Impact: One service down → entire queue stalls
 
-**Recommendations:**
-1. Implement circuit breaker pattern (pybreaker library) for external calls
-2. Add rate limiting middleware (slowapi or similar)
-3. Implement SIGTERM handler with grace period for in-flight jobs
-4. Document operational monitoring procedures
+2. 🔴 **Rate Limiting:** All endpoints exposed to resource exhaustion
+   - POST /repos/fix-ci - webhook replay attacks possible
+   - POST /tools/call - infinite MCP execution exhaustion
+   - POST /session/evidence - evidence spam, disk fill attacks
+   - POST /verifier/execute - job queue overflow attacks
 
----
+3. 🔴 **Graceful Shutdown:** Worker cannot clean up on SIGTERM
+   - No signal handlers (SIGTERM/SIGINT)
+   - In-flight jobs abandoned on forced kill
+   - Database connections never closed
+   - Docker stop → forced kill after 10s timeout
+
+4. 🟡 **Health Check Dependencies:** No downstream verification
+   - /healthz returns "ok" even if PostgreSQL/Redis/GitHub API down
+   - Kubernetes readiness probe insufficient
+   - Manual discovery needed for failure diagnosis
+
+5. 🟡 **Error Handling Inconsistency:** Different patterns across services
+   - GitHub API: timeout + raise_for_status (no retry)
+   - Redis: broad Exception catch with fallback
+   - PostgreSQL: propagate uncaught
+   - Result: Unpredictable failure modes
+
+6. 🟡 **Observability Gaps:** Limited request tracing
+   - No X-Request-ID correlation IDs
+   - No Prometheus metrics export
+   - Logging present in job context only, not HTTP request context
+
+**Recommendations (Priority 1 - Required):**
+1. Implement circuit breaker pattern (pybreaker library) for:
+   - GitHub API calls (fail_max=5, reset_timeout=60)
+   - MCP service availability checks
+   - PostgreSQL connection errors
+   - Effort: 4-6 hours
+
+2. Add rate limiting middleware (slowapi library):
+   - POST /repos/fix-ci: 10/minute per IP
+   - POST /tools/call: 30/minute per IP
+   - POST /session/evidence: 5/minute per IP
+   - Effort: 2-3 hours
+
+3. Implement graceful shutdown:
+   - Add SIGTERM handler to worker
+   - 30-second grace period for in-flight jobs
+   - Database connection cleanup
+   - Queue drain on exit
+   - Effort: 3-4 hours
+
+**Recommendations (Priority 2 - High):**
+1. Enhance health checks (/healthz/ready):
+   - Add PostgreSQL SELECT 1 test
+   - Add Redis PING check
+   - Add GitHub API /rate_limit check
+   - Kubernetes readiness improvement
+   - Effort: 2 hours
+
+2. Add request correlation IDs:
+   - Middleware to extract/generate X-Request-ID
+   - Propagate through all service calls
+   - Include in response headers
+   - Link to database traces
+   - Effort: 2-3 hours
+
+3. Implement retry logic with exponential backoff:
+   - GitHub API: 3 retries, 1/2/4s backoff
+   - PostgreSQL: 3 retries, 0.1/0.5/1.0s backoff
+   - Handle 429 rate limits specifically
+   - Effort: 3-4 hours
+
+**Recommendations (Priority 3 - Medium):**
+1. Add database connection timeout (currently ∞):
+   - Set timeout=10 on psycopg.connect()
+   - Effort: 1 hour
+
+2. Implement connection pooling:
+   - Use psycopg pool or SQLAlchemy
+   - Effort: 4-6 hours
+
+3. Export Prometheus metrics:
+   - Request count/latency
+   - Error rates
+   - Queue depth
+   - Service availability
+   - Effort: 3-4 hours
+
+**DMN Score:** 58/100 (Health: 50, CB: 0, RateLimit: 0, Shutdown: 10, Errors: 70, Observability: 40, Timeouts: 60)
+
+**Production Readiness:**
+- Current: 🟡 CONDITIONAL (deployable with operational monitoring, manual failover procedures)
+- Post-Priority1: 🟢 GREEN (production-grade patterns)
+
+**Full Assessment:** See `TASK-007_OPERATIONAL_HARDENING_FINDINGS.md` (900+ lines, comprehensive analysis with code examples)
 
 ### Task-008: Type Safety Verification ✅ COMPLETE
 **Status:** 🟢 GREEN (Production ready)  
