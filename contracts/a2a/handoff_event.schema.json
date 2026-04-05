@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adaptco.dev/contracts/a2a/handoff_event.schema.json",
+  "title": "A2A Handoff Event",
+  "type": "object",
+  "required": ["event", "workflow_state", "emitted_at"],
+  "properties": {
+    "event": {
+      "type": "string",
+      "enum": ["state.persisted", "state.resumed", "state.completed", "state.failed"]
+    },
+    "workflow_state": {
+      "$ref": "./workflow_state.schema.json"
+    },
+    "emitted_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

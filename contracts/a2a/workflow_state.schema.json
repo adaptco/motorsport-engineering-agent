@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adaptco.dev/contracts/a2a/workflow_state.schema.json",
+  "title": "A2A Workflow State",
+  "type": "object",
+  "required": [
+    "session_id",
+    "workflow_id",
+    "current_position",
+    "status",
+    "version",
+    "updated_at"
+  ],
+  "properties": {
+    "session_id": { "type": "string", "minLength": 1 },
+    "workflow_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string" },
+    "trace_id": { "type": "string" },
+    "current_position": { "type": "string", "minLength": 1 },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "running", "blocked", "completed", "failed"]
+    },
+    "summary": { "type": "string" },
+    "pending_actions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "artifacts": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": ["kind", "ref"],
+        "properties": {
+          "kind": { "type": "string" },
+          "ref": { "type": "string" },
+          "note": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "default": {}
+    },
+    "version": { "type": "integer", "minimum": 1 },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "created_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

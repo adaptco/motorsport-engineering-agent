@@ -11,3 +11,4 @@ Rules:
 3. Treat the system as fail-closed.
 4. Prefer minimal patches tied to failing tests or workflow config.
 5. Never bypass the control plane.
+6. Persist `workflow_state.current_position` after each workflow step and include it in the next turn's context so recursive sessions resume from the last known state.

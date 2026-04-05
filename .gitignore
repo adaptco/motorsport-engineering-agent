@@ -7,4 +7,12 @@ __pycache__/
 .venv/
 dist/
 build/
-.jules/
+
+# AI Agent / Automation helpers (Local Only)
+GEMINI.md
+.github/agents/
+mcp_tools/ralph_wiggum_agent.py
+
+# A2A persisted workflow state artifacts
+.mea_tmp/workflow_state/
+runtime_logs/workflow_state/

@@ -1,5 +1,4 @@
 from __future__ import annotations
-import tempfile
 
 import os
 
@@ -8,9 +7,10 @@ from fastapi import APIRouter
 from control_plane.services.supervisor_service import queue_agent_decision
 from shared.forensic_ledger import append_receipt
 from shared.models import AgentDecisionRequest, AgentDecisionResponse
+from shared.runtime_paths import default_session_ledger_path
 
 router = APIRouter(tags=['agent'])
-LEDGER_DB_PATH = os.environ.get("SESSION_LEDGER_DB_PATH", os.path.join(tempfile.gettempdir(), "mea-session-ledger.db"))
+LEDGER_DB_PATH = os.environ.get("SESSION_LEDGER_DB_PATH", str(default_session_ledger_path()))
 
 
 @router.post('/agent/decision', response_model=AgentDecisionResponse)

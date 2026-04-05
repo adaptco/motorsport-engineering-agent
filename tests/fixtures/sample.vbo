@@ -1,0 +1,9 @@
+File created on 31/07/2006 at 09:55:20
+[header]
+[channel units]
+s mph lat lon
+[column names]
+time velocity_kmh latitude longitude
+0.00 100.8 42.2808 -83.7430
+0.10 104.4 42.2809 -83.7431
+0.20 108.0 42.2810 -83.7432

@@ -1,3 +1,11 @@
+## v3.5 / 0.3.5
+
+- added `ingest/logs` static-log ingestion module with adapter registry
+- added adapters for MoTeC `.ld`, iRacing `.ibt`, AiM `.xrk/.xrz`, VBOX `.vbo`, Pi MAT, and vendor CSV/TXT exports
+- added canonical normalizer emitting `normalized_channels.csv`, `channel_manifest.csv`, and `session_manifest.json`
+- added control-plane ingest endpoints and CLI harness for local module I/O testing
+- added fixture-driven tests for normalization and API routing
+
 # Changelog
 
 ## v3.4 / 0.3.4

@@ -1,15 +1,6 @@
 {
-  "kernel_version": "3.4",
-  "package_version": "0.3.4",
-  "git_commit": "resolve-from-tag:v3.4",
-  "git_tag": "v3.4",
-  "source_lineage": {
-    "based_on_artifact": "Root-Kernel-V3.3-source.zip",
-    "upstream_commit_reported": "bc5d40a164db323a6b4a1c566342b1e3d2678c8e",
-    "reissued_from_bundle": "MEA-Root-Kernel-v3.3.1-bundle.zip"
-  },
-  "validation": {
-    "pytest": "17 passed, 1 warning in 5.94s",
-    "date": "2026-04-03"
-  }
+  "kernel_version": "3.5",
+  "package_version": "0.3.5",
+  "source_base": "MEA-Root-Kernel-v3.4-bundle.zip",
+  "notes": "v3.5 adds static-log ingestion skeleton and normalization outputs for local telemetry I/O testing."
 }

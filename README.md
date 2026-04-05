@@ -1,15 +1,17 @@
-# MEA Root Kernel v3.4
+# MEA Root Kernel v3.5
 
-MEA Root Kernel v3.4 builds on the governed v3.2 core and integrates the runtime-correctness patch set required for temporally correct replay, policy determinism, and supervisor-loop readiness.
+MEA Root Kernel v3.5 adds a static-log ingestion harness for native motorsport data files and exported telemetry files, integrated into the existing control-plane scaffold.
 
-## What v3.3 adds
-- PolicyEngine logical clock with deterministic queue behavior
-- DATA vs WALL time-domain helpers
-- strict JSONL validation for replay artifacts
-- `POST /session/replay` backed by replay validation tasks
-- `POST /agent/decision` supervisor loop hook with paired receipts
-- evidence packet schema migration scaffold
-- sentry-style metrics and model-weight manifests
+It introduces a first testable path for file I/O normalization before live sim adapter work.
+
+## What v3.5 adds
+- `ingest/logs/` native-log ingestion skeleton
+- off-the-shelf adapters for MoTeC `.ld`, iRacing `.ibt`, AiM `.xrk/.xrz`, VBOX `.vbo`
+- vendor-export adapters for Pi MAT, Haltech CSV/TXT, and AEM CSV/TXT
+- canonical channel mapper and normalizer that emit normalized CSV artifacts
+- `tools/normalize_log.py` CLI for local testing
+- control-plane endpoints: `GET /ingest/sources`, `POST /ingest/normalize`
+- fixture-driven tests for CSV/VBOX normalization and ingest API
 
 ## Quick start
 ```bash
