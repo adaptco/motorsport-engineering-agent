@@ -1,5 +1,4 @@
 from __future__ import annotations
-import tempfile
 
 import os
 
@@ -10,7 +9,7 @@ from shared.forensic_ledger import append_receipt
 from shared.models import AgentDecisionRequest, AgentDecisionResponse
 
 router = APIRouter(tags=['agent'])
-LEDGER_DB_PATH = os.environ.get("SESSION_LEDGER_DB_PATH", os.path.join(tempfile.gettempdir(), "mea-session-ledger.db"))
+LEDGER_DB_PATH = os.environ.get('SESSION_LEDGER_DB_PATH', '/tmp/mea-session-ledger.db')
 
 
 @router.post('/agent/decision', response_model=AgentDecisionResponse)

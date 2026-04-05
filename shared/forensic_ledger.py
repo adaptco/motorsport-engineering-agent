@@ -196,7 +196,7 @@ def append_receipt(
                 created_at,
             ),
         )
-        receipt_id = int(cursor.lastrowid or 0)
+        receipt_id = int(cursor.lastrowid)
         last_operational_state_hash = state_hash if status == "ACCEPTED" else (None if head is None else head["last_operational_state_hash"])
         conn.execute(
             """

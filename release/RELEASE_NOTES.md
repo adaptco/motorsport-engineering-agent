@@ -1,14 +1,12 @@
-# MEA Root Kernel V3.4 / 0.3.4
+# MEA Root Kernel v3.5 / 0.3.5
 
-This release packages the validated runtime-correctness patch set as the coherent **kernel V3.4** release, paired with package version **0.3.4** per the repo versioning specification.
+This release adds a static-log ingestion harness to the governed control-plane kernel.
 
-## Included scope
-- deterministic PolicyEngine with per-session logical clock and bounded queue
-- strict JSONL replay validation path
-- supervisor loop decision hook and forensic receipts
-- evidence packet migration scaffold
-- updated model weights and performance task manifests
+## Added
+- `ingest/logs/` adapter registry and normalizer
+- `tools/normalize_log.py` CLI
+- control-plane ingest endpoints for local file normalization
+- fixture-driven tests for CSV/VBOX normalization
 
-## Release intent
-- replace the inconsistent v3.3.1 naming surface with a coherent V3.4 bundle
-- preserve runtime behavior while aligning kernel naming to the versioning policy
+## Intended use
+Use v3.5 to validate native or vendor-export telemetry logs before wiring live sim adapters.

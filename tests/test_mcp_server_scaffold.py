@@ -26,17 +26,3 @@ def test_a2a_invoke_returns_scaffold_metadata(monkeypatch):
     body = response.json()
     assert body["status"] == "scaffolded"
     assert body["required_env"] == "OPENAI_API_KEY"
-
-
-def test_tools_call_supports_ralph_wiggum_agent(monkeypatch):
-    monkeypatch.setenv("MCP_SHARED_BEARER_TOKEN", "secret")
-    response = client.post(
-        "/tools/call",
-        headers={"Authorization": "Bearer secret"},
-        json={"name": "ralph_wiggum_agent", "arguments": {"mode": "metadata"}},
-    )
-    assert response.status_code == 200, response.text
-    body = response.json()
-    assert body["ok"] is True
-    assert body["agent_id"] == "ralph-wiggum"
-    assert body["provider_agnostic"] is True

@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>MEA HITL Runtime Log Review</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background:#0b1020; color:#e8ecf3; }
+    h1,h2 { margin: 0 0 12px 0; }
+    .row { display:flex; gap:20px; align-items:flex-start; }
+    .card { background:#141b31; border:1px solid #243050; border-radius:10px; padding:16px; width:100%; }
+    button { padding:8px 12px; cursor:pointer; }
+    input[type=file] { margin:8px 0 12px; }
+    table { width:100%; border-collapse: collapse; font-size: 12px; }
+    th, td { border:1px solid #243050; padding:6px; text-align:left; vertical-align:top; }
+    th { background:#1a2340; position:sticky; top:0; }
+    .muted { color:#a8b2c8; }
+    pre { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>MEA Runtime Log Review</h1>
+  <p class="muted">HITL surface for uploaded simulator/runtime logs. Use <code>/runtime/logs/parse</code> for CSV/TXT review and <code>/ingest/normalize</code> for native vendor log normalization.</p>
+
+  <div class="row">
+    <div class="card">
+      <h2>Upload Runtime Log</h2>
+      <input id="file" type="file" />
+      <button onclick="upload()">Parse</button>
+      <pre id="status"></pre>
+    </div>
+    <div class="card">
+      <h2>Saved Sessions</h2>
+      <button onclick="loadSessions()">Refresh</button>
+      <div id="sessions"></div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:20px;">
+    <div class="card">
+      <h2>Session Preview</h2>
+      <div id="summary"></div>
+      <div style="max-height:500px; overflow:auto;">
+        <table id="preview"></table>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Debrief</h2>
+      <pre id="debrief"></pre>
+    </div>
+  </div>
+
+<script>
+const API = location.origin;
+
+async function upload() {
+  const el = document.getElementById('file');
+  if (!el.files.length) return;
+  const fd = new FormData();
+  fd.append('file', el.files[0]);
+  const res = await fetch(API + '/runtime/logs/parse', { method:'POST', body:fd });
+  const data = await res.json();
+  document.getElementById('status').textContent = JSON.stringify(data, null, 2);
+  if (res.ok) {
+    renderSession(data.summary);
+    loadDebrief(data.summary.session_id);
+    loadSessions();
+  }
+}
+
+async function loadSessions() {
+  const res = await fetch(API + '/runtime/sessions');
+  const data = await res.json();
+  const root = document.getElementById('sessions');
+  root.innerHTML = '';
+  data.forEach(item => {
+    const btn = document.createElement('button');
+    btn.textContent = item.session_id + ' (' + item.rows + ' rows)';
+    btn.style.display='block';
+    btn.style.margin='0 0 8px 0';
+    btn.onclick = async () => {
+      const sres = await fetch(API + '/runtime/sessions/' + item.session_id);
+      const sdata = await sres.json();
+      renderSession(sdata);
+      loadDebrief(item.session_id);
+    };
+    root.appendChild(btn);
+  });
+}
+
+async function loadDebrief(sessionId) {
+  const res = await fetch(API + '/runtime/sessions/' + sessionId + '/debrief');
+  const data = await res.json();
+  document.getElementById('debrief').textContent = JSON.stringify(data, null, 2);
+}
+
+function renderSession(summary) {
+  document.getElementById('summary').innerHTML =
+    '<p><b>Session:</b> ' + summary.session_id + '</p>' +
+    '<p><b>File:</b> ' + summary.filename + '</p>' +
+    '<p><b>Rows:</b> ' + summary.rows + '</p>' +
+    '<p><b>Columns:</b> ' + summary.columns.join(', ') + '</p>';
+
+  const table = document.getElementById('preview');
+  table.innerHTML = '';
+  const cols = summary.columns || [];
+  const head = document.createElement('tr');
+  cols.forEach(c => {
+    const th = document.createElement('th');
+    th.textContent = c;
+    head.appendChild(th);
+  });
+  table.appendChild(head);
+
+  (summary.preview || []).forEach(row => {
+    const tr = document.createElement('tr');
+    cols.forEach(c => {
+      const td = document.createElement('td');
+      td.textContent = row[c] ?? '';
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  });
+}
+
+loadSessions();
+</script>
+</body>
+</html>
