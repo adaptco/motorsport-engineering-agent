@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 import os
 from collections import deque
@@ -9,16 +7,8 @@ try:
 except Exception:  # pragma: no cover
     redis = None
 
-from shared.circuit_breaker import CircuitBreaker
-
 QUEUE_NAME = "mea.jobs"
-QUEUE_ALLOW_IN_MEMORY_FALLBACK = os.environ.get("QUEUE_ALLOW_IN_MEMORY_FALLBACK", "true").strip().lower() in {
-    "1",
-    "true",
-    "yes",
-}
 _memory_queue: deque[str] = deque()
-_redis_breaker = CircuitBreaker.from_env("REDIS")
 
 if redis is not None:
     try:
@@ -30,35 +20,20 @@ else:  # pragma: no cover
     r = None
 
 
-def _fail_closed_or_fallback(payload: str | None = None):
-    if not QUEUE_ALLOW_IN_MEMORY_FALLBACK:
-        raise RuntimeError("redis_unavailable_and_memory_fallback_disabled")
-    if payload is not None:
-        _memory_queue.append(payload)
-    return None
-
-
 def enqueue(job: dict):
     payload = json.dumps(job)
-    if r is None:
-        _fail_closed_or_fallback(payload)
-        return
-    try:
-        _redis_breaker.call(lambda: r.rpush(QUEUE_NAME, payload))
-    except Exception:
-        _fail_closed_or_fallback(payload)
+    if r is not None:
+        r.rpush(QUEUE_NAME, payload)
+    else:
+        _memory_queue.append(payload)
 
 
 def dequeue(timeout: int = 5):
     if r is not None:
-        try:
-            item = _redis_breaker.call(lambda: r.blpop(QUEUE_NAME, timeout=timeout))
-        except Exception:
-            if not QUEUE_ALLOW_IN_MEMORY_FALLBACK:
-                raise
-            item = None
-        if item:
-            return json.loads(item[1])
+        item = r.blpop(QUEUE_NAME, timeout=timeout)
+        if not item:
+            return None
+        return json.loads(item[1])
     if not _memory_queue:
         return None
     return json.loads(_memory_queue.popleft())
