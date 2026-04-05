@@ -1,0 +1,388 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://axp.local/schemas/_shared-axp-defs.schema.json",
+  "title": "AXP Shared Definitions",
+  "$defs": {
+    "NonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:/#@-]+$"
+    },
+    "Semver": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "Sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "Uri": {
+      "type": "string",
+      "format": "uri"
+    },
+    "AgentId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
+    },
+    "TaskId": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_-]{1,63}$"
+    },
+    "WorkflowId": {
+      "type": "string",
+      "pattern": "^wf_[A-Za-z0-9._:-]{3,128}$"
+    },
+    "RunId": {
+      "type": "string",
+      "pattern": "^run_[A-Za-z0-9._:-]{3,128}$"
+    },
+    "SessionId": {
+      "type": "string",
+      "pattern": "^sess_[A-Za-z0-9._:-]{3,128}$"
+    },
+    "CheckpointId": {
+      "type": "string",
+      "pattern": "^ckpt_[A-Za-z0-9._:-]{3,128}$"
+    },
+    "TraceId": {
+      "type": "string",
+      "pattern": "^trace_[A-Za-z0-9._:-]{3,128}$"
+    },
+    "CorrelationId": {
+      "type": "string",
+      "pattern": "^corr_[A-Za-z0-9._:-]{3,128}$"
+    },
+    "DeliveryId": {
+      "type": "string",
+      "pattern": "^deliv_[A-Za-z0-9._:-]{3,128}$"
+    },
+    "ReasonCode": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{1,63}$"
+    },
+    "Authority": {
+      "type": "string",
+      "enum": [
+        "authoritative",
+        "derived",
+        "commentary"
+      ]
+    },
+    "ProtocolVersions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "anp",
+        "acp",
+        "a2a",
+        "mcp"
+      ],
+      "properties": {
+        "anp": {
+          "$ref": "#/$defs/Semver"
+        },
+        "acp": {
+          "$ref": "#/$defs/Semver"
+        },
+        "a2a": {
+          "$ref": "#/$defs/Semver"
+        },
+        "mcp": {
+          "$ref": "#/$defs/Semver"
+        }
+      }
+    },
+    "AuthorityBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authority",
+        "source_type",
+        "source_ref"
+      ],
+      "properties": {
+        "authority": {
+          "$ref": "#/$defs/Authority"
+        },
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "ANP.RouteDecision",
+            "ACP.HandoffEnvelope",
+            "ACP.ExecutionReceipt",
+            "ACP.CommitReceipt",
+            "ACP.WorkflowCursor",
+            "A2A.HandoffRule",
+            "ToolRegistry",
+            "Commentary",
+            "DerivedComputation"
+          ]
+        },
+        "source_ref": {
+          "$ref": "#/$defs/Identifier"
+        }
+      }
+    },
+    "BudgetEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_remaining",
+        "output_remaining",
+        "tool_reserve",
+        "cost_remaining_usdc",
+        "preflight_required"
+      ],
+      "properties": {
+        "input_remaining": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "output_remaining": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tool_reserve": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cost_remaining_usdc": {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d{1,6})?$"
+        },
+        "preflight_required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "agent_id",
+        "instance_id"
+      ],
+      "properties": {
+        "agent_id": {
+          "$ref": "#/$defs/AgentId"
+        },
+        "instance_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "orchestrator",
+            "planner",
+            "executor",
+            "verifier",
+            "attestor",
+            "retriever",
+            "safety_guard",
+            "tool_broker",
+            "session_manager"
+          ]
+        }
+      }
+    },
+    "HashList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Sha256"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "ContextBandRefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hot"
+      ],
+      "properties": {
+        "hot": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "warm": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "uniqueItems": true
+        },
+        "cold": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Uri"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "CompatibilityWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min_supported",
+        "current",
+        "max_emittable"
+      ],
+      "properties": {
+        "min_supported": {
+          "$ref": "#/$defs/Semver"
+        },
+        "current": {
+          "$ref": "#/$defs/Semver"
+        },
+        "max_emittable": {
+          "$ref": "#/$defs/Semver"
+        }
+      }
+    },
+    "StatusExecution": {
+      "type": "string",
+      "enum": [
+        "accepted",
+        "running",
+        "completed",
+        "failed",
+        "canceled",
+        "deferred"
+      ]
+    },
+    "StatusCommit": {
+      "type": "string",
+      "enum": [
+        "verified",
+        "committed",
+        "rejected",
+        "rolled_back"
+      ]
+    },
+    "ReceiptBase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "workflow_id",
+        "run_id",
+        "session_id",
+        "task_id",
+        "from_agent",
+        "to_agent",
+        "prev_receipt_hash",
+        "receipt_hash",
+        "created_at",
+        "authority_binding",
+        "protocol_versions"
+      ],
+      "properties": {
+        "schema_version": {
+          "$ref": "#/$defs/Semver"
+        },
+        "workflow_id": {
+          "$ref": "#/$defs/WorkflowId"
+        },
+        "run_id": {
+          "$ref": "#/$defs/RunId"
+        },
+        "session_id": {
+          "$ref": "#/$defs/SessionId"
+        },
+        "task_id": {
+          "$ref": "#/$defs/TaskId"
+        },
+        "from_agent": {
+          "$ref": "#/$defs/Actor"
+        },
+        "to_agent": {
+          "$ref": "#/$defs/Actor"
+        },
+        "prev_receipt_hash": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "receipt_hash": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "created_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "authority_binding": {
+          "$ref": "#/$defs/AuthorityBinding"
+        },
+        "protocol_versions": {
+          "$ref": "#/$defs/ProtocolVersions"
+        }
+      }
+    },
+    "BudgetUsage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_tokens",
+        "output_tokens",
+        "tool_tokens_reserved",
+        "cost_usdc"
+      ],
+      "properties": {
+        "input_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "output_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tool_tokens_reserved": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cost_usdc": {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d{1,6})?$"
+        }
+      }
+    },
+    "VerificationSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "harness_safe",
+        "task_succeeded"
+      ],
+      "properties": {
+        "harness_safe": {
+          "type": "boolean"
+        },
+        "task_succeeded": {
+          "type": "boolean"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NonEmptyString"
+          }
+        }
+      }
+    }
+  }
+}

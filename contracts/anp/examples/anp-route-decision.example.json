@@ -1,0 +1,53 @@
+{
+  "kind": "ANP.RouteDecision",
+  "schema_version": "1.0.0",
+  "route_id": "route_T005_01",
+  "workflow_id": "wf_demo",
+  "run_id": "run_demo",
+  "task_id": "T005",
+  "decision_time": "2026-04-05T05:10:00Z",
+  "next_agent": {
+    "agent_id": "adaptco/k8s-agent",
+    "instance_id": "k8s-01",
+    "role": "executor"
+  },
+  "delivery": {
+    "mode": "async",
+    "delivery_id": "deliv_T005_01",
+    "endpoint_uri": "https://k8s.example.com/mcp",
+    "retry_policy": {
+      "max_attempts": 3,
+      "backoff": "exponential",
+      "dead_letter_on_exhaustion": true
+    }
+  },
+  "expected_receipt_type": "ACP.ExecutionReceipt",
+  "session_binding": {
+    "session_id": "sess_demo",
+    "trace_id": "trace_demo",
+    "correlation_id": "corr_demo",
+    "mcp_endpoint": "https://k8s.example.com/mcp",
+    "lease_expires_at": "2026-04-05T06:10:00Z"
+  },
+  "budget_snapshot": {
+    "input_remaining": 12000,
+    "output_remaining": 3000,
+    "tool_reserve": 2000,
+    "cost_remaining_usdc": "0.006000",
+    "preflight_required": true
+  },
+  "authority_binding": {
+    "authority": "authoritative",
+    "source_type": "A2A.HandoffRule",
+    "source_ref": "handoff_T005"
+  },
+  "compatibility": {
+    "min_supported": "1.0.0",
+    "current": "1.0.0",
+    "max_emittable": "1.0.0"
+  },
+  "reason_codes": [
+    "LEGAL_NEXT_TASK",
+    "BUDGET_OK"
+  ]
+}

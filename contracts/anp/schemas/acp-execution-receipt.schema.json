@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://axp.local/schemas/acp-execution-receipt.schema.json",
+  "title": "ACP Execution Receipt",
+  "description": "Terminal record that a receiving agent completed local work, before ACP commit advancement.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "workflow_id",
+    "run_id",
+    "session_id",
+    "task_id",
+    "from_agent",
+    "to_agent",
+    "prev_receipt_hash",
+    "receipt_hash",
+    "created_at",
+    "authority_binding",
+    "protocol_versions",
+    "kind",
+    "receipt_type",
+    "status",
+    "input_digests",
+    "output_digests",
+    "budget_usage",
+    "verification"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Semver"
+    },
+    "workflow_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/WorkflowId"
+    },
+    "run_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/RunId"
+    },
+    "session_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/SessionId"
+    },
+    "task_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/TaskId"
+    },
+    "from_agent": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Actor"
+    },
+    "to_agent": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Actor"
+    },
+    "prev_receipt_hash": {
+      "anyOf": [
+        {
+          "$ref": "_shared-axp-defs.schema.json#/$defs/Sha256"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "receipt_hash": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Sha256"
+    },
+    "created_at": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Timestamp"
+    },
+    "authority_binding": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/AuthorityBinding"
+    },
+    "protocol_versions": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/ProtocolVersions"
+    },
+    "kind": {
+      "const": "ACP.ExecutionReceipt"
+    },
+    "receipt_type": {
+      "const": "ACP.ExecutionReceipt"
+    },
+    "status": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/StatusExecution"
+    },
+    "input_digests": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/HashList"
+    },
+    "output_digests": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/HashList"
+    },
+    "budget_usage": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/BudgetUsage"
+    },
+    "verification": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/VerificationSummary"
+    },
+    "stream_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "_shared-axp-defs.schema.json#/$defs/Identifier"
+      },
+      "uniqueItems": true
+    },
+    "failure_code": {
+      "anyOf": [
+        {
+          "$ref": "_shared-axp-defs.schema.json#/$defs/ReasonCode"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "failure_summary": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}
