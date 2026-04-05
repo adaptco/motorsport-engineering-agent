@@ -184,14 +184,11 @@ def process_fix_ci_job(job: dict) -> None:
             add_span(job_id, trace_id, "apply_patch", "ok", {"patch_hash": hashlib.sha256(patch.encode()).hexdigest()})
             set_job_phase(job_id, "running", "patched")
 
-            # Step 6: Run tests
-            tests_ok = True
+            # Step 6: Run tests (fail fast on validation failures)
             try:
                 run(["pytest"], cwd=tmpdir)
             except subprocess.CalledProcessError:
-                tests_ok = False
-            add_span(job_id, trace_id, "test_suite", "ok" if tests_ok else "warning", {"tests_ok": tests_ok})
-            if not tests_ok:
+                add_span(job_id, trace_id, "test_suite", "warning", {"tests_ok": False})
                 set_job_phase(
                     job_id,
                     "failed",
@@ -200,6 +197,8 @@ def process_fix_ci_job(job: dict) -> None:
                     error_message="Validation failed: test suite failed",
                 )
                 return
+            tests_ok = True
+            add_span(job_id, trace_id, "test_suite", "ok", {"tests_ok": tests_ok})
             set_job_phase(job_id, "running", "validated", {"tests_ok": tests_ok})
 
             run(["git", "config", "user.name", "mea-ci-bot[app]"], cwd=tmpdir)
@@ -232,6 +231,8 @@ def process_fix_ci_job(job: dict) -> None:
             pr_url = pr["html_url"]
             add_span(job_id, trace_id, "create_pr", "ok", {"pr_url": pr_url})
             complete_job(job_id, fix_branch, pr_url, {"summary": "PR opened", "tests_ok": tests_ok, "pr_url": pr_url})
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
 
     except Exception as e:
         # Error handling: Mark job as failed and log error
