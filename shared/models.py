@@ -20,15 +20,8 @@ class FixCIRequest(BaseModel):
             return v
         if v.startswith("-"):
             raise ValueError("String must not start with a hyphen to prevent option injection")
-        if not re.match(r"^[a-zA-Z0-9._/-]+$", v) or ".." in v:
-            raise ValueError(f"String contains invalid characters or sequences: {v}")
-        return v
-
-    @field_validator("repo")
-    @classmethod
-    def validate_repo_format(cls, v: str) -> str:
-        if "/" not in v or v.count("/") != 1:
-            raise ValueError("Repo must be in 'owner/repo' format")
+        if not re.match(r"^[a-zA-Z0-9._/-]+$", v):
+            raise ValueError(f"String contains invalid characters: {v}")
         return v
 
 
