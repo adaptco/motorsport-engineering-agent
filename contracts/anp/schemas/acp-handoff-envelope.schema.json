@@ -97,7 +97,7 @@
     },
     "field_authority": {
       "type": "array",
-      "minItems": 5,
+      "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,

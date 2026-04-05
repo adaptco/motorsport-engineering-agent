@@ -4,8 +4,8 @@ This folder contains imported protocol artifacts for the Agent Network Protocol 
 
 ## Sources
 
-- `C:\Users\eqhsp\Downloads\axp-protocol-next.zip`
-- `C:\Users\eqhsp\Downloads\axp-harness-bundle.zip`
+- `axp-protocol-next.zip`
+- `axp-harness-bundle.zip`
 
 ## Layout
 

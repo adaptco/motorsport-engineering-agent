@@ -39,6 +39,12 @@ def _schema_registry() -> Registry:
     return registry
 
 
+@pytest.fixture(scope="session")
+def schema_registry() -> Registry:
+    # Shared registry avoids rebuilding schema resources for each parametrized case.
+    return _schema_registry()
+
+
 def test_anp_bundle_files_exist() -> None:
     for schema_name, example_name in SCHEMA_EXAMPLE_PAIRS:
         assert (ANP_SCHEMA_DIR / schema_name).is_file(), f"missing schema: {schema_name}"
@@ -49,11 +55,13 @@ def test_anp_bundle_files_exist() -> None:
 
 
 @pytest.mark.parametrize(("schema_name", "example_name"), SCHEMA_EXAMPLE_PAIRS)
-def test_anp_examples_validate_against_schemas(schema_name: str, example_name: str) -> None:
+def test_anp_examples_validate_against_schemas(
+    schema_name: str, example_name: str, schema_registry: Registry
+) -> None:
     schema = _read_json(ANP_SCHEMA_DIR / schema_name)
     example = _read_json(ANP_EXAMPLE_DIR / example_name)
 
-    validator = Draft202012Validator(schema=schema, registry=_schema_registry())
+    validator = Draft202012Validator(schema=schema, registry=schema_registry)
     validator.validate(example)
 
 
