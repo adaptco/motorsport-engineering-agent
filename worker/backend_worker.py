@@ -1,34 +1,138 @@
 import logging
 import os
+import time
 import uuid
 import shutil
 import subprocess
+import hashlib
 from pathlib import Path
 from worker import github_app_client as gh
-from worker import repository as repo  # Namespaced import
+from worker import repository as repo
+
+# Fallback for requests if not in environment
+try:
+    import requests
+except ModuleNotFoundError:
+    import urllib.request as requests
 
 logger = logging.getLogger(__name__)
 
+GITHUB_API_URL = "https://api.github.com"
+ALLOWED_REPOS = {r.strip() for r in os.environ.get("GITHUB_ALLOWED_REPOS", "").split(",") if r.strip()}
+MAX_PATCH_LINES = int(os.environ.get("MAX_PATCH_LINES", "1000"))
+ALLOW_WORKFLOW_CHANGES = os.environ.get("ALLOW_WORKFLOW_CHANGES", "false").lower() == "true"
+EMPTY_POLL_BACKOFF_SECONDS_MIN = 1.0
+EMPTY_POLL_BACKOFF_SECONDS_MAX = 60.0
+WORKER_TEMP_ROOT = Path(os.environ.get("MEA_WORKER_TEMP_ROOT", str(Path.cwd() / ".mea_tmp")))
+
+def run(cmd: list[str], cwd: Path) -> None:
+    subprocess.run(cmd, cwd=cwd, check=True)
+
+def validate_patch(patch: str) -> None:
+    if not patch.strip():
+        raise ValueError("Patch is empty")
+    if patch.count("\n") > MAX_PATCH_LINES:
+        raise ValueError("Patch too large")
+    if not ALLOW_WORKFLOW_CHANGES and ".github/workflows" in patch:
+        raise ValueError("Workflow edits disabled")
+
 def process_fix_ci_job(job: dict) -> None:
     job_id = job["job_id"]
-    # 1. Grounded call to get_job_identity
     identity = repo.get_job_identity(job_id)
     if not identity:
+        logger.error(f"Identity missing for job {job_id}")
         return
 
     trace_id = identity["trace_id"]
     repo_slug = job["repo"]
-    
+    base_branch = job.get("branch", "main")
+    patch = job["patch"]
+
     try:
-        # 2. Grounded call to set_job_phase (matching 5-arg signature)
-        repo.set_job_phase(job_id, "running", "policy_check", {"repo": repo_slug}, None)
+        if repo_slug not in ALLOWED_REPOS:
+            raise ValueError("Repo not allowlisted")
+        validate_patch(patch)
+
         repo.add_span(job_id, trace_id, "policy_check", "ok", {"repo": repo_slug})
+        # FIXED: 5 arguments (job_id, status, phase, payload, error_message)
+        repo.set_job_phase(job_id, "running", "policy_check", {"repo": repo_slug}, None)
 
-        # ... (rest of your logic) ...
+        installation_token = gh.get_installation_token(job.get("installation_id"))
+        repo.add_span(job_id, trace_id, "issue_installation_token", "ok", {})
+        repo.set_job_phase(job_id, "running", "token_issued", {}, None)
 
-        # 3. Grounded call to complete_job
-        repo.complete_job(job_id, "fix-branch-name", "https://github.com/pr/1", {"status": "done"})
+        WORKER_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
+        tmpdir = WORKER_TEMP_ROOT / f"job-{job_id}-{uuid.uuid4().hex[:8]}"
+        tmpdir.mkdir(parents=True, exist_ok=False)
+
+        try:
+            clone_url = f"https://x-access-token:{installation_token}@github.com/{repo_slug}.git"
+            run(["git", "clone", "--depth", "1", "--branch", base_branch, "--", clone_url, "."], cwd=tmpdir)
+            
+            repo.add_span(job_id, trace_id, "clone_repo", "ok", {"branch": base_branch})
+            repo.set_job_phase(job_id, "running", "cloned", {}, None)
+
+            fix_branch = f"fix-ci/{job.get('run_id') or job_id}"
+            run(["git", "checkout", "-b", fix_branch], cwd=tmpdir)
+            (tmpdir / "patch.diff").write_text(patch, encoding="utf-8")
+            run(["git", "apply", "patch.diff"], cwd=tmpdir)
+            
+            repo.add_span(job_id, trace_id, "apply_patch", "ok", {"hash": hashlib.sha256(patch.encode()).hexdigest()})
+            repo.set_job_phase(job_id, "running", "patched", {}, None)
+
+            tests_ok = True
+            try:
+                run(["pytest"], cwd=tmpdir)
+            except subprocess.CalledProcessError:
+                tests_ok = False
+
+            repo.add_span(job_id, trace_id, "test_suite", "ok" if tests_ok else "warning", {"tests_ok": tests_ok})
+
+            if not tests_ok:
+                repo.set_job_phase(job_id, "failed", "validation_failed", {"tests_ok": False}, "Tests failed")
+                return
+
+            repo.set_job_phase(job_id, "running", "validated", {"tests_ok": True}, None)
+
+            run(["git", "config", "user.name", "mea-ci-bot"], cwd=tmpdir)
+            run(["git", "config", "user.email", "mea-ci-bot@example.com"], cwd=tmpdir)
+            run(["git", "add", "."], cwd=tmpdir)
+            run(["git", "commit", "-m", f"Fix CI {job_id}"], cwd=tmpdir)
+            run(["git", "push", "origin", fix_branch], cwd=tmpdir)
+
+            owner, name = repo_slug.split("/")
+            resp = requests.post(
+                f"{GITHUB_API_URL}/repos/{owner}/{name}/pulls",
+                headers={"Authorization": f"Bearer {installation_token}"},
+                json={"title": f"Fix CI {job_id}", "head": fix_branch, "base": base_branch},
+            )
+            resp.raise_for_status()
+            pr_url = resp.json()["html_url"]
+
+            repo.add_span(job_id, trace_id, "create_pr", "ok", {"pr_url": pr_url})
+            repo.complete_job(job_id, fix_branch, pr_url, {"summary": "PR opened"})
+
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
 
     except Exception as e:
-        # 4. Grounded error handling
-        repo.set_job_phase(job_id, "failed", "error", None, str(e))
+        logger.exception(f"Job {job_id} failed")
+        # FIXED: 5 arguments for error reporting
+        repo.set_job_phase(job_id, "failed", "error", {"exception": str(e)}, str(e))
+
+def worker_loop():
+    consecutive_empty_polls = 0
+    while True:
+        # Note: dequeue() logic assumed to be present in worker module
+        from worker import dequeue 
+        job = dequeue()
+        if not job:
+            consecutive_empty_polls += 1
+            sleep_seconds = min(EMPTY_POLL_BACKOFF_SECONDS_MAX, EMPTY_POLL_BACKOFF_SECONDS_MIN * consecutive_empty_polls)
+            time.sleep(sleep_seconds)
+            continue
+        consecutive_empty_polls = 0
+        process_fix_ci_job(job)
+
+if __name__ == "__main__":
+    worker_loop()
