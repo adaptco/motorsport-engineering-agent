@@ -7,3 +7,8 @@ __pycache__/
 .venv/
 dist/
 build/
+
+# AI Agent / Automation helpers (Local Only)
+GEMINI.md
+.github/agents/
+mcp_tools/ralph_wiggum_agent.py

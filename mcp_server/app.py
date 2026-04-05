@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI, Header, HTTPException
 
 from mcp_tools.mea_ci_guardrail import run_mea_ci_guardrail
+from mcp_tools.ralph_wiggum_agent import run_ralph_wiggum_agent
 from shared.models import A2AInvokeRequest, A2AInvokeResponse, MCPProviderStatus, MCPToolCall
 from shared.version import load_version_info
 
@@ -12,6 +13,11 @@ PROVIDER_ENV = {
     "anthropic": "ANTHROPIC_API_KEY",
     "google": "GOOGLE_API_KEY",
     "openrouter": "OPENROUTER_API_KEY",
+}
+
+TOOL_REGISTRY = {
+    "mea_ci_guardrail": run_mea_ci_guardrail,
+    "ralph_wiggum_agent": run_ralph_wiggum_agent,
 }
 
 
@@ -42,9 +48,10 @@ def providers():
 @app.post("/tools/call")
 def call_tool(req: MCPToolCall, authorization: str | None = Header(default=None)):
     _check_shared_token(authorization)
-    if req.name != "mea_ci_guardrail":
+    tool = TOOL_REGISTRY.get(req.name)
+    if tool is None:
         raise HTTPException(status_code=404, detail="tool_not_found")
-    return run_mea_ci_guardrail(req.arguments)
+    return tool(req.arguments)
 
 
 @app.post("/a2a/invoke", response_model=A2AInvokeResponse)
