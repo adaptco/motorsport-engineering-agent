@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional
 
@@ -11,6 +12,17 @@ class FixCIRequest(BaseModel):
     branch: str
     patch: str
     run_id: Optional[str] = None
+
+    @field_validator("repo", "branch", "run_id")
+    @classmethod
+    def validate_safe_strings(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        if v.startswith("-"):
+            raise ValueError("String must not start with a hyphen to prevent option injection")
+        if not re.match(r"^[a-zA-Z0-9._/-]+$", v):
+            raise ValueError(f"String contains invalid characters: {v}")
+        return v
 
 
 class JobStatusResponse(BaseModel):
