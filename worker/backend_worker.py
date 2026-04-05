@@ -48,6 +48,7 @@ except ModuleNotFoundError:
                 return _FallbackResponse(http_error.code, payload)
 
     requests = _FallbackRequests()
+import requests
 
 from control_plane.queue import dequeue
 from worker.github_app_client import get_installation_token
@@ -59,6 +60,7 @@ GITHUB_API_URL = "https://api.github.com"
 ALLOWED_REPOS = {r.strip() for r in os.environ.get("GITHUB_ALLOWED_REPOS", "").split(",") if r.strip()}
 MAX_PATCH_LINES = int(os.environ.get("MAX_PATCH_LINES", "1000"))
 ALLOW_WORKFLOW_CHANGES = os.environ.get("ALLOW_WORKFLOW_CHANGES", "false").lower() == "true"
+WORKDIR_ROOT = Path(os.environ.get("MEA_BACKEND_WORKDIR_ROOT", ".tmp_backend_worker"))
 
 EMPTY_POLL_BACKOFF_SECONDS_MIN = 1.0
 EMPTY_POLL_BACKOFF_SECONDS_MAX = 60.0
@@ -163,8 +165,8 @@ def process_fix_ci_job(job: dict) -> None:
         set_job_phase(job_id, "running", "token_issued")
 
         # Step 4: Clone repository
-        WORKER_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
-        tmpdir = WORKER_TEMP_ROOT / f"job-{job_id}-{uuid.uuid4().hex[:8]}"
+        WORKDIR_ROOT.mkdir(parents=True, exist_ok=True)
+        tmpdir = WORKDIR_ROOT / f"{job_id}-{uuid.uuid4().hex[:8]}"
         tmpdir.mkdir(parents=True, exist_ok=False)
         try:
             clone_url = f"https://x-access-token:{installation_token}@github.com/{repo_slug}.git"
@@ -198,7 +200,7 @@ def process_fix_ci_job(job: dict) -> None:
                     error_message="Validation failed: test suite failed",
                 )
                 return
-            set_job_phase(job_id, "running", "validated", {"tests_ok": True})
+            set_job_phase(job_id, "running", "validated", {"tests_ok": tests_ok})
 
             run(["git", "config", "user.name", "mea-ci-bot[app]"], cwd=tmpdir)
             run(["git", "config", "user.email", "mea-ci-bot@example.com"], cwd=tmpdir)

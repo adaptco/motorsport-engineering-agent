@@ -1,4 +1,5 @@
 from __future__ import annotations
+import tempfile
 
 import os
 
@@ -8,7 +9,7 @@ from control_plane.services.job_runner import JobExecutionRequest, JobNotAllowed
 from shared.forensic_ledger import append_receipt
 
 router = APIRouter(tags=["verifier"])
-LEDGER_DB_PATH = os.environ.get("SESSION_LEDGER_DB_PATH", "/tmp/mea-session-ledger.db")
+LEDGER_DB_PATH = os.environ.get("SESSION_LEDGER_DB_PATH", os.path.join(tempfile.gettempdir(), "mea-session-ledger.db"))
 
 
 @router.post("/verifier/execute")
