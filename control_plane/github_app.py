@@ -3,6 +3,7 @@ import time
 import logging
 import jwt
 import requests
+logger = logging.getLogger(__name__)
 
 GITHUB_API = "https://api.github.com"
 APP_ID = os.environ.get("GITHUB_APP_ID")

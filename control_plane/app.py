@@ -2,7 +2,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 
-from control_plane.queue import dequeue, enqueue
+from control_plane.queue import enqueue
 from control_plane.routes.agent import router as agent_router
 from control_plane.repository import create_job, get_job, list_trace
 from control_plane.routes.replay import router as replay_router
