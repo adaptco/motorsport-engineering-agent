@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@3v4
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -26,14 +26,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pkg_version=$(python - <<'PY'
+          pkg_version=$(python - <<'PY' | tr -d '\r'
           import tomllib
           from pathlib import Path
           print(tomllib.loads(Path('pyproject.toml').read_text())['project']['version'])
           PY
           )
 
-          version_json_pkg="$(python - <<'PY'
+          version_json_pkg="$(python - <<'PY' | tr -d '\r'
           import json
           from pathlib import Path
 
@@ -42,7 +42,7 @@ jobs:
           PY
           )"
 
-          version_json_kernel="$(python - <<'PY'
+          version_json_kernel="$(python - <<'PY' | tr -d '\r'
           import json
           from pathlib import Path
 
@@ -51,7 +51,7 @@ jobs:
           PY
           )"
 
-          changelog_header=$(python - <<'PY'
+          changelog_header=$(python - <<'PY' | tr -d '\r'
           import re
           from pathlib import Path
           text = Path('CHANGELOG.md').read_text()
@@ -62,7 +62,7 @@ jobs:
           PY
           )
 
-          expected_header="## v4{version_json_kernel} / ${pkg_version}"
+          expected_header="## v${version_json_kernel} / ${pkg_version}"
 
           test "${pkg_version}" = "${version_json_pkg}" || {
             echo "Mismatch: pyproject version (${pkg_version}) != VERSION.json package_version (${version_json_pkg})"
@@ -85,7 +85,7 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const ref = context.sha;
-            const required = ["quality-gate", "build-images"];
+            const required = ["test", "build-images"];
             const pollIntervalMs = 15000;
             const timeoutMs = 20 * 60 * 1000;
             const deadline = Date.now() + timeoutMs;
@@ -105,7 +105,7 @@ jobs:
                   byName.set(run.name, run);
                 }
               }
-              return 4byName;
+              return byName;
             }
 
             while (Date.now() < deadline) {
@@ -157,7 +157,8 @@ jobs:
             }
 
             core.setFailed(
-              `Timed out after ${timeoutMs / 60000} minutes waiting for required checks: ${required.join(", ")}`\n            );
+              `Timed out after ${timeoutMs / 60000} minutes waiting for required checks: ${required.join(", ")}`
+            );
 
   deploy:
     runs-on: ubuntu-latest
