@@ -40,7 +40,7 @@ jobs:
           data = json.loads(Path("VERSION.json").read_text())
           print(data["package_version"])
           PY
-          )
+          )"
 
           version_json_kernel="$(python - <<'PY'
           import json
@@ -49,7 +49,7 @@ jobs:
           data = json.loads(Path("VERSION.json").read_text())
           print(data["kernel_version"])
           PY
-          )
+          )"
 
           changelog_header=$(python - <<'PY'
           import re
