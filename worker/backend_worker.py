@@ -5,9 +5,6 @@ import os
 import shutil
 import subprocess
 import time
-import urllib.error
-import urllib.request
-import uuid
 from pathlib import Path
 
 try:
@@ -48,6 +45,7 @@ except ModuleNotFoundError:
                 return _FallbackResponse(http_error.code, payload)
 
     requests = _FallbackRequests()
+import requests
 
 from control_plane.queue import dequeue
 from worker.github_app_client import get_installation_token
@@ -196,10 +194,10 @@ def process_fix_ci_job(job: dict) -> None:
                     "failed",
                     "validation_failed",
                     {"tests_ok": False},
-                    error_message="Validation failed: test suite failed",
+                    error_message="Automated validation failed after applying patch",
                 )
                 return
-            set_job_phase(job_id, "running", "validated", {"tests_ok": tests_ok})
+            set_job_phase(job_id, "running", "validated", {"tests_ok": True})
 
             run(["git", "config", "user.name", "mea-ci-bot[app]"], cwd=tmpdir)
             run(["git", "config", "user.email", "mea-ci-bot@example.com"], cwd=tmpdir)
@@ -231,9 +229,6 @@ def process_fix_ci_job(job: dict) -> None:
             pr_url = pr["html_url"]
             add_span(job_id, trace_id, "create_pr", "ok", {"pr_url": pr_url})
             complete_job(job_id, fix_branch, pr_url, {"summary": "PR opened", "tests_ok": tests_ok, "pr_url": pr_url})
-
-        finally:
-            shutil.rmtree(tmpdir, ignore_errors=True)
     except Exception as e:
         # Error handling: Mark job as failed and log error
         set_job_phase(job_id, "failed", "error", error_message=str(e))

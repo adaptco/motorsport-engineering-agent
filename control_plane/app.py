@@ -21,9 +21,9 @@ def validate_webhook_startup_config(*, webhook_secret: str | None, webhook_requi
         raise RuntimeError("GITHUB_WEBHOOK_SECRET must be set when GITHUB_WEBHOOK_REQUIRED is true")
     return bool(webhook_secret)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     webhook_secret = get_webhook_secret()
     webhook_required = _is_truthy(os.environ.get("GITHUB_WEBHOOK_REQUIRED"))
     app.state.github_webhook_configured = validate_webhook_startup_config(
@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI):
         webhook_required=webhook_required,
     )
     yield
-    # Shutdown (if needed)
+
 
 app = FastAPI(title="MEA Control Plane", lifespan=lifespan)
 app.include_router(github_router)
