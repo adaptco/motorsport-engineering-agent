@@ -1,106 +1,53 @@
-# Progress Tracking - Motorsport Engineering Agent
+# Progress (Reconciled)
 
-**Document Version:** 1.1  
-**Last Updated:** 2026-04-05  
-**Status:** 🟡 AUDIT REFRESH COMPLETE (PRD gap index + Actions pass checklist updated)  
-**Reference:** [PRD.md](./PRD.md)
+Last reconciled: April 5, 2026 (America/New_York)
+Source of truth: repository state at `c3b04ae` plus working-tree updates in this branch.
 
----
+## What Is Verified Complete
 
-## 1) Persistent Workflow Memory Context
+- A2A handoff skill and state persistence contracts:
+  - `skills/a2a_handoff/SKILL.md`
+  - `contracts/a2a/workflow_state.schema.json`
+  - `contracts/a2a/handoff_event.schema.json`
+  - `workers/background_workers.py`
+  - `worker/background_workers.py`
+  - `tests/test_background_workers_state.py`
+- V3.5 ingestion and runtime review surface:
+  - `ingest/logs/*`
+  - `control_plane/routes/ingest.py`
+  - `control_plane/routes/runtime_logs.py`
+  - `frontend/hitl_runtime_logs.html`
+  - `tests/test_ingest_api.py`
+  - `tests/test_log_ingest_router.py`
+  - `tests/test_log_normalizer.py`
+- Trust-surface and production-hardening updates from this branch:
+  - `CURRENT_STATE.md`
+  - `OPEN_BLOCKERS.md`
+  - `TASK_LEDGER.md`
+  - `shared/runtime_paths.py`
+  - `shared/circuit_breaker.py`
+  - `shared/db.py`
+  - `control_plane/app.py`
+  - `control_plane/queue.py`
+  - `control_plane/github_app.py`
+  - `control_plane/services/mcp_client.py`
+  - `tests/test_forensic_ledger_persistence.py`
+  - `tests/test_circuit_breaker.py`
 
-- Installed skill: `notion-knowledge-capture`
-- Install path: `~/.codex/skills/notion-knowledge-capture`
-- Notes:
-  - No upstream curated skill named `persistent-workflow-memory` was available.
-  - `notion-knowledge-capture` is the closest persistent-memory workflow skill for reusable agent context capture.
+## Validation Snapshot
 
----
+- `python -m pytest -q` => `46 passed` (April 5, 2026)
+- Forensic ledger startup/write-read behavior covered by:
+  - `tests/test_forensic_ledger_persistence.py`
+- Circuit-breaker open/recovery behavior covered by:
+  - `tests/test_circuit_breaker.py`
 
-## 2) Repository Review Source
+## Explicit Corrections To Prior Status Drift
 
-- Local repo audited: `origin https://github.com/adaptco/motorsport-engineering-agent.git`
-- GitHub app connector lookup for installed repos returned no entry for this repo in this session, so indexing was performed from the local working tree.
+- README is present and versioned (`README.md`), so any claim that it is missing is incorrect.
+- Ingestion module and API surface are present in the current repository state.
+- Runtime log review endpoints and GUI scaffold are present in the current repository state.
 
----
+## Next Milestone
 
-## 3) PRD Required Files/Modules Index (Current State)
-
-### Present
-
-- `control_plane/app.py`
-- `worker/backend_worker.py`
-- `worker/github_app_client.py`
-- `mcp_server/app.py`
-- `shared/models.py`
-- `shared/forensic_ledger.py`
-- `docs/supervisor-loop.md`
-- `db/migrations/001_init.sql`
-- `db/migrations/002_session_runtime.sql`
-- `db/migrations/003_evidence_packets.sql`
-- `.github/workflows/ci.yml`
-- `README.md`
-
-### Missing (Referenced by PRD / review criteria)
-
-- `control_plane/config.py`
-- `mea/policy_engine.py`
-- `tests/conftest.py`
-- `CONTRIBUTING.md`
-- `docs/DEPLOYMENT.md`
-
----
-
-## 4) Actions Workflow Status (Current)
-
-### `.github/workflows/ci.yml`
-
-- Structurally valid YAML.
-- Matches unit checks in `tests/test_ci_workflow.py`:
-  - `actions/checkout@v6`
-  - `actions/setup-node@v6` with Node `24`
-  - `actions/setup-python@v6` with Python `3.13`
-- Builds Docker images for control plane / mcp server / worker after tests.
-
-### `.github/workflows/release-gate.yml`
-
-- File exists but contains multiple blocking errors that will fail workflow execution:
-  - Invalid action ref: `actions/checkout@3v4`
-  - Invalid Python module in inline script: `tomllab` (should be `tomllib`)
-  - Broken bash/script syntax in changelog extraction and expected header interpolation
-  - Broken JavaScript in `actions/github-script` step (e.g., `return 4byName;`)
-
----
-
-## 5) What Must Be Created To Satisfy PRD + Stabilize Test/CI Readiness
-
-### Create now
-
-1. `tests/conftest.py`  
-   Centralized fixtures + deterministic shared setup for test infrastructure consistency.
-
-2. `control_plane/config.py`  
-   Explicit config module expected by PRD architecture/documentation model.
-
-3. `mea/policy_engine.py`  
-   Canonical policy engine module path referenced by PRD tasks.
-
-4. `docs/DEPLOYMENT.md`  
-   Deployment/run instructions required by PRD documentation acceptance criteria.
-
-5. `CONTRIBUTING.md`  
-   Contributor workflow and quality gates required by PRD documentation completeness.
-
-### Fix (not create) to get Actions green
-
-1. Correct `.github/workflows/release-gate.yml` syntax and logic errors listed above.
-2. Ensure release-gate expected changelog/version checks use valid expressions.
-3. Re-run CI + release-gate workflows after patching.
-
----
-
-## 6) Current Overall Status
-
-- Review artifacts are present, but the progress tracker was previously inconsistent/outdated.
-- PRD still has explicit missing file/module targets (listed above).
-- Main CI workflow appears aligned with tests; release-gate workflow needs immediate correction before reliable Actions pass status can be claimed.
+- Convert the remaining open blockers in `OPEN_BLOCKERS.md` into isolated, reviewable PRs, tracked in `TASK_LEDGER.md`.

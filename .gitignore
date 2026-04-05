@@ -12,3 +12,7 @@ build/
 GEMINI.md
 .github/agents/
 mcp_tools/ralph_wiggum_agent.py
+
+# A2A persisted workflow state artifacts
+.mea_tmp/workflow_state/
+runtime_logs/workflow_state/
