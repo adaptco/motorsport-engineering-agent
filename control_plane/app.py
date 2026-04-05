@@ -48,7 +48,7 @@ def validate_session_ledger_startup_config(*, ledger_db_path: str | Path) -> str
 
 
 @app.on_event("startup")
-def validate_webhook_config() -> None:
+def perform_startup_validation() -> None:
     webhook_secret = get_webhook_secret()
     webhook_required = _is_truthy(os.environ.get("GITHUB_WEBHOOK_REQUIRED"))
     app.state.github_webhook_configured = validate_webhook_startup_config(
