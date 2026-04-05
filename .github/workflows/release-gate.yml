@@ -31,7 +31,7 @@ jobs:
           from pathlib import Path
           print(tomllib.loads(Path('pyproject.toml').read_text())['project']['version'])
           PY
-          )"
+          )
 
           version_json_pkg="$(python - <<'PY'
           import json
@@ -40,7 +40,7 @@ jobs:
           data = json.loads(Path("VERSION.json").read_text())
           print(data["package_version"])
           PY
-          )"
+          )
 
           version_json_kernel="$(python - <<'PY'
           import json
@@ -49,7 +49,7 @@ jobs:
           data = json.loads(Path("VERSION.json").read_text())
           print(data["kernel_version"])
           PY
-          )"
+          )
 
           changelog_header=$(python - <<'PY'
           import re
@@ -60,7 +60,7 @@ jobs:
               raise SystemExit('No changelog version heading found')
           print(match.group(0))
           PY
-          )"
+          )
 
           expected_header="## v4{version_json_kernel} / ${pkg_version}"
 
