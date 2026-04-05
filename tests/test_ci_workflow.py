@@ -21,7 +21,7 @@ def _find_step_for_action(steps: list[dict], action: str) -> dict:
 def _action_major_version(step: dict) -> int:
     uses = step.get("uses")
     assert isinstance(uses, str), "Workflow step is missing a valid 'uses' value"
-    match = re.search(r"@v(\d+)$", uses)
+    match = re.search(r"@v(\d+)", uses)
     assert match, f"Unable to parse action major version from '{uses}'"
     return int(match.group(1))
 
