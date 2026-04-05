@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
 import uuid
 from pathlib import Path
 from typing import Iterable, List, Literal, TYPE_CHECKING
 
 from pydantic import ValidationError
 
+from shared.jsonl_validator import validate_jsonl_artifact
 from shared.models import (
     DirectStreamProbeResult,
     ReplayMetrics,
@@ -18,53 +20,56 @@ from shared.models import (
 if TYPE_CHECKING:
     from shared.models import JSONLValidationResult
 
-def load_replay_log(path: Path) -> Iterable[TelemetryFrame]:
-    with open(path, "r") as f:
-        for line in f:
-            if not line.strip():
-                continue
-            yield TelemetryFrame.model_validate_json(line)
+REQUIRED_CHANNELS = ("Throttle", "Brake", "Speed")
 
 
-def build_replay_metrics(path: Path) -> ReplayMetrics:
+def iter_jsonl_frames(path: Path, max_frames: int | None = None) -> Iterable[TelemetryFrame]:
+    with path.open("r", encoding="utf-8") as handle:
+        for idx, line in enumerate(handle, start=1):
+            if max_frames and idx > max_frames:
+                break
+            yield TelemetryFrame.model_validate(json.loads(line))
+
+
+def build_replay_metrics(path: Path, max_frames: int | None = None) -> ReplayMetrics:
     metrics = ReplayMetrics()
-    first_ts = 0
-    previous_ts = 0
+    previous_tick: int | None = None
+    first_ts: int | None = None
+    previous_ts: int | None = None
 
-    try:
-        for frame in load_replay_log(path):
+    with path.open("r", encoding="utf-8") as handle:
+        for idx, line in enumerate(handle, start=1):
+            if max_frames and idx > max_frames:
+                break
             metrics.frames_seen += 1
+            try:
+                frame = TelemetryFrame.model_validate(json.loads(line))
+            except (json.JSONDecodeError, ValidationError):
+                metrics.frames_invalid += 1
+                continue
+
             metrics.frames_valid += 1
+            if first_ts is None:
+                first_ts = frame.timestamp_ns
+            if previous_tick is not None:
+                metrics.max_tick_gap = max(metrics.max_tick_gap, frame.tick - previous_tick)
+            if previous_ts is not None:
+                if frame.timestamp_ns == previous_ts:
+                    metrics.duplicate_timestamps += 1
+                if frame.timestamp_ns < previous_ts:
+                    metrics.out_of_order_frames += 1
+            previous_tick = frame.tick
+            previous_ts = frame.timestamp_ns
 
-            ts = frame.timestamp_ns
-            if first_ts == 0:
-                first_ts = ts
+            missing = [ch for ch in REQUIRED_CHANNELS if ch not in frame.channels]
+            for channel in missing:
+                if channel not in metrics.missing_required_channels:
+                    metrics.missing_required_channels.append(channel)
 
-            if previous_ts > 0 and ts <= previous_ts:
-                metrics.out_of_order_frames += 1
-
-            previous_ts = ts
-
-    except ValidationError:
-        metrics.frames_seen += 1
-        metrics.frames_invalid += 1
-    except Exception:
-        metrics.frames_invalid += 1
-
-    if metrics.frames_valid > 1:
+    if metrics.frames_valid > 1 and first_ts is not None and previous_ts is not None and previous_ts > first_ts:
         metrics.duration_ns = previous_ts - first_ts
         metrics.average_hz = round((metrics.frames_valid - 1) * 1_000_000_000 / metrics.duration_ns, 2)
     return metrics
-
-
-def replay_artifact(req: ReplayRequest) -> ReplayResponse:
-    metrics = build_replay_metrics(Path(req.artifact_path))
-    return ReplayResponse(
-        replay_id=str(uuid.uuid4()),
-        status="complete",
-        metrics=metrics,
-        tasks=build_validation_tasks(metrics, req.sampling_hz)
-    )
 
 
 def build_validation_tasks(metrics: ReplayMetrics, target_hz: int, validation: JSONLValidationResult | None = None) -> List[ReplayTask]:
@@ -78,28 +83,61 @@ def build_validation_tasks(metrics: ReplayMetrics, target_hz: int, validation: J
         "pass" if metrics.frames_invalid == 0 and (validation is None or validation.invalid_lines == 0) else "fail",
         f"{metrics.frames_valid} valid frames, {metrics.frames_invalid} invalid frames",
     )
+    add(
+        "tick_ordering",
+        "pass" if metrics.max_tick_gap <= 1 and (validation is None or validation.monotonic_tick) else "warn",
+        f"Maximum tick gap was {metrics.max_tick_gap}",
+    )
+    if metrics.average_hz == 0:
+        hz_status: Literal["pass", "fail", "warn"] = "fail"
+    elif abs(metrics.average_hz - target_hz) <= 5:
+        hz_status = "pass"
+    else:
+        hz_status = "warn"
+    add(
+        "sampling_rate",
+        hz_status,
+        f"Observed {metrics.average_hz}Hz against target {target_hz}Hz",
+    )
+    add(
+        "timestamp_uniqueness",
+        "pass" if metrics.duplicate_timestamps == 0 else "warn",
+        f"{metrics.duplicate_timestamps} duplicate timestamps observed",
+    )
+    add(
+        "required_channels",
+        "pass" if not metrics.missing_required_channels else "fail",
+        "Missing channels: " + ", ".join(metrics.missing_required_channels) if metrics.missing_required_channels else "All required channels present",
+    )
 
-    if metrics.duration_ns > 0:
-        add(
-            "sample_rate_check",
-            "pass" if metrics.average_hz >= target_hz * 0.9 else "warn",
-            f"Average sample rate: {metrics.average_hz} Hz (Target: {target_hz} Hz)",
-        )
+    # Integration tests expect 'timestamp_monotonicity' task
+    is_monotonic = True
+    if validation is not None:
+        is_monotonic = validation.monotonic_timestamp_ns
+    elif metrics.out_of_order_frames > 0:
+        is_monotonic = False
 
     add(
         "timestamp_monotonicity",
-        "pass" if metrics.out_of_order_frames == 0 else "fail",
-        f"{metrics.out_of_order_frames} frames out of order",
+        "pass" if is_monotonic else "fail",
+        "timestamps monotonic" if is_monotonic else f"{metrics.out_of_order_frames} frames out of order",
     )
-
     return tasks
 
 
-def probe_direct_stream(req: ReplayRequest) -> DirectStreamProbeResult:
-    # Simplified mock implementation
-    return DirectStreamProbeResult(
-        session_id=Path(req.artifact_path).name,
-        is_active=True,
-        bitrate_kbps=1500.0,
-        frame_rate_hz=60.0
+def replay_artifact(request: ReplayRequest) -> ReplayResponse:
+    path = Path(request.artifact_path)
+    metrics = build_replay_metrics(path, max_frames=request.max_frames)
+    validation = validate_jsonl_artifact(path) if request.source == 'jsonl' else None
+    tasks = build_validation_tasks(metrics, request.sampling_hz, validation=validation)
+    return ReplayResponse(
+        replay_id=str(uuid.uuid4()),
+        status="complete",
+        metrics=metrics,
+        tasks=tasks,
     )
+
+
+def direct_stream_probe(metrics: ReplayMetrics, target_hz: int, notes: list[str] | None = None) -> DirectStreamProbeResult:
+    tasks = build_validation_tasks(metrics, target_hz)
+    return DirectStreamProbeResult(status="complete", metrics=metrics, tasks=tasks, notes=notes or [])
