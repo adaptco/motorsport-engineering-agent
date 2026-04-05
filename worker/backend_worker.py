@@ -2,11 +2,52 @@ import hashlib
 import json as jsonlib
 import logging
 import os
+import shutil
 import subprocess
-import tempfile
 import time
-import logging
+import urllib.error
+import urllib.request
+import uuid
 from pathlib import Path
+
+try:
+    import requests
+except ModuleNotFoundError:
+    class _FallbackResponse:
+        def __init__(self, status_code: int, payload: dict):
+            self.status_code = status_code
+            self._payload = payload
+
+        def raise_for_status(self) -> None:
+            if self.status_code >= 400:
+                raise RuntimeError(f"HTTP {self.status_code}: {self._payload}")
+
+        def json(self) -> dict:
+            return self._payload
+
+    class _FallbackRequests:
+        @staticmethod
+        def post(url: str, headers: dict | None = None, json: dict | None = None, timeout: int = 30) -> _FallbackResponse:
+            body = None if json is None else str.encode(jsonlib.dumps(json), "utf-8")
+            req = urllib.request.Request(
+                url,
+                data=body,
+                headers=headers or {},
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                    payload_bytes = resp.read()
+                    payload = jsonlib.loads(payload_bytes.decode("utf-8")) if payload_bytes else {}
+                    status_code = getattr(resp, "status", resp.getcode())
+                    return _FallbackResponse(status_code, payload)
+            except urllib.error.HTTPError as http_error:
+                payload = {}
+                if http_error.fp:
+                    payload = jsonlib.loads(http_error.fp.read().decode("utf-8"))
+                return _FallbackResponse(http_error.code, payload)
+
+    requests = _FallbackRequests()
 import requests
 
 from control_plane.queue import dequeue
@@ -124,8 +165,10 @@ def process_fix_ci_job(job: dict) -> None:
         set_job_phase(job_id, "running", "token_issued")
 
         # Step 4: Clone repository
-        with tempfile.TemporaryDirectory() as tmpdir_str:
-            tmpdir = Path(tmpdir_str)
+        WORKDIR_ROOT.mkdir(parents=True, exist_ok=True)
+        tmpdir = WORKDIR_ROOT / f"{job_id}-{uuid.uuid4().hex[:8]}"
+        tmpdir.mkdir(parents=True, exist_ok=False)
+        try:
             clone_url = f"https://x-access-token:{installation_token}@github.com/{repo_slug}.git"
             run(["git", "clone", "--depth", "1", "--branch", base_branch, clone_url, "."], cwd=tmpdir)
             add_span(job_id, trace_id, "clone_repo", "ok", {"branch": base_branch})
@@ -148,6 +191,15 @@ def process_fix_ci_job(job: dict) -> None:
             except subprocess.CalledProcessError:
                 tests_ok = False
             add_span(job_id, trace_id, "test_suite", "ok" if tests_ok else "warning", {"tests_ok": tests_ok})
+            if not tests_ok:
+                set_job_phase(
+                    job_id,
+                    "failed",
+                    "validation_failed",
+                    {"tests_ok": False},
+                    error_message="Validation failed: test suite failed",
+                )
+                return
             set_job_phase(job_id, "running", "validated", {"tests_ok": tests_ok})
 
             run(["git", "config", "user.name", "mea-ci-bot[app]"], cwd=tmpdir)
