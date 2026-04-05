@@ -171,8 +171,9 @@ def process_fix_ci_job(job: dict) -> None:
         tmpdir = WORKER_TEMP_ROOT / f"job-{job_id}-{uuid.uuid4().hex[:8]}"
         tmpdir.mkdir(parents=True, exist_ok=False)
         try:
+            # Defense-in-depth: use -- separator to prevent option injection
             clone_url = f"https://x-access-token:{installation_token}@github.com/{repo_slug}.git"
-            run(["git", "clone", "--depth", "1", "--branch", base_branch, clone_url, "."], cwd=tmpdir)
+            run(["git", "clone", "--depth", "1", "--branch", base_branch, "--", clone_url, "."], cwd=tmpdir)
             add_span(job_id, trace_id, "clone_repo", "ok", {"branch": base_branch})
             set_job_phase(job_id, "running", "cloned")
 
