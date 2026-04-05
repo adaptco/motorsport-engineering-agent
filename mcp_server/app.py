@@ -60,3 +60,4 @@ def a2a_invoke(req: A2AInvokeRequest, authorization: str | None = Header(default
         configured=configured,
         message="Provider bridge scaffold only. Inject the required API key and provider-specific transport to activate real calls.",
     )
+# Force CI refresh

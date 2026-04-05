@@ -233,3 +233,4 @@ class A2AInvokeResponse(BaseModel):
     required_env: str
     configured: bool
     message: str
+# Force CI refresh
