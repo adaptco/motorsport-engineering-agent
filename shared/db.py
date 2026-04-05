@@ -81,20 +81,10 @@ def get_conn() -> Iterator[Any]:
     pool = get_pool()
     if pool is not None:
         with pool.connection() as conn:
-            try:
+            with conn:
                 yield conn
-                conn.commit()
-            except Exception:
-                conn.rollback()
-                raise
         return
 
-    conn = psycopg.connect(DATABASE_URL, connect_timeout=DB_CONNECT_TIMEOUT_SECONDS)
-    try:
-        yield conn
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+    with psycopg.connect(DATABASE_URL, connect_timeout=DB_CONNECT_TIMEOUT_SECONDS) as conn:
+        with conn:
+            yield conn

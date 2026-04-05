@@ -12,7 +12,7 @@ from control_plane.routes.replay import router as replay_router
 from control_plane.routes.session import router as session_router
 from control_plane.routes.verifier import router as verifier_router
 from control_plane.webhooks import get_webhook_secret, router as github_router
-from shared.db import pool_health
+from shared.db import close_pool, pool_health
 from shared.forensic_ledger import init_ledger
 from shared.models import FixCIRequest
 from shared.runtime_paths import default_session_ledger_path
@@ -57,6 +57,11 @@ def perform_startup_validation() -> None:
     )
     ledger_db_path = os.environ.get("SESSION_LEDGER_DB_PATH", str(default_session_ledger_path()))
     app.state.session_ledger_db_path = validate_session_ledger_startup_config(ledger_db_path=ledger_db_path)
+
+
+@app.on_event("shutdown")
+def shutdown_event() -> None:
+    close_pool()
 
 
 @app.get("/healthz")
