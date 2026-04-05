@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional
 
@@ -11,6 +12,17 @@ class FixCIRequest(BaseModel):
     branch: str
     patch: str
     run_id: Optional[str] = None
+
+    @field_validator("repo", "branch", "run_id")
+    @classmethod
+    def validate_safe_strings(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        if v.startswith("-"):
+            raise ValueError("String must not start with a hyphen to prevent option injection")
+        if not re.match(r"^[a-zA-Z0-9._/-]+$", v):
+            raise ValueError(f"String contains invalid characters: {v}")
+        return v
 
 
 class JobStatusResponse(BaseModel):
@@ -221,3 +233,32 @@ class A2AInvokeResponse(BaseModel):
     required_env: str
     configured: bool
     message: str
+
+
+class IngestSourceStatus(BaseModel):
+    vendor: str
+    native_extensions: List[str] = Field(default_factory=list)
+    parser_module: Optional[str] = None
+    available: bool = False
+    notes: Optional[str] = None
+
+
+class IngestNormalizeRequest(BaseModel):
+    input_path: str
+    output_dir: str
+    vendor_hint: Optional[Literal["motec", "iracing", "aim", "vbox", "pi", "haltech", "aem", "csv_export"]] = None
+    session_id: Optional[str] = None
+
+
+class IngestNormalizeResponse(BaseModel):
+    status: Literal["complete"]
+    vendor: str
+    input_path: str
+    output_dir: str
+    normalized_csv: str
+    channel_manifest_csv: str
+    session_manifest_json: str
+    row_count: int = 0
+    column_count: int = 0
+    canonical_columns: List[str] = Field(default_factory=list)
+    notes: List[str] = Field(default_factory=list)

@@ -1,8 +1,11 @@
 import os
+
 from fastapi import FastAPI, HTTPException
 
 from control_plane.queue import enqueue
 from control_plane.routes.agent import router as agent_router
+from control_plane.routes.ingest import router as ingest_router
+from control_plane.routes.runtime_logs import router as runtime_logs_router
 from control_plane.repository import create_job, get_job, list_trace
 from control_plane.routes.replay import router as replay_router
 from control_plane.routes.session import router as session_router
@@ -10,6 +13,16 @@ from control_plane.routes.verifier import router as verifier_router
 from control_plane.webhooks import get_webhook_secret, router as github_router
 from shared.models import FixCIRequest
 from shared.version import load_version_info
+
+app = FastAPI(title="MEA Control Plane")
+app.include_router(github_router)
+app.include_router(session_router)
+app.include_router(replay_router)
+app.include_router(verifier_router)
+app.include_router(agent_router)
+app.include_router(ingest_router)
+app.include_router(runtime_logs_router)
+
 
 def _is_truthy(value: str | None) -> bool:
     return (value or "").strip().lower() in {"1", "true", "yes"}
@@ -19,14 +32,6 @@ def validate_webhook_startup_config(*, webhook_secret: str | None, webhook_requi
     if webhook_required and not webhook_secret:
         raise RuntimeError("GITHUB_WEBHOOK_SECRET must be set when GITHUB_WEBHOOK_REQUIRED is true")
     return bool(webhook_secret)
-
-
-app = FastAPI(title="MEA Control Plane")
-app.include_router(github_router)
-app.include_router(session_router)
-app.include_router(replay_router)
-app.include_router(verifier_router)
-app.include_router(agent_router)
 
 
 @app.on_event("startup")

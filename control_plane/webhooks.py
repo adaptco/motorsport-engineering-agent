@@ -1,9 +1,7 @@
 import hashlib
 import hmac
 import os
-
 from fastapi import APIRouter, Header, HTTPException, Request
-
 from control_plane.repository import correlate_workflow_run, store_webhook
 
 router = APIRouter(prefix="/github", tags=["github"])
@@ -26,7 +24,6 @@ def verify_signature(body: bytes, signature: str | None) -> None:
     digest = "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
     if not hmac.compare_digest(digest, signature):
         raise HTTPException(status_code=401, detail="invalid signature")
-
 
 @router.post("/webhook")
 async def github_webhook(

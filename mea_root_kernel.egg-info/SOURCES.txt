@@ -1,3 +1,4 @@
+README.md
 pyproject.toml
 mea_root_kernel.egg-info/PKG-INFO
 mea_root_kernel.egg-info/SOURCES.txt
@@ -6,6 +7,8 @@ mea_root_kernel.egg-info/requires.txt
 mea_root_kernel.egg-info/top_level.txt
 tests/test_agent_decision_api.py
 tests/test_api_v32.py
+tests/test_backend_worker.py
+tests/test_ci_workflow.py
 tests/test_forensic_ledger.py
 tests/test_iracing_stream_adapter.py
 tests/test_job_runner.py
@@ -14,3 +17,6 @@ tests/test_jsonl_validator.py
 tests/test_mcp_server_scaffold.py
 tests/test_model_weights.py
 tests/test_replay_service.py
+tests/test_security_validation.py
+tests/test_version_alignment.py
+tests/test_webhooks.py
