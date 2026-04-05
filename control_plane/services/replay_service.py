@@ -3,20 +3,22 @@ from __future__ import annotations
 import json
 import uuid
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable, List, Literal, TYPE_CHECKING
 
 from pydantic import ValidationError
 
 from shared.jsonl_validator import validate_jsonl_artifact
 from shared.models import (
     DirectStreamProbeResult,
-    JSONLValidationResult,
     ReplayMetrics,
     ReplayRequest,
     ReplayResponse,
     ReplayTask,
     TelemetryFrame,
 )
+
+if TYPE_CHECKING:
+    from shared.models import JSONLValidationResult
 
 REQUIRED_CHANNELS = ("Throttle", "Brake", "Speed")
 
@@ -54,6 +56,8 @@ def build_replay_metrics(path: Path, max_frames: int | None = None) -> ReplayMet
             if previous_ts is not None:
                 if frame.timestamp_ns == previous_ts:
                     metrics.duplicate_timestamps += 1
+                if frame.timestamp_ns < previous_ts:
+                    metrics.out_of_order_frames += 1
             previous_tick = frame.tick
             previous_ts = frame.timestamp_ns
 
@@ -71,7 +75,7 @@ def build_replay_metrics(path: Path, max_frames: int | None = None) -> ReplayMet
 def build_validation_tasks(metrics: ReplayMetrics, target_hz: int, validation: JSONLValidationResult | None = None) -> List[ReplayTask]:
     tasks: List[ReplayTask] = []
 
-    def add(name: str, status: str, detail: str) -> None:
+    def add(name: str, status: Literal["pass", "fail", "warn"], detail: str) -> None:
         tasks.append(ReplayTask(task_id=str(uuid.uuid4()), name=name, status=status, detail=detail))
 
     add(
@@ -85,7 +89,7 @@ def build_validation_tasks(metrics: ReplayMetrics, target_hz: int, validation: J
         f"Maximum tick gap was {metrics.max_tick_gap}",
     )
     if metrics.average_hz == 0:
-        hz_status = "fail"
+        hz_status: Literal["pass", "fail", "warn"] = "fail"
     elif abs(metrics.average_hz - target_hz) <= 5:
         hz_status = "pass"
     else:
@@ -105,12 +109,19 @@ def build_validation_tasks(metrics: ReplayMetrics, target_hz: int, validation: J
         "pass" if not metrics.missing_required_channels else "fail",
         "Missing channels: " + ", ".join(metrics.missing_required_channels) if metrics.missing_required_channels else "All required channels present",
     )
+
+    # Integration tests expect 'timestamp_monotonicity' task
+    is_monotonic = True
     if validation is not None:
-        add(
-            "timestamp_monotonicity",
-            "pass" if validation.monotonic_timestamp_ns else "fail",
-            "timestamps monotonic" if validation.monotonic_timestamp_ns else "; ".join(v for v in validation.violations if 'timestamp' in v),
-        )
+        is_monotonic = validation.monotonic_timestamp_ns
+    elif metrics.out_of_order_frames > 0:
+        is_monotonic = False
+
+    add(
+        "timestamp_monotonicity",
+        "pass" if is_monotonic else "fail",
+        "timestamps monotonic" if is_monotonic else f"{metrics.out_of_order_frames} frames out of order",
+    )
     return tasks
 
 
