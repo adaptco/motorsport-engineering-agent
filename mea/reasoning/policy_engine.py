@@ -4,7 +4,6 @@ import heapq
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import Any, Literal
 
 from shared.models import Recommendation
 

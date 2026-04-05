@@ -9,7 +9,6 @@ Source of truth: repository state at `c3b04ae` plus working-tree updates in this
   - `skills/a2a_handoff/SKILL.md`
   - `contracts/a2a/workflow_state.schema.json`
   - `contracts/a2a/handoff_event.schema.json`
-  - `workers/background_workers.py`
   - `worker/background_workers.py`
   - `tests/test_background_workers_state.py`
 - V3.5 ingestion and runtime review surface:

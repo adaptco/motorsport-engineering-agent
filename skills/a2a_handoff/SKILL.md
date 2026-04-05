@@ -36,7 +36,6 @@ on conversational context.
 - Workflow state schema: `contracts/a2a/workflow_state.schema.json`
 - Handoff event schema: `contracts/a2a/handoff_event.schema.json`
 - Worker persistence runtime: `worker/background_workers.py`
-- Compatibility shim path: `workers/background_workers.py`
 
 ## Environment Contract
 - `A2A_WORKFLOW_STATE_DIR` default `.mea_tmp/workflow_state`
