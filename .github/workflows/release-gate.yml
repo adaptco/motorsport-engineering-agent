@@ -76,7 +76,6 @@ jobs:
 
   required-ci-checks:
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
     steps:
       - name: Wait for required checks to complete successfully
         uses: actions/github-script@v7
