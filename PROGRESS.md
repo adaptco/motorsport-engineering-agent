@@ -1,498 +1,106 @@
-# Progress Tracking - Motorsport Engineering Agent Codebase Review
+# Progress Tracking - Motorsport Engineering Agent
 
-**Document Version:** 1.0  
+**Document Version:** 1.1  
 **Last Updated:** 2026-04-05  
-**Status:** ✅ ALL REVIEW TASKS COMPLETE  
-**Reference:** [PRD.md](./PRD.md) | [Consolidated Findings](./CONSOLIDATED_TASK_FINDINGS.md)
+**Status:** 🟡 AUDIT REFRESH COMPLETE (PRD gap index + Actions pass checklist updated)  
+**Reference:** [PRD.md](./PRD.md)
 
 ---
 
-## Executive Summary
+## 1) Persistent Workflow Memory Context
 
-🚀 **REVIEW EXECUTION - ALL 8 TASKS COMPLETE**
-
-Ralph Loop autonomous execution phase completed successfully. All 8 domain reviews executed in parallel with comprehensive findings documented. Architecture validation (Task-001) confirmed SOUND with YELLOW operational items. Remaining tasks (002-008) identified RED blockers in documentation and database operations, plus YELLOW operational hardening items.
-
-**Production Readiness:** 🟡 **CONDITIONAL** - RED blockers must be remediated before production deployment
-
----
-
-## Task Status Overview
-
-| Task | Domain | Status | Risk | Findings | Completion % |
-|------|--------|--------|------|----------|--------------|
-| **Task-001** | Architecture Validation | 🟢 DONE | GREEN | SOUND architecture, YELLOW ops items | 100% |
-| **Task-002** | Security Audit | 🟢 DONE | GREEN | Secure posture, add rate limiting | 100% |
-| **Task-003** | Test Coverage Assessment | 🟢 DONE | YELLOW | 79% coverage, zero flakiness, conftest.py missing | 100% |
-| **Task-004** | Dependency Management Review | 🟢 DONE | YELLOW | Alignment drift (FastAPI 0.109 vs 0.115, 9 missing deps), lock file missing | 100% |
-| **Task-005** | Documentation Audit | 🟢 DONE | **RED** | **README/Deployment/Runbook MISSING (blocker)** | 100% |
-| **Task-006** | Database & State Management Review | 🟢 DONE | YELLOW | Ledger on /tmp (blocker), no pooling | 100% |
-| **Task-007** | Operational Hardening Assessment | 🟢 DONE | 🟡 YELLOW | Circuit breakers/rate limiting/graceful shutdown MISSING | 100% |
-| **Task-008** | Type Safety Verification | 🟢 DONE | GREEN | ~95%+ coverage, production ready | 100% |
-
-**Legend:**  
-🟢 **DONE** - Task complete, findings documented  
-🟡 **IN PROGRESS** - (none - all tasks complete)  
-⬜ **NOT STARTED** - (none - all tasks complete)
+- Installed skill: `notion-knowledge-capture`
+- Install path: `~/.codex/skills/notion-knowledge-capture`
+- Notes:
+  - No upstream curated skill named `persistent-workflow-memory` was available.
+  - `notion-knowledge-capture` is the closest persistent-memory workflow skill for reusable agent context capture.
 
 ---
 
-## Risk Assessment Summary
+## 2) Repository Review Source
 
-### RED BLOCKERS (Must fix before production)
-1. ❌ **Missing README.md** - Prevents developer onboarding (Task-005)
-2. ❌ **Missing Deployment Guide** - Blocks ops team integration (Task-005)
-3. ❌ **Forensic Ledger on /tmp** - Non-persistent, data loss risk (Task-006)
-4. ❌ **Missing E2E tests** - No end-to-end verification (Task-003)
-
-### YELLOW ITEMS (Operational hardening needed)
-1. ⚠️ **No database connection pooling** - Performance/resource risk (Task-006)
-2. ⚠️ **Dependency misalignment** - requirements.txt vs pyproject.toml drift (Task-004)
-3. ⚠️ **No circuit breakers** - External service resilience gap (Task-007)
-4. ⚠️ **No rate limiting** - Webhook processing vulnerability (Task-007)
-5. ⚠️ **No graceful shutdown** - In-flight job handling unclear (Task-007)
-
-### GREEN (Production ready in these areas)
-1. ✅ **Security posture strong** - Webhook auth, patch validation, input checks (Task-002)
-2. ✅ **Type safety excellent** - ~95%+ coverage, mypy enforced (Task-008)
-3. ✅ **Architecture sound** - Component boundaries, scalability verified (Task-001)
+- Local repo audited: `origin https://github.com/adaptco/motorsport-engineering-agent.git`
+- GitHub app connector lookup for installed repos returned no entry for this repo in this session, so indexing was performed from the local working tree.
 
 ---
 
-## Detailed Task Findings
+## 3) PRD Required Files/Modules Index (Current State)
 
-### Task-001: Architecture Validation ✅ COMPLETE
-**Status:** 🟢 GREEN  
-**Key Finding:** SOUND ARCHITECTURE  
-**DMN Score:** 99/105 (94%)
+### Present
 
-**Findings:**
-- ✅ Clear separation of concerns (Control Plane, Worker, MCP Server)
-- ✅ Scalable job queue architecture
-- ✅ Good dependency management
-- ✅ FastAPI well-structured
-- 🟡 Add operational hardening (circuit breakers, rate limiting)
+- `control_plane/app.py`
+- `worker/backend_worker.py`
+- `worker/github_app_client.py`
+- `mcp_server/app.py`
+- `shared/models.py`
+- `shared/forensic_ledger.py`
+- `docs/supervisor-loop.md`
+- `db/migrations/001_init.sql`
+- `db/migrations/002_session_runtime.sql`
+- `db/migrations/003_evidence_packets.sql`
+- `.github/workflows/ci.yml`
+- `README.md`
 
----
+### Missing (Referenced by PRD / review criteria)
 
-### Task-002: Security Audit ✅ COMPLETE
-**Status:** 🟢 GREEN  
-**Key Findings:**
-- ✅ Webhook HMAC verification: SHA256 + compare_digest (timing-attack safe)
-- ✅ Patch validation: Multi-layer controls (size limits, marker detection, option injection defense)
-- ✅ Secrets management: All env vars, no hardcoding
-- ✅ Authentication: GitHub App JWT + FastAPI Depends
-- ✅ Input validation: Pydantic models throughout
-
-**Recommendations:**
-- Add request rate limiting per webhook delivery_id
-- Expand sensitive marker list (SSH_KEY, PRIVATE_KEY_, API_SECRET)
-- Add pre-commit hook for secret detection
+- `control_plane/config.py`
+- `mea/policy_engine.py`
+- `tests/conftest.py`
+- `CONTRIBUTING.md`
+- `docs/DEPLOYMENT.md`
 
 ---
 
-### Task-003: Test Coverage Assessment ✅ COMPLETE
-**Status:** 🟡 YELLOW (E2E tests missing)  
-**Key Findings:**
-- ✅ 108 test files present
-- ✅ Unit tests: ~85% coverage
-- ✅ Integration tests: ~70% coverage
-- ❌ **E2E tests: 0%** - MISSING BLOCKER
+## 4) Actions Workflow Status (Current)
 
-**E2E Gaps:**
-- No webhook→job→execution→report flow tests
-- No error recovery scenario tests
-- No multi-component interaction testing
+### `.github/workflows/ci.yml`
 
-**Recommendations:**
-- Create E2E test suite (10-15 scenarios) covering full workflow
-- Add stress/load testing
-- Implement error recovery scenario testing
-- Target: 90%+ E2E coverage before production
+- Structurally valid YAML.
+- Matches unit checks in `tests/test_ci_workflow.py`:
+  - `actions/checkout@v6`
+  - `actions/setup-node@v6` with Node `24`
+  - `actions/setup-python@v6` with Python `3.13`
+- Builds Docker images for control plane / mcp server / worker after tests.
 
----
+### `.github/workflows/release-gate.yml`
 
-### Task-003: Test Coverage Assessment ✅ COMPLETE
-**Status:** 🟡 YELLOW (Sound coverage with infrastructure gaps)  
-**DMN Score:** 79% coverage (below 85% target by 6%)  
-**Key Findings:**
-- ✅ **Test Quality: EXCELLENT** - Zero flakiness, 3.92s execution, well-mocked
-- ✅ **Security Testing: STRONG** - Webhook validation (5 tests), command injection (4 tests)
-- ✅ **Core Coverage: HIGH** - Policy engine (88%), webhooks (90%), ledger (92%), job runner (88%)
-- 🟡 **Overall Coverage: 79%** - Below 85% target by 6% (120 uncovered lines)
-- 🟡 **Critical Path: PARTIAL** - Each segment tested separately, no integrated E2E test
-- 🟡 **Infrastructure: MISSING** - conftest.py not present (centralization opportunity)
-
-**Test Inventory:**
-- Total: 41 tests (100%)
-- Unit tests: 3 (policy_concurrency, policy_logical_clock)
-- Integration tests: 14 (webhooks, backend_worker, forensic_ledger)
-- E2E tests: 1 (partial - session replay only)
-- API/Route tests: 19
-- Configuration tests: 6
-
-**Coverage Gaps (Priority Order):**
-1. 🔴 Queue operations (control_plane/queue.py: 40% → 15 uncovered lines)
-2. 🔴 Git operations (worker/backend_worker.py: 62% → 55 uncovered lines)
-3. 🟡 Repository management (control_plane/repository.py: 59% → 36 uncovered)
-4. 🟡 Vendor log formats (adapters: 17-20% coverage, 75 uncovered total)
-5. 🟡 Database connections (shared/db.py: 64% → 5 uncovered)
-
-**CI/CD Assessment:**
-- ✅ Tests run before builds
-- ✅ Python 3.13 matches requirements
-- ✅ Fast execution (< 10s target)
-- 🟡 No coverage reporting in CI/CD
-- 🟡 No performance benchmarking
-
-**Recommendations (Priority):**
-1. Create conftest.py (2-4 hours) - Centralize fixtures
-2. Create critical path E2E test (4-6 hours) - Webhook → job → ledger → PR
-3. Improve coverage to ≥85% (6-8 hours) - Focus on queue & git ops
-4. Add Redis integration tests (4-6 hours) - Queue with mock Redis
-5. Add database integration tests (6-8 hours) - PostgreSQL connection handling
-
-**Full Assessment:** See `TEST_COVERAGE_ASSESSMENT.md` (754 lines, comprehensive analysis)
+- File exists but contains multiple blocking errors that will fail workflow execution:
+  - Invalid action ref: `actions/checkout@3v4`
+  - Invalid Python module in inline script: `tomllab` (should be `tomllib`)
+  - Broken bash/script syntax in changelog extraction and expected header interpolation
+  - Broken JavaScript in `actions/github-script` step (e.g., `return 4byName;`)
 
 ---
 
+## 5) What Must Be Created To Satisfy PRD + Stabilize Test/CI Readiness
 
-**Status:** 🟡 YELLOW (Reproducibility risk)  
-**Key Findings:**
-- ✅ Primary source: pyproject.toml (good practice)
-- ⚠️ **requirements.txt DRIFTED** - Misaligned with pyproject.toml
-- ❌ **No lock file** - No uv.lock, poetry.lock, or requirements.lock
-- ✅ CI tools (ruff, mypy, pytest) versioned in CI config
+### Create now
 
-**Impact:**
-- Reproducible builds at risk
-- Transitive dependencies opaque
-- Developers may install different versions
+1. `tests/conftest.py`  
+   Centralized fixtures + deterministic shared setup for test infrastructure consistency.
 
-**Recommendations:**
-1. Standardize on pyproject.toml (deprecate requirements.txt)
-2. Generate and commit uv.lock for reproducibility
-3. Add lock file update to CI/CD process
-4. Document dependency update procedure
+2. `control_plane/config.py`  
+   Explicit config module expected by PRD architecture/documentation model.
 
----
+3. `mea/policy_engine.py`  
+   Canonical policy engine module path referenced by PRD tasks.
 
-### Task-004: Dependency Management Review ✅ COMPLETE
-**Status:** 🟡 YELLOW  
-**Key Findings:**
-- ✅ Primary source identified: pyproject.toml (correct)
-- ⚠️ **requirements.txt CRITICALLY DRIFTED**:
-  - Missing 9 critical dependencies (psycopg, redis, pydantic, cryptography, etc.)
-  - FastAPI: 0.109.0 (pyproject) vs 0.109.0 (requirements) - OUTDATED
-  - Uvicorn: 0.30.0 (pyproject) vs 0.27.0 (requirements) - 3 versions behind
-  - gunicorn present but not in pyproject
-- ❌ **No lock file** (uv.lock, poetry.lock) - Reproducibility at risk
-- ✅ Security clean - No CVEs in current versions
-- ⚠️ License: LGPL (psycopg) requires documentation
-- ✅ Transitive dependencies: No conflicts detected
-- ✅ Optional dependencies: Properly separated
+4. `docs/DEPLOYMENT.md`  
+   Deployment/run instructions required by PRD documentation acceptance criteria.
 
-**Production Impact:**
-- Application WILL NOT RUN with just requirements.txt
-- Docker builds may fail silently
-- Different environments get different transitive dependencies
+5. `CONTRIBUTING.md`  
+   Contributor workflow and quality gates required by PRD documentation completeness.
 
-**Recommendations (Priority):**
-1. DELETE requirements.txt or mark deprecated
-2. Generate uv.lock for reproducible builds
-3. Update CI: `uv sync` instead of `pip install`
-4. Add pip-audit security scanning to CI
-5. Document LGPL compliance (psycopg)
+### Fix (not create) to get Actions green
 
-**DMN Score:** 67% (16/24) → YELLOW  
-**Full Analysis:** See `TASK-004_DEPENDENCY_MANAGEMENT_FINDINGS.md` (21 sections, 20KB)
+1. Correct `.github/workflows/release-gate.yml` syntax and logic errors listed above.
+2. Ensure release-gate expected changelog/version checks use valid expressions.
+3. Re-run CI + release-gate workflows after patching.
 
 ---
 
-### Task-005: Documentation Audit ✅ COMPLETE
-**Status:** 🟡 **YELLOW** (Critical gaps in production-facing docs)  
-**Key Findings:**
-- ✅ **Architecture Docs: EXCELLENT** (16 comprehensive analysis files)
-- ✅ **Configuration: COMPLETE** (.env.example present with all vars)
-- ✅ **API Docs: PARTIAL** (FastAPI auto-docs enabled, no endpoint docstrings)
-- 🟡 **README: MINIMAL** (27 lines, lacks purpose/architecture/Docker section)
-- ❌ **Deployment Guide: MISSING** - BLOCKER (no docs/DEPLOYMENT.md)
-- ❌ **Contributing Guide: MISSING** - No CONTRIBUTING.md
-- 🟡 **Operational Runbook: PARTIAL** (GitHub PR ops documented, general ops missing)
-- 🟡 **Code Comments: SPARSE** (Few docstrings, minimal inline comments)
+## 6) Current Overall Status
 
-**Production Risk:** CRITICAL - Cannot onboard developers or deploy operationally without deployment guide.
-
-**Gap Summary (Priority):**
-1. 🔴 Missing `docs/DEPLOYMENT.md` - BLOCKER (env vars, DB setup, startup, health checks)
-2. 🔴 Missing endpoint docstrings - BLOCKER (developers can't integrate API)
-3. 🟡 Missing `CONTRIBUTING.md` - Contributor friction
-4. 🟡 Missing general `docs/ops/GENERAL_RUNBOOK.md` - Troubleshooting gaps
-5. 🟡 Minimal README - Project purpose unclear
-6. 🟡 Sparse code comments - Complex logic undocumented
-
-**Onboarding Experience:**
-- New Developer: 🟡 4-6 hours (vs 1-2 hours with docs)
-- Operations Team: 🔴 8-12 hours (vs 1-2 hours with deployment guide)
-
-**DMN Score:** 4/10 (needs remediation)  
-**Full Findings:** See `TASK-005_DOCUMENTATION_AUDIT_FINDINGS.md` (600+ lines, comprehensive analysis)
-
-**Remediation Timeline:**
-- Phase 1 (CRITICAL, 2 days): Create deployment.md, add endpoint docstrings, create API.md
-- Phase 2 (HIGH, 2 days): Create CONTRIBUTING.md, general runbook, expand README
-- Phase 3 (MEDIUM, ongoing): Add module docstrings, inline comments, .env descriptions
-
-**After Remediation → 🟢 GREEN READY** (all 8 acceptance criteria satisfied)
-
----
-
-
-**Status:** 🔴 **RED** (CRITICAL BLOCKERS)  
-**Key Findings:**
-- ❌ **README.md: MISSING** - Blocks onboarding
-- ❌ **Deployment Guide: MISSING** - Blocks ops integration
-- ❌ **Operational Runbook: MISSING** - Operational risk
-- ✅ API Docs: FastAPI auto-docs enabled
-- 🟡 Code Comments: Partial (good in critical paths, sparse elsewhere)
-- ❌ Contributing Guide: Missing
-
-**Production Risk:** CRITICAL - Cannot onboard developers or deploy operationally
-
-**Immediate Action Required (Days 1-3):**
-1. Create root `README.md` (onboarding guide, quick start, links)
-2. Create `docs/DEPLOYMENT.md` (prerequisites, environment, startup, health checks)
-3. Create `docs/RUNBOOK.md` (troubleshooting, monitoring, emergency procedures)
-
----
-
-### Task-006: Database & State Management ✅ COMPLETE
-**Status:** 🟡 **YELLOW** (One RED sub-issue: forensic ledger location)  
-**DMN Score:** 72/100 → Production readiness CONDITIONAL (blocker present)  
-**Completion Date:** 2026-04-05
-
-**Key Findings:**
-- ✅ **Schema:** Well-designed with proper indexes (8 total)
-- ✅ **Migrations:** 3 versioned SQL files, idempotent, reversible
-- ✅ **ACID Compliance:** Transaction patterns sound for PostgreSQL
-- ✅ **Constraints:** Foreign keys (CASCADE), UNIQUE, NOT NULL present
-- ✅ **Security:** Database credentials env vars, no hardcoding
-- ❌ **Connection Pooling:** NOT IMPLEMENTED - Creates new conn per operation
-- 🔴 **Forensic Ledger on /tmp:** NON-PERSISTENT (CRITICAL BLOCKER)
-  - Lost on system reboot
-  - World-readable (security risk)
-  - `/tmp/mea-session-ledger.db` - should be `/var/lib/mea/` or PostgreSQL
-- 🟡 **Backup Procedures:** NOT DOCUMENTED
-- 🟡 **Slow Query Monitoring:** NOT CONFIGURED
-
-**Critical Blocker (RED):**
-Forensic ledger stored at `/tmp/mea-session-ledger.db`:
-- Non-persistent (destroyed on reboot)
-- World-readable permissions
-- Violates audit trail durability requirements
-- Blocks production deployment
-
-**Secondary Issues (YELLOW):**
-1. No connection pooling - Performance/resource optimization needed
-2. No backup/restore procedures documented
-3. No slow query monitoring configured
-4. Missing CHECK constraints for status/phase enums
-
-**Verification Completed:**
-- ✅ All 3 migration files reviewed (001_init.sql, 002_session_runtime.sql, 003_evidence_packets.sql)
-- ✅ Schema evolution tested (CREATE TABLE IF NOT EXISTS pattern verified)
-- ✅ Database configuration reviewed (DATABASE_URL pattern confirmed)
-- ✅ Connection patterns analyzed (9 usage sites, all create new connections)
-- ✅ Forensic ledger implementation audited (SQLite WAL mode, state chains solid)
-- ✅ Transaction handling verified (ACID patterns present)
-
-**Findings Documentation:**
-See `TASK-006_DATABASE_STATE_MANAGEMENT_FINDINGS.md` (18KB comprehensive assessment)
-
-**Remediation Required (6-8 hours to GREEN):**
-1. **Phase 1 (Day 1):** Migrate forensic ledger to PostgreSQL persistent storage
-2. **Phase 2 (Day 2):** Implement connection pooling (psycopg or SQLAlchemy)
-3. **Phase 3 (Day 3):** Document backup/restore procedures, enable slow query logging
-
-**Production Readiness Impact:**
-- Current: 🔴 **CANNOT DEPLOY** (RED blocker present)
-- Post-remediation: 🟢 **GREEN** (all criteria satisfied)
-
----
-
-### Task-007: Operational Hardening Assessment ✅ COMPLETE
-**Status:** 🟡 YELLOW (Multiple gaps)  
-**Key Findings:**
-- ✅ Health checks: Present in control_plane/routes/health.py and mcp_server/
-- ✅ Error handling: Comprehensive try/catch patterns, database context logging
-- ❌ **Circuit Breakers: MISSING** - No protection against cascading failures (pybreaker not installed)
-- ❌ **Rate Limiting: MISSING** - No endpoint throttling (slowapi not installed)
-- ❌ **Graceful Shutdown: MISSING** - No SIGTERM handlers, in-flight job cleanup unclear
-- ✅ **Logging & Observability:** Structured logging present (worker backoff), database traces comprehensive
-- ⚠️ **Timeouts:** Present but inconsistent (GitHub 30s, Redis 5s, DB ∞)
-- ⚠️ **Retry Logic:** Linear backoff for queue polling only, no API retry strategies
-- ⚠️ **Request Correlation:** No X-Request-ID middleware, trace IDs only in DB context
-
-**Operational Gaps (Severity):**
-1. 🔴 **Circuit Breaker Protection:** External services (GitHub API, MCP) can cascade failures
-   - GitHub API calls have no retry, fail immediately on rate limit (429)
-   - MCP tool calls have no availability checks
-   - PostgreSQL has no connection circuit breaker
-   - Impact: One service down → entire queue stalls
-
-2. 🔴 **Rate Limiting:** All endpoints exposed to resource exhaustion
-   - POST /repos/fix-ci - webhook replay attacks possible
-   - POST /tools/call - infinite MCP execution exhaustion
-   - POST /session/evidence - evidence spam, disk fill attacks
-   - POST /verifier/execute - job queue overflow attacks
-
-3. 🔴 **Graceful Shutdown:** Worker cannot clean up on SIGTERM
-   - No signal handlers (SIGTERM/SIGINT)
-   - In-flight jobs abandoned on forced kill
-   - Database connections never closed
-   - Docker stop → forced kill after 10s timeout
-
-4. 🟡 **Health Check Dependencies:** No downstream verification
-   - /healthz returns "ok" even if PostgreSQL/Redis/GitHub API down
-   - Kubernetes readiness probe insufficient
-   - Manual discovery needed for failure diagnosis
-
-5. 🟡 **Error Handling Inconsistency:** Different patterns across services
-   - GitHub API: timeout + raise_for_status (no retry)
-   - Redis: broad Exception catch with fallback
-   - PostgreSQL: propagate uncaught
-   - Result: Unpredictable failure modes
-
-6. 🟡 **Observability Gaps:** Limited request tracing
-   - No X-Request-ID correlation IDs
-   - No Prometheus metrics export
-   - Logging present in job context only, not HTTP request context
-
-**Recommendations (Priority 1 - Required):**
-1. Implement circuit breaker pattern (pybreaker library) for:
-   - GitHub API calls (fail_max=5, reset_timeout=60)
-   - MCP service availability checks
-   - PostgreSQL connection errors
-   - Effort: 4-6 hours
-
-2. Add rate limiting middleware (slowapi library):
-   - POST /repos/fix-ci: 10/minute per IP
-   - POST /tools/call: 30/minute per IP
-   - POST /session/evidence: 5/minute per IP
-   - Effort: 2-3 hours
-
-3. Implement graceful shutdown:
-   - Add SIGTERM handler to worker
-   - 30-second grace period for in-flight jobs
-   - Database connection cleanup
-   - Queue drain on exit
-   - Effort: 3-4 hours
-
-**Recommendations (Priority 2 - High):**
-1. Enhance health checks (/healthz/ready):
-   - Add PostgreSQL SELECT 1 test
-   - Add Redis PING check
-   - Add GitHub API /rate_limit check
-   - Kubernetes readiness improvement
-   - Effort: 2 hours
-
-2. Add request correlation IDs:
-   - Middleware to extract/generate X-Request-ID
-   - Propagate through all service calls
-   - Include in response headers
-   - Link to database traces
-   - Effort: 2-3 hours
-
-3. Implement retry logic with exponential backoff:
-   - GitHub API: 3 retries, 1/2/4s backoff
-   - PostgreSQL: 3 retries, 0.1/0.5/1.0s backoff
-   - Handle 429 rate limits specifically
-   - Effort: 3-4 hours
-
-**Recommendations (Priority 3 - Medium):**
-1. Add database connection timeout (currently ∞):
-   - Set timeout=10 on psycopg.connect()
-   - Effort: 1 hour
-
-2. Implement connection pooling:
-   - Use psycopg pool or SQLAlchemy
-   - Effort: 4-6 hours
-
-3. Export Prometheus metrics:
-   - Request count/latency
-   - Error rates
-   - Queue depth
-   - Service availability
-   - Effort: 3-4 hours
-
-**DMN Score:** 58/100 (Health: 50, CB: 0, RateLimit: 0, Shutdown: 10, Errors: 70, Observability: 40, Timeouts: 60)
-
-**Production Readiness:**
-- Current: 🟡 CONDITIONAL (deployable with operational monitoring, manual failover procedures)
-- Post-Priority1: 🟢 GREEN (production-grade patterns)
-
-**Full Assessment:** See `TASK-007_OPERATIONAL_HARDENING_FINDINGS.md` (900+ lines, comprehensive analysis with code examples)
-
-### Task-008: Type Safety Verification ✅ COMPLETE
-**Status:** 🟢 GREEN (Production ready)  
-**Key Findings:**
-- ✅ mypy: Enabled and configured in pyproject.toml
-- ✅ Type Coverage: ~95%+ (full type hints across codebase)
-- ✅ Pydantic Models: All API inputs/outputs fully typed
-- ✅ Dynamic Code: Minimal (no exec/eval patterns found)
-- ✅ Type Ignores: Rare and justified (< 5 instances)
-- ✅ CI Integration: mypy runs and enforces passes in ci.yml
-
-**Assessment:** Production ready - maintain current rigor
-
----
-
-## Production Readiness Status: CONDITIONAL 🟡
-
-### Current Status: Not Ready (RED blockers present)
-
-**Before Production Deployment, Must Complete:**
-1. ✅ Complete RED blocker remediation (documentation, ledger location, E2E tests)
-2. ✅ Implement YELLOW operational hardening items
-3. ✅ Update PROGRESS.md with remediation completion
-
-### Remediation Timeline
-
-**Phase 1: CRITICAL BLOCKERS (Days 1-2)**
-- [ ] Create root README.md
-- [ ] Create docs/DEPLOYMENT.md
-- [ ] Create docs/RUNBOOK.md
-- [ ] Migrate forensic ledger from /tmp to persistent storage
-
-**Phase 2: QUALITY HARDENING (Days 3-5)**
-- [ ] Add E2E test suite (10-15 scenarios)
-- [ ] Implement database connection pooling
-- [ ] Align pyproject.toml/requirements.txt
-- [ ] Implement circuit breaker patterns
-
-**Phase 3: OPERATIONAL HARDENING (Days 6-7)**
-- [ ] Implement rate limiting middleware
-- [ ] Add graceful shutdown handler
-- [ ] Create monitoring dashboard
-- [ ] Document ops procedures
-
-**Phase 4: FINAL VERIFICATION**
-- [ ] Verify all RED→GREEN conversions
-- [ ] Run full E2E test suite
-- [ ] Performance test with pooling
-- [ ] Production readiness sign-off
-
----
-
-## Next Steps
-
-1. **Generate REVIEW_REPORT.md** - Comprehensive report with all findings, recommendations, and remediation roadmap
-2. **Create remediation tasks** - Track implementation of all RED/YELLOW items
-3. **Schedule review** - Verify all remediation items before production deployment
-
----
-
-**Status:** ✅ ALL REVIEW TASKS COMPLETE  
-**Date:** 2026-04-05 02:44 UTC  
-**Findings:** Consolidated in CONSOLIDATED_TASK_FINDINGS.md  
-**Next Phase:** Remediation and REVIEW_REPORT generation
+- Review artifacts are present, but the progress tracker was previously inconsistent/outdated.
+- PRD still has explicit missing file/module targets (listed above).
+- Main CI workflow appears aligned with tests; release-gate workflow needs immediate correction before reliable Actions pass status can be claimed.

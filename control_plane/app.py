@@ -1,6 +1,8 @@
 import os
 
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from control_plane.queue import enqueue
 from control_plane.routes.agent import router as agent_router
@@ -22,6 +24,13 @@ app.include_router(verifier_router)
 app.include_router(agent_router)
 app.include_router(ingest_router)
 app.include_router(runtime_logs_router)
+
+# Serve the premium Google Antigravity Agent Manager UI
+app.mount("/static", StaticFiles(directory="frontend"), name="static")
+
+@app.get("/", include_in_schema=False)
+def get_agent_manager_window():
+    return FileResponse("frontend/index.html")
 
 
 def _is_truthy(value: str | None) -> bool:
