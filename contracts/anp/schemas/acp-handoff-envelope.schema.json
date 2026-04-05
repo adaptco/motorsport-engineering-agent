@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://axp.local/schemas/acp-handoff-envelope.schema.json",
+  "title": "ACP Handoff Envelope",
+  "description": "Semantic handoff contract submitted through MCP after ANP routing and ACP preflight.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "schema_version",
+    "workflow_id",
+    "run_id",
+    "session_id",
+    "task_id",
+    "checkpoint_id",
+    "from_agent",
+    "to_agent",
+    "intent",
+    "expected_execution_receipt_type",
+    "expected_commit_receipt_type",
+    "predecessor_commit_receipt_hash",
+    "budget_envelope",
+    "context_refs",
+    "authority_binding",
+    "protocol_versions",
+    "compatibility"
+  ],
+  "properties": {
+    "kind": {
+      "const": "ACP.HandoffEnvelope"
+    },
+    "schema_version": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Semver"
+    },
+    "workflow_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/WorkflowId"
+    },
+    "run_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/RunId"
+    },
+    "session_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/SessionId"
+    },
+    "task_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/TaskId"
+    },
+    "checkpoint_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/CheckpointId"
+    },
+    "from_agent": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Actor"
+    },
+    "to_agent": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Actor"
+    },
+    "intent": {
+      "type": "string",
+      "enum": [
+        "task.submit",
+        "task.resume",
+        "task.retry",
+        "task.defer",
+        "task.cancel"
+      ]
+    },
+    "objective": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/NonEmptyString"
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "$ref": "_shared-axp-defs.schema.json#/$defs/NonEmptyString"
+      },
+      "uniqueItems": true
+    },
+    "expected_execution_receipt_type": {
+      "const": "ACP.ExecutionReceipt"
+    },
+    "expected_commit_receipt_type": {
+      "const": "ACP.CommitReceipt"
+    },
+    "predecessor_commit_receipt_hash": {
+      "anyOf": [
+        {
+          "$ref": "_shared-axp-defs.schema.json#/$defs/Sha256"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "budget_envelope": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/BudgetEnvelope"
+    },
+    "context_refs": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/ContextBandRefs"
+    },
+    "field_authority": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "field",
+          "authority_binding"
+        ],
+        "properties": {
+          "field": {
+            "$ref": "_shared-axp-defs.schema.json#/$defs/Identifier"
+          },
+          "authority_binding": {
+            "$ref": "_shared-axp-defs.schema.json#/$defs/AuthorityBinding"
+          }
+        }
+      }
+    },
+    "authority_binding": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/AuthorityBinding"
+    },
+    "protocol_versions": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/ProtocolVersions"
+    },
+    "compatibility": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/CompatibilityWindow"
+    },
+    "tool_pool_ref": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Identifier"
+    },
+    "admission_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Identifier"
+    }
+  }
+}

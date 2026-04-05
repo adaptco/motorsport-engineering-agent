@@ -1,0 +1,135 @@
+{
+  "dictionary_version": "1.0.0",
+  "kind": "AXP.CanonicalTokenDictionary",
+  "root_namespace": "axp://",
+  "closed_surface": true,
+  "families": {
+    "NS": [
+      {"token": "@NS:ANP", "authority": "authoritative", "description": "Agent Network Protocol routing and session plane"},
+      {"token": "@NS:ACP", "authority": "authoritative", "description": "Agent Communication Protocol commit and receipt plane"},
+      {"token": "@NS:A2A", "authority": "authoritative", "description": "Agent ownership and handoff graph plane"},
+      {"token": "@NS:MCP", "authority": "authoritative", "description": "Execution substrate for tools, resources, prompts"},
+      {"token": "@NS:TOK", "authority": "authoritative", "description": "Protocol atom layer"},
+      {"token": "@NS:CTX", "authority": "authoritative", "description": "Prompt admission and context band layer"},
+      {"token": "@NS:WF", "authority": "authoritative", "description": "Workflow cursor and stepwise state layer"},
+      {"token": "@NS:BUD", "authority": "authoritative", "description": "Budget and admission control layer"},
+      {"token": "@NS:RCPT", "authority": "authoritative", "description": "Receipt chain layer"},
+      {"token": "@NS:CAP", "authority": "authoritative", "description": "Capability and tool registry layer"},
+      {"token": "@NS:ERR", "authority": "authoritative", "description": "Typed error namespace"}
+    ],
+    "TYPE": [
+      {"token": "@TYPE:ANP.ROUTE_DECISION", "authority": "authoritative", "description": "Resolved next-agent route"},
+      {"token": "@TYPE:ANP.SESSION_BINDING", "authority": "authoritative", "description": "Bound workflow to session and endpoint"},
+      {"token": "@TYPE:ACP.HANDOFF_ENVELOPE", "authority": "authoritative", "description": "Canonical ACP task handoff"},
+      {"token": "@TYPE:ACP.WORKFLOW_CURSOR", "authority": "authoritative", "description": "Authoritative workflow position"},
+      {"token": "@TYPE:ACP.EXECUTION_RECEIPT", "authority": "authoritative", "description": "Task local completion receipt"},
+      {"token": "@TYPE:ACP.COMMIT_RECEIPT", "authority": "authoritative", "description": "Commit advancement receipt"},
+      {"token": "@TYPE:ACP.BUDGET_LEDGER", "authority": "authoritative", "description": "Input/output/cost budget ledger"},
+      {"token": "@TYPE:CAP.TOOL_DEFINITION", "authority": "authoritative", "description": "Metadata-first tool capability object"},
+      {"token": "@TYPE:CTX.PROMPT_ADMISSION", "authority": "authoritative", "description": "Prompt-time admission object"},
+      {"token": "@TYPE:TOK.PROTOCOL_ATOM", "authority": "authoritative", "description": "Reserved protocol token object"}
+    ],
+    "VERB": [
+      {"token": "@VERB:RESOLVE", "authority": "authoritative", "description": "Resolve a route or target"},
+      {"token": "@VERB:BIND", "authority": "authoritative", "description": "Bind a session or endpoint"},
+      {"token": "@VERB:SUBMIT", "authority": "authoritative", "description": "Submit a handoff or tool call"},
+      {"token": "@VERB:PATCH", "authority": "authoritative", "description": "Apply an authoritative state patch"},
+      {"token": "@VERB:CHECKPOINT", "authority": "authoritative", "description": "Persist a resumable checkpoint"},
+      {"token": "@VERB:EMIT_EXECUTION_RECEIPT", "authority": "authoritative", "description": "Emit local task completion receipt"},
+      {"token": "@VERB:VERIFY_COMMIT_RECEIPT", "authority": "authoritative", "description": "Verify receipt before cursor advance"},
+      {"token": "@VERB:COMMIT", "authority": "authoritative", "description": "Advance workflow cursor after verification"},
+      {"token": "@VERB:RESUME", "authority": "authoritative", "description": "Resume from checkpoint"},
+      {"token": "@VERB:COMPACT", "authority": "authoritative", "description": "Compact transcript commentary"},
+      {"token": "@VERB:VERIFY", "authority": "authoritative", "description": "Run verification stage"},
+      {"token": "@VERB:REJECT", "authority": "authoritative", "description": "Reject an inadmissible action"}
+    ],
+    "KEY": [
+      {"token": "@KEY:workflow_id", "authority": "authoritative", "description": "Workflow identifier"},
+      {"token": "@KEY:run_id", "authority": "authoritative", "description": "Run identifier"},
+      {"token": "@KEY:session_id", "authority": "authoritative", "description": "Session identifier"},
+      {"token": "@KEY:task_id", "authority": "authoritative", "description": "Task or step identifier"},
+      {"token": "@KEY:current_owner", "authority": "authoritative", "description": "Current workflow owner"},
+      {"token": "@KEY:position", "authority": "authoritative", "description": "Current cursor position"},
+      {"token": "@KEY:prev_hash", "authority": "authoritative", "description": "Hash chained to prior receipt/checkpoint"},
+      {"token": "@KEY:input_budget_remaining", "authority": "authoritative", "description": "Remaining input tokens"},
+      {"token": "@KEY:output_budget_remaining", "authority": "authoritative", "description": "Remaining output tokens"},
+      {"token": "@KEY:tool_pool", "authority": "authoritative", "description": "Session-specific admitted tools"},
+      {"token": "@KEY:authority", "authority": "authoritative", "description": "Field authority classification"},
+      {"token": "@KEY:dmn_ref", "authority": "authoritative", "description": "Reference to DMN.md"},
+      {"token": "@KEY:progress_ref", "authority": "authoritative", "description": "Reference to PROGRESS.md"},
+      {"token": "@KEY:chat_history_policy", "authority": "authoritative", "description": "Non-authoritative chat handling"},
+      {"token": "@KEY:hitl_required", "authority": "authoritative", "description": "Human approval requirement"},
+      {"token": "@KEY:risk_level", "authority": "authoritative", "description": "Risk tier for tools or actions"}
+    ],
+    "ENUM": [
+      {"token": "@ENUM:STATUS.PENDING", "authority": "authoritative", "description": "Pending state"},
+      {"token": "@ENUM:STATUS.READY", "authority": "authoritative", "description": "Ready state"},
+      {"token": "@ENUM:STATUS.RUNNING", "authority": "authoritative", "description": "Running state"},
+      {"token": "@ENUM:STATUS.BLOCKED", "authority": "authoritative", "description": "Blocked state"},
+      {"token": "@ENUM:STATUS.DONE", "authority": "authoritative", "description": "Done state"},
+      {"token": "@ENUM:DELIVERY.ASYNC", "authority": "authoritative", "description": "Asynchronous delivery"},
+      {"token": "@ENUM:DELIVERY.SYNC", "authority": "authoritative", "description": "Synchronous delivery"},
+      {"token": "@ENUM:RISK.GREEN", "authority": "authoritative", "description": "Low-risk operation"},
+      {"token": "@ENUM:RISK.YELLOW", "authority": "authoritative", "description": "Bounded mutation or review-required operation"},
+      {"token": "@ENUM:RISK.RED", "authority": "authoritative", "description": "Sensitive or destructive operation"},
+      {"token": "@ENUM:AUTHORITY.AUTHORITATIVE", "authority": "authoritative", "description": "Trusted field"},
+      {"token": "@ENUM:AUTHORITY.DERIVED", "authority": "authoritative", "description": "Derived but non-committing field"},
+      {"token": "@ENUM:AUTHORITY.COMMENTARY", "authority": "authoritative", "description": "Narrative-only field"},
+      {"token": "@ENUM:CONTEXT.HOT", "authority": "authoritative", "description": "Prompt-admitted hot band"},
+      {"token": "@ENUM:CONTEXT.WARM", "authority": "authoritative", "description": "Optional warm band"},
+      {"token": "@ENUM:CONTEXT.COLD", "authority": "authoritative", "description": "Externalized cold band"}
+    ],
+    "ERR": [
+      {"token": "@ERR:BUDGET_EXHAUSTED", "authority": "authoritative", "description": "Turn or workflow budget exhausted"},
+      {"token": "@ERR:CURSOR_INVALID", "authority": "authoritative", "description": "Workflow cursor invalid or stale"},
+      {"token": "@ERR:PROSE_ONLY_PROTOCOL_STATE", "authority": "authoritative", "description": "Protocol-bearing state present only in commentary"},
+      {"token": "@ERR:UNDECLARED_TOOL", "authority": "authoritative", "description": "Tool not present in registry or tool pool"},
+      {"token": "@ERR:RECEIPT_VERIFICATION_FAILED", "authority": "authoritative", "description": "Receipt chain verification failed"},
+      {"token": "@ERR:DESTRUCTIVE_ACTION_BLOCKED", "authority": "authoritative", "description": "Bash or mutation action blocked by policy"}
+    ],
+    "INVARIANT": [
+      {"token": "@INV:NO_PROTOCOL_ACTION_FROM_PROSE", "authority": "authoritative", "description": "Typed object beats prose"},
+      {"token": "@INV:NO_CURSOR_ADVANCE_WITHOUT_VERIFIED_COMMIT_RECEIPT", "authority": "authoritative", "description": "Commit receipt required"},
+      {"token": "@INV:NO_TASK_SELECTION_FROM_TRANSCRIPT_WITH_CURSOR", "authority": "authoritative", "description": "Cursor beats transcript"},
+      {"token": "@INV:NO_PROMPT_ASSEMBLY_WITHOUT_BUDGET_ADMISSION", "authority": "authoritative", "description": "Admission gate required"},
+      {"token": "@INV:NO_UNDECLARED_FIELD_IN_ROUTE_COMMIT_RECEIPT", "authority": "authoritative", "description": "Undeclared fields have no authority"},
+      {"token": "@INV:NO_COLD_CONTEXT_WITHOUT_URI_FETCH", "authority": "authoritative", "description": "Cold context external only"}
+    ]
+  },
+  "field_registry": {
+    "workflow_id": {"family": "WF", "value_type": "ref", "authority_required": true},
+    "run_id": {"family": "WF", "value_type": "ref", "authority_required": true},
+    "session_id": {"family": "ANP", "value_type": "ref", "authority_required": true},
+    "task_id": {"family": "ACP", "value_type": "ref", "authority_required": true},
+    "prev_hash": {"family": "RCPT", "value_type": "hash", "authority_required": true},
+    "input_budget_remaining": {"family": "BUD", "value_type": "num", "authority_required": true},
+    "output_budget_remaining": {"family": "BUD", "value_type": "num", "authority_required": true},
+    "tool_pool": {"family": "CAP", "value_type": "list[ref]", "authority_required": true},
+    "chat_history_policy": {"family": "CTX", "value_type": "enum", "authority_required": true},
+    "dmn_ref": {"family": "WF", "value_type": "ref", "authority_required": true},
+    "progress_ref": {"family": "WF", "value_type": "ref", "authority_required": true}
+  },
+  "admission_defaults": {
+    "hot_fields": [
+      "workflow_id",
+      "task_id",
+      "current_owner",
+      "position",
+      "prev_hash",
+      "input_budget_remaining",
+      "output_budget_remaining"
+    ],
+    "warm_fields": [
+      "next_allowed_steps",
+      "open_blockers",
+      "latest_receipt_summaries",
+      "tool_pool"
+    ],
+    "cold_fields": [
+      "transcript",
+      "full_logs",
+      "full_receipts",
+      "artifacts"
+    ]
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://axp.local/schemas/acp-commit-receipt.schema.json",
+  "title": "ACP Commit Receipt",
+  "description": "Authoritative proof that ACP verified a handoff result and advanced or rejected the workflow cursor.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "workflow_id",
+    "run_id",
+    "session_id",
+    "task_id",
+    "from_agent",
+    "to_agent",
+    "prev_receipt_hash",
+    "receipt_hash",
+    "created_at",
+    "authority_binding",
+    "protocol_versions",
+    "kind",
+    "receipt_type",
+    "status",
+    "execution_receipt_hash",
+    "commit_decision",
+    "cursor_before_hash",
+    "cursor_after_hash",
+    "budget_usage"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Semver"
+    },
+    "workflow_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/WorkflowId"
+    },
+    "run_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/RunId"
+    },
+    "session_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/SessionId"
+    },
+    "task_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/TaskId"
+    },
+    "from_agent": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Actor"
+    },
+    "to_agent": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Actor"
+    },
+    "prev_receipt_hash": {
+      "anyOf": [
+        {
+          "$ref": "_shared-axp-defs.schema.json#/$defs/Sha256"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "receipt_hash": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Sha256"
+    },
+    "created_at": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Timestamp"
+    },
+    "authority_binding": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/AuthorityBinding"
+    },
+    "protocol_versions": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/ProtocolVersions"
+    },
+    "kind": {
+      "const": "ACP.CommitReceipt"
+    },
+    "receipt_type": {
+      "const": "ACP.CommitReceipt"
+    },
+    "status": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/StatusCommit"
+    },
+    "execution_receipt_hash": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Sha256"
+    },
+    "commit_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "advanced_cursor",
+        "admitted_next_tasks",
+        "gate_passed",
+        "reason_codes"
+      ],
+      "properties": {
+        "advanced_cursor": {
+          "type": "boolean"
+        },
+        "admitted_next_tasks": {
+          "type": "array",
+          "items": {
+            "$ref": "_shared-axp-defs.schema.json#/$defs/TaskId"
+          },
+          "uniqueItems": true
+        },
+        "gate_passed": {
+          "type": "boolean"
+        },
+        "reason_codes": {
+          "type": "array",
+          "items": {
+            "$ref": "_shared-axp-defs.schema.json#/$defs/ReasonCode"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "cursor_before_hash": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Sha256"
+    },
+    "cursor_after_hash": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Sha256"
+    },
+    "budget_usage": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/BudgetUsage"
+    },
+    "policy_version": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Semver"
+    }
+  }
+}
