@@ -89,4 +89,3 @@ def test_load_version_info_falls_back_when_manifest_missing_fields(tmp_path: Pat
     assert version_info.kernel_version == "5.1"
     assert version_info.release_channel == "unknown"
     shared_version.load_version_info.cache_clear()
-# Force CI refresh

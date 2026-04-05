@@ -26,4 +26,3 @@ def test_a2a_invoke_returns_scaffold_metadata(monkeypatch):
     body = response.json()
     assert body["status"] == "scaffolded"
     assert body["required_env"] == "OPENAI_API_KEY"
-# Force CI refresh

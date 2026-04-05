@@ -13,15 +13,35 @@ class FixCIRequest(BaseModel):
     patch: str
     run_id: Optional[str] = None
 
-    @field_validator("repo", "branch", "run_id")
+    @field_validator("repo")
     @classmethod
-    def validate_safe_strings(cls, v: str | None) -> str | None:
+    def validate_repo(cls, v: str) -> str:
+        if v.startswith("-"):
+            raise ValueError("Repo must not start with a hyphen")
+        if v.count("/") != 1:
+            raise ValueError("Repo must be in 'owner/repo' format")
+        if not re.match(r"^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$", v):
+            raise ValueError(f"Invalid repo format: {v}")
+        return v
+
+    @field_validator("branch")
+    @classmethod
+    def validate_branch(cls, v: str) -> str:
+        if v.startswith("-"):
+            raise ValueError("Branch must not start with a hyphen")
+        if not re.match(r"^[a-zA-Z0-9._/-]+$", v):
+            raise ValueError(f"Invalid branch characters: {v}")
+        return v
+
+    @field_validator("run_id")
+    @classmethod
+    def validate_run_id(cls, v: str | None) -> str | None:
         if v is None:
             return v
         if v.startswith("-"):
-            raise ValueError("String must not start with a hyphen to prevent option injection")
-        if not re.match(r"^[a-zA-Z0-9._/-]+$", v):
-            raise ValueError(f"String contains invalid characters: {v}")
+            raise ValueError("Run ID must not start with a hyphen")
+        if not re.match(r"^[a-zA-Z0-9._-]+$", v):
+            raise ValueError(f"Invalid run_id characters: {v}")
         return v
 
 
@@ -233,4 +253,3 @@ class A2AInvokeResponse(BaseModel):
     required_env: str
     configured: bool
     message: str
-# Force CI refresh
