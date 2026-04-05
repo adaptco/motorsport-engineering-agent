@@ -83,7 +83,10 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const ref = context.sha;
+            const ref =
+              context.eventName === "pull_request"
+                ? context.payload.pull_request.head.sha
+                : context.sha;
             const required = ["test", "build-images"];
             const pollIntervalMs = 15000;
             const timeoutMs = 20 * 60 * 1000;
