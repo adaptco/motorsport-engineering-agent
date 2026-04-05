@@ -3,7 +3,6 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from control_plane.app import app
-from control_plane.repository import SESSION_LEDGER_DB_PATH
 from shared.forensic_ledger import get_session_head
 
 
