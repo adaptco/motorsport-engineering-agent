@@ -1,0 +1,764 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://axp.local/schemas/axp-core-foundation.bundle.schema.json",
+  "title": "AXP Core Foundational Primitives Bundle",
+  "description": "Closed protocol surface and day-0 harness for agent runtime stability, governance, and budget control.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "schema_version",
+    "meta",
+    "agent_identity",
+    "agent_type_system",
+    "tool_registry",
+    "permission_system",
+    "session_persistence",
+    "workflow_state",
+    "token_budgeting",
+    "streaming_logging_verification",
+    "tool_pool_assembly",
+    "transcript_compaction",
+    "prompt_admission",
+    "core_invariants"
+  ],
+  "properties": {
+    "kind": { "const": "AXP.AgentFoundation" },
+    "schema_version": { "$ref": "#/$defs/Semver" },
+    "meta": { "$ref": "#/$defs/Meta" },
+    "agent_identity": { "$ref": "#/$defs/AgentIdentity" },
+    "agent_type_system": { "$ref": "#/$defs/AgentTypeSystem" },
+    "tool_registry": { "$ref": "#/$defs/ToolRegistry" },
+    "permission_system": { "$ref": "#/$defs/PermissionSystem" },
+    "session_persistence": { "$ref": "#/$defs/SessionPersistence" },
+    "workflow_state": { "$ref": "#/$defs/WorkflowState" },
+    "token_budgeting": { "$ref": "#/$defs/TokenBudgeting" },
+    "streaming_logging_verification": { "$ref": "#/$defs/StreamingLoggingVerification" },
+    "tool_pool_assembly": { "$ref": "#/$defs/ToolPoolAssembly" },
+    "transcript_compaction": { "$ref": "#/$defs/TranscriptCompaction" },
+    "prompt_admission": { "$ref": "#/$defs/PromptAdmission" },
+    "core_invariants": {
+      "type": "array",
+      "minItems": 6,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "NO_PROTOCOL_ACTION_FROM_PROSE_WHEN_TYPED_OBJECT_EXISTS",
+          "NO_CURSOR_ADVANCE_WITHOUT_VERIFIED_COMMIT_RECEIPT",
+          "NO_TASK_SELECTION_FROM_TRANSCRIPT_WHEN_CURSOR_EXISTS",
+          "NO_PROMPT_ASSEMBLY_WITHOUT_BUDGET_ADMISSION",
+          "NO_UNDECLARED_FIELD_MAY_INFLUENCE_ROUTE_COMMIT_OR_RECEIPT",
+          "NO_COLD_BAND_CONTEXT_IN_PROMPT_WITHOUT_EXPLICIT_URI_FETCH",
+          "NO_DESTRUCTIVE_TOOL_EXECUTION_WITHOUT_AUTHZ_AND_POLICY_PASS",
+          "NO_TOOL_DISCOVERY_BY_EXECUTION_WHEN_REGISTRY_METADATA_EXISTS"
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "NonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:/#@-]+$"
+    },
+    "Uri": {
+      "type": "string",
+      "format": "uri"
+    },
+    "Sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "Semver": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "StringArray": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "Meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "description", "owner", "created_at", "updated_at"],
+      "properties": {
+        "name": { "$ref": "#/$defs/NonEmptyString" },
+        "description": { "$ref": "#/$defs/NonEmptyString" },
+        "owner": { "$ref": "#/$defs/NonEmptyString" },
+        "created_at": { "$ref": "#/$defs/Timestamp" },
+        "updated_at": { "$ref": "#/$defs/Timestamp" },
+        "labels": { "$ref": "#/$defs/StringArray" }
+      }
+    },
+    "AgentIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent_id", "instance_id", "display_name", "origin_state", "protocol_profile"],
+      "properties": {
+        "agent_id": { "$ref": "#/$defs/Identifier" },
+        "instance_id": { "$ref": "#/$defs/Identifier" },
+        "display_name": { "$ref": "#/$defs/NonEmptyString" },
+        "origin_state": { "$ref": "#/$defs/OriginState" },
+        "protocol_profile": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["anp_version", "acp_version", "a2a_version", "mcp_version"],
+          "properties": {
+            "anp_version": { "$ref": "#/$defs/Semver" },
+            "acp_version": { "$ref": "#/$defs/Semver" },
+            "a2a_version": { "$ref": "#/$defs/Semver" },
+            "mcp_version": { "$ref": "#/$defs/Semver" }
+          }
+        }
+      }
+    },
+    "OriginState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["core_foundational_primitives", "authority_mode", "default_context_policy"],
+      "properties": {
+        "core_foundational_primitives": { "const": true },
+        "authority_mode": {
+          "type": "string",
+          "enum": ["typed_objects_only", "typed_objects_plus_commentary"]
+        },
+        "default_context_policy": {
+          "type": "string",
+          "enum": ["hot_only", "hot_plus_selected_warm"]
+        }
+      }
+    },
+    "AgentTypeSystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default_role", "allowed_roles", "sub_agent_policy", "behavioral_constraints"],
+      "properties": {
+        "default_role": {
+          "type": "string",
+          "enum": [
+            "orchestrator",
+            "planner",
+            "executor",
+            "verifier",
+            "attestor",
+            "retriever",
+            "safety_guard",
+            "tool_broker",
+            "session_manager"
+          ]
+        },
+        "allowed_roles": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "orchestrator",
+              "planner",
+              "executor",
+              "verifier",
+              "attestor",
+              "retriever",
+              "safety_guard",
+              "tool_broker",
+              "session_manager"
+            ]
+          }
+        },
+        "sub_agent_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["allow_sub_agents", "max_depth", "inherit_constraints"],
+          "properties": {
+            "allow_sub_agents": { "type": "boolean" },
+            "max_depth": { "type": "integer", "minimum": 0, "maximum": 8 },
+            "inherit_constraints": { "type": "boolean" }
+          }
+        },
+        "behavioral_constraints": { "$ref": "#/$defs/StringArray" }
+      }
+    },
+    "ToolRegistry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["registry_version", "discovery_mode", "tools"],
+      "properties": {
+        "registry_version": { "$ref": "#/$defs/Semver" },
+        "discovery_mode": { "const": "metadata_first" },
+        "tools": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/ToolDefinition" }
+        }
+      }
+    },
+    "ToolDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tool_id",
+        "display_name",
+        "description",
+        "kind",
+        "capability_tags",
+        "input_schema_ref",
+        "output_schema_ref",
+        "risk_level",
+        "permissions_required",
+        "streaming_support",
+        "cost_class",
+        "enabled_by_default"
+      ],
+      "properties": {
+        "tool_id": { "$ref": "#/$defs/Identifier" },
+        "display_name": { "$ref": "#/$defs/NonEmptyString" },
+        "description": { "$ref": "#/$defs/NonEmptyString" },
+        "kind": {
+          "type": "string",
+          "enum": ["bash", "http", "mcp_tool", "filesystem", "python", "db", "browser", "custom"]
+        },
+        "capability_tags": { "$ref": "#/$defs/StringArray" },
+        "input_schema_ref": { "$ref": "#/$defs/Identifier" },
+        "output_schema_ref": { "$ref": "#/$defs/Identifier" },
+        "risk_level": { "type": "string", "enum": ["green", "yellow", "red"] },
+        "permissions_required": { "$ref": "#/$defs/StringArray" },
+        "streaming_support": {
+          "type": "string",
+          "enum": ["none", "status", "incremental", "full_duplex"]
+        },
+        "cost_class": { "type": "string", "enum": ["free", "metered", "premium"] },
+        "enabled_by_default": { "type": "boolean" },
+        "hitl_required": { "type": "boolean", "default": false },
+        "destructive": { "type": "boolean", "default": false }
+      }
+    },
+    "PermissionSystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trust_architecture", "permission_tiers", "bash_protection_stack", "default_enforcement"],
+      "properties": {
+        "trust_architecture": {
+          "type": "string",
+          "enum": ["multi_tier", "zero_trust", "hybrid"]
+        },
+        "permission_tiers": {
+          "type": "array",
+          "minItems": 3,
+          "items": { "$ref": "#/$defs/PermissionTier" }
+        },
+        "bash_protection_stack": { "$ref": "#/$defs/BashProtectionStack" },
+        "default_enforcement": {
+          "type": "string",
+          "enum": ["deny_by_default", "prompt_for_red", "allow_green_only"]
+        }
+      }
+    },
+    "PermissionTier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tier", "description", "allowed_risk", "requires_human_approval"],
+      "properties": {
+        "tier": {
+          "type": "string",
+          "enum": ["read_only", "bounded_mutation", "sensitive_write", "destructive_admin"]
+        },
+        "description": { "$ref": "#/$defs/NonEmptyString" },
+        "allowed_risk": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "enum": ["green", "yellow", "red"] },
+          "uniqueItems": true
+        },
+        "requires_human_approval": { "type": "boolean" }
+      }
+    },
+    "BashProtectionStack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "modules",
+        "deny_patterns",
+        "allowlist_mode",
+        "filesystem_scope",
+        "network_policy",
+        "execution_timeout_seconds",
+        "max_command_length"
+      ],
+      "properties": {
+        "enabled": { "const": true },
+        "modules": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "string",
+            "enum": [
+              "command_parser",
+              "risk_classifier",
+              "path_sandbox",
+              "network_guard",
+              "secret_redactor",
+              "timeout_guard",
+              "audit_logger",
+              "approval_gate",
+              "destructive_action_blocker"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "deny_patterns": { "$ref": "#/$defs/StringArray" },
+        "allowlist_mode": { "type": "boolean" },
+        "filesystem_scope": {
+          "type": "string",
+          "enum": ["workspace_only", "workspace_plus_tmp", "sandbox_only"]
+        },
+        "network_policy": { "type": "string", "enum": ["deny_all", "allowlisted_only", "metered_allowlist"] },
+        "execution_timeout_seconds": { "type": "integer", "minimum": 1, "maximum": 900 },
+        "max_command_length": { "type": "integer", "minimum": 1, "maximum": 8192 }
+      }
+    },
+    "SessionPersistence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "persistence_mode",
+        "snapshot_interval_turns",
+        "persisted_objects",
+        "usage_metrics",
+        "crash_recovery",
+        "state_store"
+      ],
+      "properties": {
+        "persistence_mode": { "type": "string", "enum": ["durable", "durable_plus_journal"] },
+        "snapshot_interval_turns": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "persisted_objects": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "string",
+            "enum": [
+              "usage_metrics",
+              "permissions",
+              "session_config",
+              "workflow_cursor",
+              "budget_ledger",
+              "tool_pool",
+              "verification_records",
+              "stream_events",
+              "transcript_compaction_map"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "usage_metrics": { "$ref": "#/$defs/UsageMetrics" },
+        "crash_recovery": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["resume_from_last_checkpoint", "max_replay_events"],
+          "properties": {
+            "resume_from_last_checkpoint": { "type": "boolean" },
+            "max_replay_events": { "type": "integer", "minimum": 0, "maximum": 5000 }
+          }
+        },
+        "state_store": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["backend", "session_key_pattern"],
+          "properties": {
+            "backend": { "type": "string", "enum": ["sqlite", "postgres", "kv", "object_store"] },
+            "session_key_pattern": { "$ref": "#/$defs/NonEmptyString" }
+          }
+        }
+      }
+    },
+    "UsageMetrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["track_tokens", "track_cost", "track_tool_calls", "track_verification_outcomes"],
+      "properties": {
+        "track_tokens": { "type": "boolean" },
+        "track_cost": { "type": "boolean" },
+        "track_tool_calls": { "type": "boolean" },
+        "track_verification_outcomes": { "type": "boolean" }
+      }
+    },
+    "WorkflowState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow_id",
+        "state_mode",
+        "dmn_ref",
+        "progress_ref",
+        "chat_history_policy",
+        "cursor",
+        "steps"
+      ],
+      "properties": {
+        "workflow_id": { "$ref": "#/$defs/Identifier" },
+        "state_mode": { "const": "stepwise" },
+        "dmn_ref": {
+          "type": "string",
+          "pattern": "(^|.*/)DMN\\.md$"
+        },
+        "progress_ref": {
+          "type": "string",
+          "pattern": "(^|.*/)PROGRESS\\.md$"
+        },
+        "chat_history_policy": {
+          "type": "string",
+          "enum": ["non_authoritative", "commentary_only", "compacted_commentary"]
+        },
+        "cursor": { "$ref": "#/$defs/WorkflowCursor" },
+        "steps": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/WorkflowStep" },
+          "minItems": 1
+        }
+      }
+    },
+    "WorkflowCursor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_step_id",
+        "current_owner",
+        "position",
+        "last_verified_execution_receipt_hash",
+        "last_verified_commit_receipt_hash",
+        "next_allowed_steps"
+      ],
+      "properties": {
+        "current_step_id": { "$ref": "#/$defs/Identifier" },
+        "current_owner": { "$ref": "#/$defs/Identifier" },
+        "position": {
+          "type": "string",
+          "enum": [
+            "planned",
+            "ready",
+            "running",
+            "awaiting_execution_receipt",
+            "awaiting_commit_receipt",
+            "blocked",
+            "completed",
+            "failed"
+          ]
+        },
+        "last_verified_execution_receipt_hash": {
+          "anyOf": [
+            { "$ref": "#/$defs/Sha256" },
+            { "type": "null" }
+          ]
+        },
+        "last_verified_commit_receipt_hash": {
+          "anyOf": [
+            { "$ref": "#/$defs/Sha256" },
+            { "type": "null" }
+          ]
+        },
+        "next_allowed_steps": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Identifier" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "WorkflowStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step_id", "title", "owner_role", "status", "authoritative_source"],
+      "properties": {
+        "step_id": { "$ref": "#/$defs/Identifier" },
+        "title": { "$ref": "#/$defs/NonEmptyString" },
+        "owner_role": { "$ref": "#/$defs/NonEmptyString" },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "ready", "running", "blocked", "done", "failed"]
+        },
+        "authoritative_source": { "type": "string", "enum": ["dmn", "progress", "receipt_chain"] },
+        "depends_on": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Identifier" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "TokenBudgeting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hard_limits",
+        "pre_turn_checks",
+        "runaway_loop_protection",
+        "cost_budget",
+        "tool_reserve_tokens",
+        "response_reserve_tokens"
+      ],
+      "properties": {
+        "hard_limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["max_input_tokens", "max_output_tokens", "max_total_tokens_per_turn", "max_turns_per_workflow"],
+          "properties": {
+            "max_input_tokens": { "type": "integer", "minimum": 1 },
+            "max_output_tokens": { "type": "integer", "minimum": 1 },
+            "max_total_tokens_per_turn": { "type": "integer", "minimum": 1 },
+            "max_turns_per_workflow": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "pre_turn_checks": {
+          "type": "array",
+          "minItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "budget_available",
+              "cursor_valid",
+              "required_hot_context_present",
+              "tool_pool_bound",
+              "authority_fields_present",
+              "verification_required_if_mutating"
+            ]
+          }
+        },
+        "runaway_loop_protection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled", "max_repeated_step_attempts", "max_same_tool_calls_per_turn"],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "max_repeated_step_attempts": { "type": "integer", "minimum": 1, "maximum": 20 },
+            "max_same_tool_calls_per_turn": { "type": "integer", "minimum": 1, "maximum": 50 }
+          }
+        },
+        "cost_budget": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["currency", "max_cost_per_turn", "max_cost_per_workflow"],
+          "properties": {
+            "currency": { "type": "string", "enum": ["usd", "usdc", "credits"] },
+            "max_cost_per_turn": { "type": "number", "minimum": 0 },
+            "max_cost_per_workflow": { "type": "number", "minimum": 0 }
+          }
+        },
+        "tool_reserve_tokens": { "type": "integer", "minimum": 0 },
+        "response_reserve_tokens": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "StreamingLoggingVerification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["streaming", "logging", "verification"],
+      "properties": {
+        "streaming": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["event_schema_ref", "typed_events_only"],
+          "properties": {
+            "event_schema_ref": { "$ref": "#/$defs/Identifier" },
+            "typed_events_only": { "const": true }
+          }
+        },
+        "logging": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["structured", "levels", "include_trace_ids"],
+          "properties": {
+            "structured": { "const": true },
+            "levels": {
+              "type": "array",
+              "items": { "type": "string", "enum": ["debug", "info", "warn", "error", "audit"] },
+              "uniqueItems": true,
+              "minItems": 3
+            },
+            "include_trace_ids": { "type": "boolean" }
+          }
+        },
+        "verification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "checks"],
+          "properties": {
+            "mode": { "const": "dual_level" },
+            "checks": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "type": "string",
+                "enum": ["harness_safe", "task_succeeded", "receipt_chain_valid", "post_conditions_met"]
+              },
+              "uniqueItems": true
+            }
+          }
+        }
+      }
+    },
+    "ToolPoolAssembly": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "selection_inputs", "fallback_pool"],
+      "properties": {
+        "mode": { "const": "dynamic_session_subset" },
+        "selection_inputs": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "string",
+            "enum": ["agent_role", "workflow_step", "budget", "risk_level", "permissions", "verification_mode"]
+          },
+          "uniqueItems": true
+        },
+        "fallback_pool": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Identifier" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "TranscriptCompaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "trigger_threshold_tokens", "preserve", "summary_authority"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "trigger_threshold_tokens": { "type": "integer", "minimum": 1 },
+        "preserve": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "string",
+            "enum": [
+              "workflow_cursor",
+              "latest_receipt_summaries",
+              "budget_ledger",
+              "tool_pool",
+              "verification_records",
+              "open_blockers",
+              "user_constraints"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "summary_authority": {
+          "type": "string",
+          "enum": ["commentary_only", "non_authoritative_warm_context"]
+        }
+      }
+    },
+    "PromptAdmission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["context_bands", "required_hot_fields", "rejection_rules"],
+      "properties": {
+        "context_bands": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["hot", "warm", "cold"],
+          "properties": {
+            "hot": { "$ref": "#/$defs/ContextBand" },
+            "warm": { "$ref": "#/$defs/ContextBand" },
+            "cold": { "$ref": "#/$defs/ContextBand" }
+          }
+        },
+        "required_hot_fields": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "string",
+            "enum": [
+              "workflow_id",
+              "current_step_id",
+              "current_owner",
+              "position",
+              "last_verified_commit_receipt_hash",
+              "next_allowed_steps",
+              "input_budget_remaining",
+              "output_budget_remaining"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "rejection_rules": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "string",
+            "enum": [
+              "reject_if_authoritative_field_missing",
+              "reject_if_budget_insufficient",
+              "reject_if_protocol_state_is_prose_only",
+              "reject_if_cold_context_attached_without_uri",
+              "reject_if_undeclared_tool_requested"
+            ]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "ContextBand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority", "allowed_content"],
+      "properties": {
+        "authority": {
+          "type": "string",
+          "enum": ["authoritative", "derived", "commentary", "external_only"]
+        },
+        "allowed_content": { "$ref": "#/$defs/StringArray" }
+      }
+    },
+    "StreamEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_id", "event_type", "timestamp", "run_id", "level", "payload"],
+      "properties": {
+        "event_id": { "$ref": "#/$defs/Identifier" },
+        "event_type": {
+          "type": "string",
+          "enum": [
+            "session.started",
+            "workflow.step.started",
+            "workflow.step.completed",
+            "tool.call.started",
+            "tool.call.completed",
+            "verification.started",
+            "verification.completed",
+            "budget.blocked",
+            "receipt.emitted",
+            "receipt.verified",
+            "error.raised"
+          ]
+        },
+        "timestamp": { "$ref": "#/$defs/Timestamp" },
+        "run_id": { "$ref": "#/$defs/Identifier" },
+        "level": { "type": "string", "enum": ["info", "warn", "error", "audit"] },
+        "payload": { "type": "object" }
+      }
+    },
+    "ProtocolAtom": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family", "token", "authority", "description"],
+      "properties": {
+        "family": {
+          "type": "string",
+          "enum": ["NS", "TYPE", "VERB", "KEY", "ENUM", "ERR", "INVARIANT"]
+        },
+        "token": { "type": "string", "pattern": "^@[A-Z]+:[A-Z0-9._-]+$" },
+        "authority": { "type": "string", "enum": ["authoritative", "derived", "commentary_forbidden"] },
+        "description": { "$ref": "#/$defs/NonEmptyString" }
+      }
+    }
+  }
+}

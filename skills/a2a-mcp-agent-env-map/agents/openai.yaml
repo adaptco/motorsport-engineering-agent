@@ -1,0 +1,8 @@
+version: 1
+interface:
+  display_name: MEA A2A MCP Env Map
+  short_description: Maps MEA env/runtime contracts with fail-closed gates.
+  default_prompt: >-
+    Audit and map environment variables and runtime contracts across MEA
+    services, identify doc/code drift, and return fail-closed gate verdicts
+    with file-backed evidence.

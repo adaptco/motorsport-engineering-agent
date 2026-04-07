@@ -14,7 +14,6 @@
   - `skills/a2a_handoff/SKILL.md`
   - `contracts/a2a/workflow_state.schema.json`
   - `contracts/a2a/handoff_event.schema.json`
-  - `workers/background_workers.py`
   - `worker/background_workers.py`
 - Ignore policy covers persisted state artifacts only:
   - `.gitignore` includes `.mea_tmp/workflow_state/` and `runtime_logs/workflow_state/`.

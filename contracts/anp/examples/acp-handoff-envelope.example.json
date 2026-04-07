@@ -1,0 +1,106 @@
+{
+  "kind": "ACP.HandoffEnvelope",
+  "schema_version": "1.0.0",
+  "workflow_id": "wf_demo",
+  "run_id": "run_demo",
+  "session_id": "sess_demo",
+  "task_id": "T005",
+  "checkpoint_id": "ckpt_demo",
+  "from_agent": {
+    "agent_id": "adaptco/agent-q",
+    "instance_id": "agent-q-01",
+    "role": "orchestrator"
+  },
+  "to_agent": {
+    "agent_id": "adaptco/k8s-agent",
+    "instance_id": "k8s-01",
+    "role": "executor"
+  },
+  "intent": "task.submit",
+  "objective": "Apply manifests and verify rollout",
+  "constraints": [
+    "no raw transcript replay",
+    "receipt required"
+  ],
+  "expected_execution_receipt_type": "ACP.ExecutionReceipt",
+  "expected_commit_receipt_type": "ACP.CommitReceipt",
+  "predecessor_commit_receipt_hash": null,
+  "budget_envelope": {
+    "input_remaining": 12000,
+    "output_remaining": 3000,
+    "tool_reserve": 2000,
+    "cost_remaining_usdc": "0.006000",
+    "preflight_required": true
+  },
+  "context_refs": {
+    "hot": [
+      "ctx_hot_T005"
+    ],
+    "warm": [
+      "ctx_warm_recent"
+    ],
+    "cold": [
+      "receipt://latest/wf_demo"
+    ]
+  },
+  "field_authority": [
+    {
+      "field": "task_id",
+      "authority_binding": {
+        "authority": "authoritative",
+        "source_type": "ANP.RouteDecision",
+        "source_ref": "route_T005_01"
+      }
+    },
+    {
+      "field": "workflow_id",
+      "authority_binding": {
+        "authority": "authoritative",
+        "source_type": "ACP.WorkflowCursor",
+        "source_ref": "cursor_demo"
+      }
+    },
+    {
+      "field": "budget_envelope",
+      "authority_binding": {
+        "authority": "authoritative",
+        "source_type": "ACP.WorkflowCursor",
+        "source_ref": "cursor_demo"
+      }
+    },
+    {
+      "field": "objective",
+      "authority_binding": {
+        "authority": "derived",
+        "source_type": "DerivedComputation",
+        "source_ref": "objective_projection_01"
+      }
+    },
+    {
+      "field": "constraints",
+      "authority_binding": {
+        "authority": "authoritative",
+        "source_type": "A2A.HandoffRule",
+        "source_ref": "handoff_T005"
+      }
+    }
+  ],
+  "authority_binding": {
+    "authority": "authoritative",
+    "source_type": "ANP.RouteDecision",
+    "source_ref": "route_T005_01"
+  },
+  "protocol_versions": {
+    "anp": "1.0.0",
+    "acp": "1.0.0",
+    "a2a": "1.0.0",
+    "mcp": "0.6.0"
+  },
+  "compatibility": {
+    "min_supported": "1.0.0",
+    "current": "1.0.0",
+    "max_emittable": "1.0.0"
+  },
+  "tool_pool_ref": "tool_pool_k8s_T005",
+  "admission_id": "adm_demo"
+}

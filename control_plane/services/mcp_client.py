@@ -5,7 +5,7 @@ from typing import Any
 
 import requests
 
-from shared.circuit_breaker import CircuitBreaker
+from shared.circuit_breaker import CircuitBreaker, CircuitBreakerOpenError
 
 MCP_SERVER_BASE_URL = os.environ.get("MCP_SERVER_BASE_URL", "http://localhost:7000").rstrip("/")
 MCP_SHARED_BEARER_TOKEN = os.environ.get("MCP_SHARED_BEARER_TOKEN", "").strip()
@@ -34,6 +34,8 @@ def call_mcp_tool(name: str, arguments: dict[str, Any] | None = None) -> dict[st
     for _ in range(attempts):
         try:
             return MCP_API_BREAKER.call(_request)
+        except CircuitBreakerOpenError:
+            raise
         except Exception as exc:
             last_exc = exc
     raise RuntimeError(f"mcp_call_failed_after_{attempts}_attempts:{name}:{last_exc}")

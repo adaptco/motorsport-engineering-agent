@@ -1,0 +1,45 @@
+{
+  "kind": "ACP.WorkflowCursor",
+  "schema_version": "1.0.0",
+  "workflow_id": "wf_demo",
+  "run_id": "run_demo",
+  "session_id": "sess_demo",
+  "cursor_id": "cursor_demo",
+  "position": "awaiting_handoff",
+  "current_task_id": "T005",
+  "current_owner": {
+    "agent_id": "adaptco/agent-q",
+    "instance_id": "agent-q-01",
+    "role": "orchestrator"
+  },
+  "last_execution_receipt_hash": null,
+  "last_commit_receipt_hash": null,
+  "next_allowed_tasks": [
+    "T005"
+  ],
+  "blocked_tasks": [],
+  "checkpoint_id": "ckpt_demo",
+  "checkpoint_at": "2026-04-05T05:09:00Z",
+  "budget_snapshot": {
+    "input_remaining": 12000,
+    "output_remaining": 3000,
+    "tool_reserve": 2000,
+    "cost_remaining_usdc": "0.006000",
+    "preflight_required": true
+  },
+  "authority_binding": {
+    "authority": "authoritative",
+    "source_type": "ACP.CommitReceipt",
+    "source_ref": "bootstrap_commit"
+  },
+  "protocol_versions": {
+    "anp": "1.0.0",
+    "acp": "1.0.0",
+    "a2a": "1.0.0",
+    "mcp": "0.6.0"
+  },
+  "resume_policy": {
+    "resume_from_commit_receipt_only": true,
+    "max_resume_depth": 128
+  }
+}

@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from control_plane.queue import enqueue
 from control_plane.routes.agent import router as agent_router
@@ -12,7 +14,7 @@ from control_plane.routes.replay import router as replay_router
 from control_plane.routes.session import router as session_router
 from control_plane.routes.verifier import router as verifier_router
 from control_plane.webhooks import get_webhook_secret, router as github_router
-from shared.db import pool_health
+from shared.db import close_pool, pool_health
 from shared.forensic_ledger import init_ledger
 from shared.models import FixCIRequest
 from shared.runtime_paths import default_session_ledger_path
@@ -26,6 +28,13 @@ app.include_router(verifier_router)
 app.include_router(agent_router)
 app.include_router(ingest_router)
 app.include_router(runtime_logs_router)
+
+# Serve the premium Google Antigravity Agent Manager UI
+app.mount("/static", StaticFiles(directory="frontend"), name="static")
+
+@app.get("/", include_in_schema=False)
+def get_agent_manager_window():
+    return FileResponse("frontend/index.html")
 
 
 def _is_truthy(value: str | None) -> bool:
@@ -48,7 +57,7 @@ def validate_session_ledger_startup_config(*, ledger_db_path: str | Path) -> str
 
 
 @app.on_event("startup")
-def validate_webhook_config() -> None:
+def perform_startup_validation() -> None:
     webhook_secret = get_webhook_secret()
     webhook_required = _is_truthy(os.environ.get("GITHUB_WEBHOOK_REQUIRED"))
     app.state.github_webhook_configured = validate_webhook_startup_config(
@@ -57,6 +66,11 @@ def validate_webhook_config() -> None:
     )
     ledger_db_path = os.environ.get("SESSION_LEDGER_DB_PATH", str(default_session_ledger_path()))
     app.state.session_ledger_db_path = validate_session_ledger_startup_config(ledger_db_path=ledger_db_path)
+
+
+@app.on_event("shutdown")
+def shutdown_event() -> None:
+    close_pool()
 
 
 @app.get("/healthz")

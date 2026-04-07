@@ -4,7 +4,7 @@ import time
 import jwt
 import requests
 
-from shared.circuit_breaker import CircuitBreaker
+from shared.circuit_breaker import CircuitBreaker, CircuitBreakerOpenError
 
 GITHUB_API = "https://api.github.com"
 APP_ID = os.environ.get("GITHUB_APP_ID")
@@ -43,6 +43,8 @@ def create_installation_token(installation_id: int) -> str:
     for _ in range(attempts):
         try:
             return GITHUB_API_BREAKER.call(_request_token)
+        except CircuitBreakerOpenError:
+            raise
         except Exception as exc:
             last_exc = exc
     raise RuntimeError(f"github_installation_token_failed_after_{attempts}_attempts: {last_exc}")
