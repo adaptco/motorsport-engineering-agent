@@ -19,3 +19,4 @@ runtime_logs/workflow_state/
 
 # Local worktree scratch area (must stay outside tracked source)
 motorsport-engineering-agent.worktrees/
+motorsport-engineering-agent/
