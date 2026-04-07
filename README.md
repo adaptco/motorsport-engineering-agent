@@ -24,3 +24,6 @@ uvicorn control_plane.app:app --reload
 
 ## Release authority
 Use `docs/versioning-spec.md` as the release authority for kernel and package revisions.
+
+## System architecture
+Use `docs/system_architecture.md` as the canonical runtime architecture baseline for v3.5.
