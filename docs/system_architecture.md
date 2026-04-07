@@ -24,7 +24,6 @@ flowchart LR
     worker --> pg
     worker --> gh
     worker --> mcp
-    mcp --> worker
     gh --> cp
 ```
 
