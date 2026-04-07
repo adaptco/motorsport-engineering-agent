@@ -1,3 +1,11 @@
+## v3.5.1 / 0.3.5.1
+
+- resolved merge conflicts and reconciled `PROGRESS.md` for V3.5.1 baseline
+- migrated `control_plane/app.py` from deprecated `on_event` hooks to `lifespan` context manager
+- implemented production-hardening: circuit breakers for GitHub/MCP and persistent forensic ledger paths
+- updated version alignment across `VERSION.json`, `pyproject.toml`, and `README.md`
+- established V3.6 preparation roadmap in `TASK_LEDGER.md`
+
 ## v3.5 / 0.3.5
 
 - added `ingest/logs` static-log ingestion module with adapter registry
