@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0.0",
+  "workflow_id": "wf_demo",
+  "run_id": "run_demo",
+  "session_id": "sess_demo",
+  "task_id": "T005",
+  "from_agent": {
+    "agent_id": "adaptco/agent-q",
+    "instance_id": "agent-q-01",
+    "role": "verifier"
+  },
+  "to_agent": {
+    "agent_id": "adaptco/agent-q",
+    "instance_id": "agent-q-01",
+    "role": "orchestrator"
+  },
+  "prev_receipt_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "receipt_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "created_at": "2026-04-05T05:21:00Z",
+  "authority_binding": {
+    "authority": "authoritative",
+    "source_type": "ACP.ExecutionReceipt",
+    "source_ref": "exec_demo"
+  },
+  "protocol_versions": {
+    "anp": "1.0.0",
+    "acp": "1.0.0",
+    "a2a": "1.0.0",
+    "mcp": "0.6.0"
+  },
+  "kind": "ACP.CommitReceipt",
+  "receipt_type": "ACP.CommitReceipt",
+  "status": "committed",
+  "execution_receipt_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "commit_decision": {
+    "advanced_cursor": true,
+    "admitted_next_tasks": [
+      "T006"
+    ],
+    "gate_passed": true,
+    "reason_codes": [
+      "DUAL_VERIFICATION_PASS",
+      "BUDGET_OK"
+    ]
+  },
+  "cursor_before_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+  "cursor_after_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+  "budget_usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "tool_tokens_reserved": 0,
+    "cost_usdc": "0.000000"
+  },
+  "policy_version": "1.0.0"
+}

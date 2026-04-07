@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://axp.local/schemas/anp-route-decision.schema.json",
+  "title": "ANP Route Decision",
+  "description": "Authoritative network-plane decision for next legal delivery target.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "schema_version",
+    "route_id",
+    "workflow_id",
+    "run_id",
+    "task_id",
+    "decision_time",
+    "next_agent",
+    "delivery",
+    "expected_receipt_type",
+    "session_binding",
+    "budget_snapshot",
+    "authority_binding",
+    "compatibility"
+  ],
+  "properties": {
+    "kind": {
+      "const": "ANP.RouteDecision"
+    },
+    "schema_version": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Semver"
+    },
+    "route_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Identifier"
+    },
+    "workflow_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/WorkflowId"
+    },
+    "run_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/RunId"
+    },
+    "task_id": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/TaskId"
+    },
+    "decision_time": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Timestamp"
+    },
+    "next_agent": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/Actor"
+    },
+    "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "delivery_id",
+        "endpoint_uri",
+        "retry_policy"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "sync",
+            "async"
+          ]
+        },
+        "delivery_id": {
+          "$ref": "_shared-axp-defs.schema.json#/$defs/DeliveryId"
+        },
+        "endpoint_uri": {
+          "$ref": "_shared-axp-defs.schema.json#/$defs/Uri"
+        },
+        "retry_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "max_attempts",
+            "backoff",
+            "dead_letter_on_exhaustion"
+          ],
+          "properties": {
+            "max_attempts": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 32
+            },
+            "backoff": {
+              "type": "string",
+              "enum": [
+                "fixed",
+                "linear",
+                "exponential"
+              ]
+            },
+            "dead_letter_on_exhaustion": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "expected_receipt_type": {
+      "type": "string",
+      "enum": [
+        "ACP.ExecutionReceipt",
+        "ACP.CommitReceipt"
+      ]
+    },
+    "session_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "session_id",
+        "trace_id",
+        "correlation_id",
+        "mcp_endpoint",
+        "lease_expires_at"
+      ],
+      "properties": {
+        "session_id": {
+          "$ref": "_shared-axp-defs.schema.json#/$defs/SessionId"
+        },
+        "trace_id": {
+          "$ref": "_shared-axp-defs.schema.json#/$defs/TraceId"
+        },
+        "correlation_id": {
+          "$ref": "_shared-axp-defs.schema.json#/$defs/CorrelationId"
+        },
+        "mcp_endpoint": {
+          "$ref": "_shared-axp-defs.schema.json#/$defs/Uri"
+        },
+        "lease_expires_at": {
+          "$ref": "_shared-axp-defs.schema.json#/$defs/Timestamp"
+        }
+      }
+    },
+    "budget_snapshot": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/BudgetEnvelope"
+    },
+    "authority_binding": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/AuthorityBinding"
+    },
+    "compatibility": {
+      "$ref": "_shared-axp-defs.schema.json#/$defs/CompatibilityWindow"
+    },
+    "reason_codes": {
+      "type": "array",
+      "items": {
+        "$ref": "_shared-axp-defs.schema.json#/$defs/ReasonCode"
+      },
+      "uniqueItems": true
+    }
+  }
+}

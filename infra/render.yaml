@@ -1,1 +1,257 @@
+services:
+  - name: mea-control-plane
+    type: web
+    runtime: python
+    plan: starter
+    region: ohio
+    healthCheckPath: /healthz
+    buildCommand: |
+      pip install -U pip
+      pip install -e .[dev]
+    preDeployCommand: |
+      python -m control_plane.bootstrap_db
+    startCommand: |
+      uvicorn control_plane.app:app --host 0.0.0.0 --port $PORT
+    autoDeploy: true
+    envVarGroups:
+      - mea-governance-common
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: MEA_RUNTIME_ROLE
+        value: control-plane
+      - key: KERNEL_VERSION
+        value: 3.6.1
+      - key: PACKAGE_VERSION
+        value: 0.3.6.1
+      - key: MCP_SERVER_URL
+        fromService:
+          name: mea-mcp-server
+          type: pserv
+          property: hostport
+      - key: REDIS_URL
+        fromService:
+          name: mea-kv
+          type: keyvalue
+          property: connectionString
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mea-governance-db
+          property: connectionString
+      - key: SESSION_LEDGER_DB_PATH
+        value: /var/tmp/mea/session-ledger.sqlite3
+      - key: GITHUB_WEBHOOK_REQUIRED
+        value: "true"
+      - key: GITHUB_WEBHOOK_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: RENDER_BLUEPRINT_MODE
+        value: governance
+      - key: MEA_COMPILED_WORKFLOW_PLAN_PATH
+        value: /opt/render/project/src/configs/compiled_workflow_plan.yaml
+      - key: MEA_RUNTIME_KERNEL_STATE_BACKEND
+        value: postgres+sqlite
+      - key: MEA_VERIFICATION_MIDDLEWARE_REQUIRED
+        value: "true"
+      - key: MEA_FAIL_CLOSED
+        value: "true"
+      - key: MEA_PROMPT_ADMISSION_MODE
+        value: compiled
+      - key: MEA_TOOL_EFFECT_POLICY
+        value: required
 
+  - name: mea-mcp-server
+    type: pserv
+    runtime: python
+    plan: starter
+    region: ohio
+    buildCommand: |
+      pip install -U pip
+      pip install -e .[dev]
+    startCommand: |
+      uvicorn mcp_server.app:app --host 0.0.0.0 --port $PORT
+    autoDeploy: true
+    envVarGroups:
+      - mea-governance-common
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: MEA_RUNTIME_ROLE
+        value: mcp-server
+      - key: KERNEL_VERSION
+        value: 3.6.1
+      - key: PACKAGE_VERSION
+        value: 0.3.6.1
+      - key: MCP_SHARED_BEARER_TOKEN
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mea-governance-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: mea-kv
+          type: keyvalue
+          property: connectionString
+      - key: MEA_COMPILED_WORKFLOW_PLAN_PATH
+        value: /opt/render/project/src/configs/compiled_workflow_plan.yaml
+      - key: MEA_MCP_TOOL_REGISTRY_MODE
+        value: effect-typed
+      - key: MEA_VERIFICATION_MIDDLEWARE_REQUIRED
+        value: "true"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+
+  - name: mea-backend-worker
+    type: worker
+    runtime: python
+    plan: starter
+    region: ohio
+    buildCommand: |
+      pip install -U pip
+      pip install -e .[dev]
+    startCommand: |
+      python -m worker.backend_worker
+    autoDeploy: true
+    envVarGroups:
+      - mea-governance-common
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: MEA_RUNTIME_ROLE
+        value: backend-worker
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mea-governance-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: mea-kv
+          type: keyvalue
+          property: connectionString
+      - key: SESSION_LEDGER_DB_PATH
+        value: /var/tmp/mea/session-ledger.sqlite3
+      - key: GITHUB_ALLOWED_REPOS
+        value: adaptco/motorsport-engineering-agent
+      - key: ALLOW_WORKFLOW_CHANGES
+        value: "false"
+      - key: MAX_PATCH_LINES
+        value: "1200"
+      - key: MEA_COMPILED_WORKFLOW_PLAN_PATH
+        value: /opt/render/project/src/configs/compiled_workflow_plan.yaml
+      - key: MEA_RUNTIME_KERNEL_STATE_BACKEND
+        value: postgres+sqlite
+      - key: MEA_VERIFICATION_MIDDLEWARE_REQUIRED
+        value: "true"
+      - key: MEA_FAIL_CLOSED
+        value: "true"
+      - key: GITHUB_APP_ID
+        sync: false
+      - key: GITHUB_APP_PRIVATE_KEY
+        sync: false
+      - key: GITHUB_WEBHOOK_SECRET
+        sync: false
+
+  - name: mea-verification-cron
+    type: cron
+    runtime: python
+    plan: starter
+    region: ohio
+    schedule: "*/15 * * * *"
+    buildCommand: |
+      pip install -U pip
+      pip install -e .[dev]
+    startCommand: |
+      python -m control_plane.jobs.verify_runtime_kernel
+    autoDeploy: true
+    envVarGroups:
+      - mea-governance-common
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: MEA_RUNTIME_ROLE
+        value: verification-cron
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mea-governance-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: mea-kv
+          type: keyvalue
+          property: connectionString
+      - key: SESSION_LEDGER_DB_PATH
+        value: /var/tmp/mea/session-ledger.sqlite3
+      - key: MEA_COMPILED_WORKFLOW_PLAN_PATH
+        value: /opt/render/project/src/configs/compiled_workflow_plan.yaml
+      - key: MEA_VERIFICATION_MIDDLEWARE_REQUIRED
+        value: "true"
+      - key: MEA_FAIL_CLOSED
+        value: "true"
+
+  - name: mea-kv
+    type: keyvalue
+    plan: starter
+    region: ohio
+    ipAllowList: []
+
+  - name: mea-review-ui
+    type: web
+    runtime: static
+    plan: free
+    rootDir: frontend
+    buildCommand: |
+      npm install
+      npm run build
+    staticPublishPath: out
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVarGroups:
+      - mea-governance-common
+    envVars:
+      - key: NEXT_PUBLIC_CONTROL_PLANE_URL
+        fromService:
+          name: mea-control-plane
+          type: web
+          property: host
+      - key: NEXT_PUBLIC_MCP_SERVER_URL
+        fromService:
+          name: mea-mcp-server
+          type: pserv
+          property: host
+
+databases:
+  - name: mea-governance-db
+    databaseName: mea_governance
+    user: mea
+    plan: starter
+    region: ohio
+
+envVarGroups:
+  - name: mea-governance-common
+    envVars:
+      - key: MEA_FAILURE_TAXONOMY
+        value: "FAIL.AUTH,FAIL.BUDGET,FAIL.TOOL_DECLARATION,FAIL.TOOL_POLICY,FAIL.SCHEMA,FAIL.VERIFICATION,FAIL.RECEIPT_CHAIN,FAIL.CURSOR,FAIL.EXTERNAL_DEP,FAIL.TIMEOUT,FAIL.DRIFT"
+      - key: MEA_RECOVERY_POLICY
+        value: "FAIL.BUDGET=reject+compact+defer;FAIL.SCHEMA=reject+no-retry;FAIL.EXTERNAL_DEP=retry-bounded;FAIL.VERIFICATION=block-commit;FAIL.CURSOR=halt;FAIL.DRIFT=halt"
+      - key: MEA_AUTHORITY_SURFACE
+        value: RuntimeKernelState
+      - key: MEA_WORKFLOW_SURFACE
+        value: CompiledWorkflowPlan
+      - key: MEA_GOVERNANCE_MODE
+        value: enforced

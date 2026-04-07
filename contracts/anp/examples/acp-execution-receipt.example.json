@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0.0",
+  "workflow_id": "wf_demo",
+  "run_id": "run_demo",
+  "session_id": "sess_demo",
+  "task_id": "T005",
+  "from_agent": {
+    "agent_id": "adaptco/k8s-agent",
+    "instance_id": "k8s-01",
+    "role": "executor"
+  },
+  "to_agent": {
+    "agent_id": "adaptco/agent-q",
+    "instance_id": "agent-q-01",
+    "role": "orchestrator"
+  },
+  "prev_receipt_hash": null,
+  "receipt_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "created_at": "2026-04-05T05:20:00Z",
+  "authority_binding": {
+    "authority": "authoritative",
+    "source_type": "ACP.HandoffEnvelope",
+    "source_ref": "handoff_demo"
+  },
+  "protocol_versions": {
+    "anp": "1.0.0",
+    "acp": "1.0.0",
+    "a2a": "1.0.0",
+    "mcp": "0.6.0"
+  },
+  "kind": "ACP.ExecutionReceipt",
+  "receipt_type": "ACP.ExecutionReceipt",
+  "status": "completed",
+  "input_digests": [
+    "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+  ],
+  "output_digests": [
+    "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+  ],
+  "budget_usage": {
+    "input_tokens": 1800,
+    "output_tokens": 420,
+    "tool_tokens_reserved": 200,
+    "cost_usdc": "0.002000"
+  },
+  "verification": {
+    "harness_safe": true,
+    "task_succeeded": true,
+    "notes": [
+      "rollout complete"
+    ]
+  },
+  "stream_event_ids": [
+    "evt_01"
+  ]
+}
