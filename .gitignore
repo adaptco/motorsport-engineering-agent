@@ -18,5 +18,5 @@ mcp_tools/ralph_wiggum_agent.py
 runtime_logs/workflow_state/
 
 # Local worktree scratch area (must stay outside tracked source)
-motorsport-engineering-agent.worktrees/
-motorsport-engineering-agent/
+/motorsport-engineering-agent.worktrees/
+/motorsport-engineering-agent/
