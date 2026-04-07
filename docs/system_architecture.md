@@ -53,7 +53,7 @@ flowchart LR
 
 ### 5. Data and Audit Layer
 - PostgreSQL stores operational runtime state (jobs, traces, evidence).
-- Redis backs async queueing with in-memory fallback behavior in queue code paths.
+- Redis backs async queueing (in-memory fallback is supported for local/monolithic development only).
 - SQLite forensic ledger provides immutable, chain-verifiable receipts.
 
 ## Job Lifecycle
