@@ -1,0 +1,265 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adaptco.dev/contracts/orchestrator/orchestrator_run.schema.json",
+  "title": "Orchestrator Run",
+  "type": "object",
+  "required": [
+    "session_id",
+    "workflow_id",
+    "run_id",
+    "trace_id",
+    "workspace_id",
+    "current_position",
+    "status",
+    "phase",
+    "request",
+    "governance",
+    "version",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "session_id": { "type": "string", "minLength": 1 },
+    "workflow_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "trace_id": { "type": "string", "minLength": 1 },
+    "workspace_id": { "type": "string", "minLength": 1 },
+    "entrypoint": {
+      "type": "string",
+      "enum": ["ui", "api", "webhook", "scheduler", "external"]
+    },
+    "current_position": { "type": "string", "minLength": 1 },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "running", "blocked", "completed", "failed", "cancelled"]
+    },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "accepted",
+        "routed",
+        "policy_screened",
+        "planned",
+        "approval_pending",
+        "approval_resolved",
+        "executing",
+        "checkpointing",
+        "completed",
+        "failed"
+      ]
+    },
+    "summary": { "type": "string" },
+    "request": {
+      "type": "object",
+      "required": ["principal_id", "authz_scope", "policy_version"],
+      "properties": {
+        "principal_id": { "type": "string", "minLength": 1 },
+        "authz_scope": { "type": "string", "minLength": 1 },
+        "policy_version": { "type": "string", "minLength": 1 },
+        "prompt": { "type": "string" },
+        "repo": { "type": "string" },
+        "branch": { "type": "string" },
+        "metadata": { "type": "object", "default": {} }
+      },
+      "additionalProperties": false
+    },
+    "routing": {
+      "type": "object",
+      "properties": {
+        "gateway_route": { "type": "string" },
+        "registry_target": { "type": "string" },
+        "planner_id": { "type": "string" },
+        "capability_ref": { "type": "string" },
+        "policy_decision_ref": { "type": ["string", "null"] },
+        "model_selection": { "$ref": "#/$defs/modelSelection" }
+      },
+      "additionalProperties": false,
+      "default": {}
+    },
+    "plan": {
+      "type": "object",
+      "required": ["plan_id", "status", "steps"],
+      "properties": {
+        "plan_id": { "type": "string", "minLength": 1 },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "ready", "running", "blocked", "completed", "failed"]
+        },
+        "current_step_id": { "type": ["string", "null"] },
+        "steps": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/planStep" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "approval": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["not_required", "pending", "approved", "rejected", "rework", "escalated"]
+        },
+        "queue_ref": { "type": ["string", "null"] },
+        "reviewer_id": { "type": ["string", "null"] },
+        "resolved_at": { "type": ["string", "null"], "format": "date-time" },
+        "note": { "type": "string" }
+      },
+      "additionalProperties": false,
+      "default": { "status": "not_required" }
+    },
+    "execution": {
+      "type": "object",
+      "required": ["queue_name", "worker_mode", "input_ref", "output_ref", "receipt_refs"],
+      "properties": {
+        "queue_name": { "type": "string", "minLength": 1 },
+        "worker_mode": {
+          "type": "string",
+          "enum": ["sync", "async", "sandbox", "background"]
+        },
+        "worker_id": { "type": ["string", "null"] },
+        "checkpoint_ref": { "type": ["string", "null"] },
+        "input_ref": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "output_ref": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "receipt_refs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "tool_calls": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/toolCallSummary" },
+          "default": []
+        },
+        "artifacts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/artifact" },
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    },
+    "governance": {
+      "type": "object",
+      "required": ["logical_clock", "receipts_created", "latest_state_hash"],
+      "properties": {
+        "logical_clock": { "type": "integer", "minimum": 0 },
+        "receipts_created": { "type": "integer", "minimum": 0 },
+        "receipt_type": { "type": "string" },
+        "latest_state_hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "prev_hash": {
+          "anyOf": [
+            { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+            { "type": "null" }
+          ]
+        },
+        "latest_operational_state_hash": {
+          "anyOf": [
+            { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+            { "type": "null" }
+          ]
+        },
+        "policy_decision_ref": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "handoff_state": { "$ref": "../a2a/workflow_state.schema.json" },
+    "pending_actions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "artifacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifact" },
+      "default": []
+    },
+    "metadata": {
+      "type": "object",
+      "default": {}
+    },
+    "version": { "type": "integer", "minimum": 1 },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "created_at": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "required": ["kind", "ref"],
+      "properties": {
+        "kind": { "type": "string" },
+        "ref": { "type": "string", "minLength": 1 },
+        "note": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "modelSelection": {
+      "type": "object",
+      "required": ["provider", "model"],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": ["openai", "anthropic", "google", "openrouter"]
+        },
+        "model": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "planStep": {
+      "type": "object",
+      "required": ["step_id", "kind", "status"],
+      "properties": {
+        "step_id": { "type": "string", "minLength": 1 },
+        "kind": {
+          "type": "string",
+          "enum": ["policy", "approval", "tool", "worker", "agent", "checkpoint", "emit_event"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "ready", "running", "blocked", "completed", "failed"]
+        },
+        "tool_name": { "type": "string" },
+        "worker_class": { "type": "string" },
+        "depends_on": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        },
+        "input_ref": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        },
+        "output_ref": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        },
+        "metadata": { "type": "object", "default": {} }
+      },
+      "additionalProperties": false
+    },
+    "toolCallSummary": {
+      "type": "object",
+      "required": ["name", "status"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "running", "succeeded", "failed", "blocked"]
+        },
+        "tool_ref": { "type": "string" },
+        "output_ref": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
