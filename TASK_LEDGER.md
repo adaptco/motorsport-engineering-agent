@@ -23,7 +23,8 @@
 
 | Task | Status | Owner | Evidence | Notes |
 | --- | --- | --- | --- | --- |
-| Migrate FastAPI hooks to Lifespan | ⚪ Open | — | `control_plane/app.py` | P0: Move from deprecated `on_event` to `lifespan` context manager. |
+| Migrate FastAPI hooks to Lifespan | 🟢 Done | codex | `control_plane/app.py` | Migrated `on_event` to `lifespan` context manager. |
+| Version alignment across docs | 🟢 Done | codex | `README.md`, `VERSION.json` | Reconciled README and package version for v3.5.1. |
 | Project-wide Linting Config | ⚪ Open | — | `pyproject.toml` | P1: Add `ruff` and `mypy` configurations for technical debt reduction. |
 | Dockerfile Standardization | ⚪ Open | — | `Dockerfile`, `control_plane/Dockerfile` | P1: Standardize all images to `python:3.12-slim`. |
 | Enforce strict Redis fallback | ⚪ Open | — | `control_plane/queue.py` | P1: Set `QUEUE_ALLOW_IN_MEMORY_FALLBACK=false` for production environments. |

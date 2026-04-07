@@ -1,6 +1,6 @@
-# MEA Root Kernel v3.5
+# MEA Root Kernel v3.5.1
 
-MEA Root Kernel v3.5 adds a static-log ingestion harness for native motorsport data files and exported telemetry files, integrated into the existing control-plane scaffold.
+MEA Root Kernel v3.5.1 adds a static-log ingestion harness for native motorsport data files and exported telemetry files, integrated into the existing control-plane scaffold.
 
 It introduces a first testable path for file I/O normalization before live sim adapter work.
 

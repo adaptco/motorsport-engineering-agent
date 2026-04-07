@@ -2,10 +2,8 @@
 
 ## P0/P1 - V3.6 Update Readiness
 
-1. **Deprecated FastAPI Startup Hooks**
-- Impact: Deprecation warnings; potential breakage in future FastAPI releases.
-- Location: `control_plane/app.py`.
-- Next action: Migrate `on_event("startup")` and `on_event("shutdown")` to `lifespan` context manager.
+1. **Deprecated FastAPI Startup Hooks (RESOLVED)**
+- Resolution: Migrated `on_event` hooks to `lifespan` context manager in `control_plane/app.py`.
 
 2. **Absence of Unified Linting/Formatting**
 - Impact: Codebase consistency and technical debt risk.
