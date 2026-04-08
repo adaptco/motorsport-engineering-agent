@@ -1,4 +1,7 @@
-version: "3.9"
+# Unified production docker-compose.yml for mea-root-kernel
+# Usage:
+#   docker compose up -d                    # Start all services
+#   docker compose -f docker-compose.override.yml up  # Dev with hot reload
 
 services:
   postgres:
@@ -48,10 +51,9 @@ services:
   control_plane:
     build:
       context: .
-      dockerfile: ./control_plane/Dockerfile
+      dockerfile: Dockerfile
+      target: control_plane
     container_name: mea-control-plane
-    env_file:
-      - .env
     ports:
       - "8000:8000"
     depends_on:
@@ -68,16 +70,19 @@ services:
     cpus: "1"
     environment:
       PYTHONUNBUFFERED: "1"
-    volumes:
-      - ./logs/control_plane:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   worker:
     build:
       context: .
-      dockerfile: ./worker/Dockerfile
+      dockerfile: Dockerfile
+      target: worker
     container_name: mea-worker
-    env_file:
-      - .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -92,16 +97,13 @@ services:
     cpus: "2"
     environment:
       PYTHONUNBUFFERED: "1"
-    volumes:
-      - ./logs/worker:/app/logs
 
   mcp_server:
     build:
       context: .
-      dockerfile: ./mcp_server/Dockerfile
+      dockerfile: Dockerfile
+      target: mcp_server
     container_name: mea-mcp-server
-    env_file:
-      - .env
     ports:
       - "7000:7000"
     restart: unless-stopped
@@ -111,8 +113,12 @@ services:
     cpus: "1"
     environment:
       PYTHONUNBUFFERED: "1"
-    volumes:
-      - ./logs/mcp_server:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 volumes:
   postgres_data:
