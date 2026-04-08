@@ -26,6 +26,5 @@
 - Impact: High-level scenario validation is split across unit/integration tests.
 - Next action: Create a single integration test for the full `normalize -> ingest -> debrief` lifecycle.
 
-6. **Missing Dependency Lock Strategy**
-- Impact: Version drift across environments.
-- Next action: Finalize and enforce `requirements.txt` generation or lockfile workflow.
+6. **Dependency Lock Strategy (RESOLVED)**
+- Resolution: Added `uv.lock` and removed stale root `requirements.txt` to enforce `pyproject.toml` + `uv` as the canonical dependency workflow.

@@ -478,13 +478,13 @@ dev = [
 ### Phase 1: CRITICAL (Days 1-2)
 
 **1.1 Delete or Update requirements.txt**
-- [ ] Either delete `requirements.txt` entirely (since pyproject.toml is primary)
+- [x] Either delete `requirements.txt` entirely (since pyproject.toml is primary)
 - [ ] OR regenerate it: `pip freeze > requirements.txt` (not recommended for production)
-- [ ] Recommendation: DELETE and use uv.lock instead
+- [x] Recommendation: DELETE and use uv.lock instead
 
 **1.2 Implement Lock File Strategy**
-- [ ] Install UV: `pip install uv`
-- [ ] Generate lock: `uv lock`
+- [x] Install UV: `pip install uv`
+- [x] Generate lock: `uv lock`
 - [ ] Commit `uv.lock` to git
 - [ ] Update CI: Replace `pip install` with `uv sync`
 - [ ] Document in README: "Use `uv sync` to install all dependencies"

@@ -19,6 +19,13 @@ This tracker is the canonical execution board for the additive migration path:
 
 The release strategy is intentionally non-destructive. Legacy v3.5.2 operational surfaces remain compatibility-backed while newer slices are layered in behind versioned routes and additive migrations.
 
+## Latest Execution Update (2026-04-08)
+
+- Added persistent reconciliation loop primitives in `worker/background_workers.py` for task findings, `TASK_LEDGER.md`, and MCP PRD acceptance criteria.
+- Added/extended loop coverage in `tests/test_background_workers_state.py`.
+- Created skill `skills/agent-ralph-wiggum/` to run checkpointed closeout loops.
+- Resolved dependency lock workflow blocker by generating `uv.lock` and removing stale root `requirements.txt`.
+
 ---
 
 ## Four-Phase Timeline

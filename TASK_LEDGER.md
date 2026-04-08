@@ -18,6 +18,7 @@
 | Runtime log endpoints | 🟢 Done | main | `control_plane/routes/runtime_logs.py` | Already present at current baseline. |
 | Minimal GUI for runtime review | 🟢 Done | main | `frontend/hitl_runtime_logs.html` | Local operator scaffold present. |
 | A2A handoff skill & persistence | 🟢 Done | codex | `skills/a2a_handoff/SKILL.md`, `contracts/a2a/` | Workflow state and handoff event schemas established. |
+| Agent Ralph Wiggum loop skill | 🟢 Done | codex | `skills/agent-ralph-wiggum/SKILL.md`, `worker/background_workers.py`, `tests/test_background_workers_state.py` | Reconciliation loop now persists pending task/PRD gates across iterations. |
 
 ## V3.6 Preparation Roadmap
 
@@ -29,4 +30,4 @@
 | Dockerfile Standardization | ⚪ Open | — | `Dockerfile`, `control_plane/Dockerfile` | P1: Standardize all images to `python:3.12-slim`. |
 | Enforce strict Redis fallback | ⚪ Open | — | `control_plane/queue.py` | P1: Set `QUEUE_ALLOW_IN_MEMORY_FALLBACK=false` for production environments. |
 | E2E Ingest integration suite | ⚪ Open | — | `tests/integration/` | P2: Consolidate fragmented tests into single end-to-end scenario. |
-| Dependency lock strategy | ⚪ Open | — | `pyproject.toml` | P2: Finalize and enforce `requirements.txt` or lockfile workflow. |
+| Dependency lock strategy | 🟢 Done | codex | `pyproject.toml`, `uv.lock`, `TASK-004_DEPENDENCY_MANAGEMENT_FINDINGS.md` | Stale `requirements.txt` removed; lockfile workflow now grounded on `uv lock` + `uv sync`. |
