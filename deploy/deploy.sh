@@ -107,7 +107,7 @@ docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" up -d
 # Wait for services to be healthy
 log_info "Waiting for services to become healthy..."
 for i in {1..30}; do
-    if docker compose exec -T postgres pg_isready -U mea > /dev/null 2>&1; then
+    if docker compose exec -T postgres pg_isready -U "${POSTGRES_USER:-mea}" > /dev/null 2>&1; then
         log_info "✓ PostgreSQL is healthy"
         break
     fi
@@ -120,7 +120,12 @@ for i in {1..30}; do
 done
 
 for i in {1..30}; do
-    if docker compose exec -T redis redis-cli ping > /dev/null 2>&1; then
+    if [ -n "${REDIS_PASSWORD:-}" ]; then
+        if docker compose exec -T -e REDISCLI_AUTH="$REDIS_PASSWORD" redis redis-cli ping > /dev/null 2>&1; then
+            log_info "✓ Redis is healthy"
+            break
+        fi
+    elif docker compose exec -T redis redis-cli ping > /dev/null 2>&1; then
         log_info "✓ Redis is healthy"
         break
     fi

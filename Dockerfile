@@ -47,8 +47,7 @@ COPY pyproject.toml uv.lock ./
 RUN python -m venv /opt/venv && \
     . /opt/venv/bin/activate && \
     pip install --upgrade pip setuptools wheel uv && \
-    uv sync --frozen --no-install-project --python /opt/venv/bin/python && \
-    pip install -e .
+    uv sync --frozen --no-install-project --python /opt/venv/bin/python
 
 # ============================================================
 # STAGE 3: Control Plane
@@ -63,8 +62,10 @@ ENV PATH="/opt/venv/bin:$PATH" \
 COPY control_plane/ ./control_plane/
 COPY shared/ ./shared/
 COPY pyproject.toml ./
+COPY VERSION.json ./
 COPY LICENSES/ ./LICENSES/
 COPY DEPENDENCIES.md ./DEPENDENCIES.md
+COPY frontend/ ./frontend/
 
 RUN chown -R appuser:appuser /app
 
@@ -96,6 +97,7 @@ COPY control_plane/ ./control_plane/
 COPY worker/ ./worker/
 COPY shared/ ./shared/
 COPY pyproject.toml ./
+COPY VERSION.json ./
 COPY LICENSES/ ./LICENSES/
 COPY DEPENDENCIES.md ./DEPENDENCIES.md
 
@@ -121,6 +123,7 @@ COPY mcp_server/ ./mcp_server/
 COPY mcp_tools/ ./mcp_tools/
 COPY shared/ ./shared/
 COPY pyproject.toml ./
+COPY VERSION.json ./
 COPY LICENSES/ ./LICENSES/
 COPY DEPENDENCIES.md ./DEPENDENCIES.md
 
