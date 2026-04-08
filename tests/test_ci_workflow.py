@@ -51,9 +51,9 @@ def test_deploy_compose_overlays_target_ci_published_image_tags() -> None:
 
     for compose in (staging, production):
         services = compose["services"]
-        assert services["control_plane"]["image"].endswith(":control-plane-latest")
-        assert services["worker"]["image"].endswith(":worker-latest")
-        assert services["mcp_server"]["image"].endswith(":mcp-server-latest")
+        assert services["control_plane"]["image"].endswith(":control-plane-${VERSION:-latest}")
+        assert services["worker"]["image"].endswith(":worker-${VERSION:-latest}")
+        assert services["mcp_server"]["image"].endswith(":mcp-server-${VERSION:-latest}")
         assert "your-org/your-repo" not in services["control_plane"]["image"]
         assert "your-org/your-repo" not in services["worker"]["image"]
         assert "your-org/your-repo" not in services["mcp_server"]["image"]
@@ -64,6 +64,6 @@ def test_k8s_manifests_target_ci_published_image_tags() -> None:
     worker_manifest = Path("deploy/k8s/worker.yaml").read_text(encoding="utf-8")
     mcp_manifest = Path("deploy/k8s/mcp-server.yaml").read_text(encoding="utf-8")
 
-    assert "ghcr.io/adaptco/motorsport-engineering-agent:control-plane-latest" in control_plane_manifest
-    assert "ghcr.io/adaptco/motorsport-engineering-agent:worker-latest" in worker_manifest
-    assert "ghcr.io/adaptco/motorsport-engineering-agent:mcp-server-latest" in mcp_manifest
+    assert "${REGISTRY}/${IMAGE_NAME}:control-plane-${VERSION:-latest}" in control_plane_manifest
+    assert "${REGISTRY}/${IMAGE_NAME}:worker-${VERSION:-latest}" in worker_manifest
+    assert "${REGISTRY}/${IMAGE_NAME}:mcp-server-${VERSION:-latest}" in mcp_manifest

@@ -8,7 +8,7 @@ ENVIRONMENT="${1:-staging}"
 VERSION="${2:-latest}"
 REGISTRY="${REGISTRY:-ghcr.io}"
 IMAGE_NAME="${IMAGE_NAME:-adaptco/motorsport-engineering-agent}"
-export REGISTRY IMAGE_NAME
+export REGISTRY IMAGE_NAME VERSION
 
 # Color output
 RED='\033[0;31m'

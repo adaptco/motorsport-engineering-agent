@@ -24,7 +24,7 @@ spec:
       serviceAccountName: mea-sa
       containers:
       - name: mcp-server
-        image: ghcr.io/adaptco/motorsport-engineering-agent:mcp-server-latest
+        image: ${REGISTRY}/${IMAGE_NAME}:mcp-server-${VERSION:-latest}
         imagePullPolicy: Always
         ports:
         - name: http

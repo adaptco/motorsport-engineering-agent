@@ -24,7 +24,7 @@ spec:
       serviceAccountName: mea-sa
       containers:
       - name: worker
-        image: ghcr.io/adaptco/motorsport-engineering-agent:worker-latest
+        image: ${REGISTRY}/${IMAGE_NAME}:worker-${VERSION:-latest}
         imagePullPolicy: Always
         envFrom:
         - configMapRef:
