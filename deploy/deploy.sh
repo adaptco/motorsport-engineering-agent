@@ -6,7 +6,9 @@ set -euo pipefail
 
 ENVIRONMENT="${1:-staging}"
 VERSION="${2:-latest}"
-REGISTRY="ghcr.io/your-org/your-repo"
+REGISTRY="${REGISTRY:-ghcr.io}"
+IMAGE_NAME="${IMAGE_NAME:-adaptco/motorsport-engineering-agent}"
+export REGISTRY IMAGE_NAME VERSION
 
 # Color output
 RED='\033[0;31m'
@@ -33,6 +35,7 @@ if [[ ! "$ENVIRONMENT" =~ ^(staging|production)$ ]]; then
 fi
 
 log_info "Starting deployment to $ENVIRONMENT environment with version $VERSION"
+log_info "Using image registry: ${REGISTRY}/${IMAGE_NAME}"
 
 # Check Docker daemon
 if ! docker ps > /dev/null 2>&1; then
@@ -50,9 +53,9 @@ else
     log_warn ".env.$ENVIRONMENT not found. Using defaults."
 fi
 
-# Pull latest images
+# Pull latest images for the target environment overlay
 log_info "Pulling latest images..."
-docker compose pull
+docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" pull
 
 # Validate compose files
 log_info "Validating docker-compose configuration..."
@@ -63,8 +66,8 @@ BACKUP_DIR="backups/$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$BACKUP_DIR"
 log_info "Backing up current state to $BACKUP_DIR"
 
-docker compose ps > "$BACKUP_DIR/containers.log" || true
-docker compose logs > "$BACKUP_DIR/logs.log" 2>&1 || true
+docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" ps > "$BACKUP_DIR/containers.log" || true
+docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" logs > "$BACKUP_DIR/logs.log" 2>&1 || true
 
 # Deploy services
 log_info "Deploying services..."
@@ -73,7 +76,7 @@ docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" up -d
 # Wait for services to be healthy
 log_info "Waiting for services to become healthy..."
 for i in {1..30}; do
-    if docker compose exec -T postgres pg_isready -U "${POSTGRES_USER:-mea}" > /dev/null 2>&1; then
+    if docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" exec -T postgres pg_isready -U "${POSTGRES_USER:-mea}" > /dev/null 2>&1; then
         log_info "✓ PostgreSQL is healthy"
         break
     fi
@@ -86,7 +89,7 @@ for i in {1..30}; do
 done
 
 for i in {1..30}; do
-    if docker compose exec -T redis redis-cli ${REDIS_PASSWORD:+-a "$REDIS_PASSWORD"} ping > /dev/null 2>&1; then
+    if docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" exec -T redis redis-cli ${REDIS_PASSWORD:+-a "$REDIS_PASSWORD"} ping > /dev/null 2>&1; then
         log_info "✓ Redis is healthy"
         break
     fi
@@ -100,21 +103,21 @@ done
 
 # Run database migrations
 log_info "Running database migrations..."
-docker compose exec -T control_plane alembic upgrade head || {
+docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" exec -T control_plane alembic upgrade head || {
     log_error "Database migration failed"
     exit 1
 }
 
 # Health check
 log_info "Performing health checks..."
-if docker compose exec -T control_plane curl -f http://localhost:8000/healthz > /dev/null 2>&1; then
+if docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" exec -T control_plane curl -f http://localhost:8000/healthz > /dev/null 2>&1; then
     log_info "✓ Control plane is healthy"
 else
     log_error "Control plane health check failed"
     exit 1
 fi
 
-if docker compose exec -T mcp_server curl -f http://localhost:7000/healthz > /dev/null 2>&1; then
+if docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" exec -T mcp_server curl -f http://localhost:7000/healthz > /dev/null 2>&1; then
     log_info "✓ MCP server is healthy"
 else
     log_warn "MCP server health check failed (may still be starting)"
@@ -125,4 +128,4 @@ log_info "Backup saved to $BACKUP_DIR"
 
 # Summary
 log_info "Current deployment status:"
-docker compose ps
+docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" ps
