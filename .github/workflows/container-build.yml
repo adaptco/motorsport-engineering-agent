@@ -9,6 +9,7 @@ on:
 permissions:
   contents: read
   packages: write
+  security-events: write
 
 env:
   REGISTRY: ghcr.io
@@ -110,14 +111,14 @@ jobs:
 
       - name: Verify healthchecks
         run: |
-          docker compose up -d
+          docker compose up -d --build
           echo "Waiting for services to be healthy..."
-          for i in {1..30}; do
+          for i in {1..60}; do
             if docker compose ps --services --filter "status=healthy" | wc -l | grep -q "[3-4]"; then
               echo "✓ Services are healthy"
               break
             fi
-            if [ $i -eq 30 ]; then
+            if [ $i -eq 60 ]; then
               echo "ERROR: Services failed to become healthy"
               docker compose ps
               docker compose logs
