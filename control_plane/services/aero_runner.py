@@ -362,8 +362,10 @@ class WslOpenFoamRunner:
             results_dir = case_dir / "results"
             stdout_path = logs_dir / "wsl.stdout.log"
             stderr_path = logs_dir / "wsl.stderr.log"
-            _write_text(stdout_path, exc.stdout or "")
-            _write_text(stderr_path, (exc.stderr or "") + f"\nSolver timed out after {SOLVER_RUN_TIMEOUT_SECONDS}s\n")
+            stdout_path.parent.mkdir(parents=True, exist_ok=True)
+            stderr_path.parent.mkdir(parents=True, exist_ok=True)
+            stdout_path.write_text(exc.stdout or "", encoding="utf-8")
+            stderr_path.write_text((exc.stderr or "") + f"\nSolver timed out after {SOLVER_RUN_TIMEOUT_SECONDS}s\n", encoding="utf-8")
 
             execution_notes = [
                 "WSL execution timed out.",

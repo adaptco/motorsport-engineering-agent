@@ -1,12 +1,13 @@
 import os
 import time
 import uuid
+import ipaddress
 from contextlib import asynccontextmanager
 from pathlib import Path
 from collections import defaultdict, deque
 from threading import Lock
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from starlette.responses import JSONResponse
@@ -30,13 +31,16 @@ from shared.version import load_version_info
 RATE_LIMIT_ENABLED = os.environ.get("RATE_LIMIT_ENABLED", "true").strip().lower() in {"1", "true", "yes"}
 RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get("RATE_LIMIT_WINDOW_SECONDS", "60"))
 RATE_LIMIT_REQUESTS_PER_WINDOW = int(os.environ.get("RATE_LIMIT_REQUESTS_PER_WINDOW", "60"))
+RATE_LIMIT_BUCKET_CLEANUP_INTERVAL_SECONDS = int(os.environ.get("RATE_LIMIT_BUCKET_CLEANUP_INTERVAL_SECONDS", "30"))
 RATE_LIMIT_PATHS = {
     path.strip()
     for path in os.environ.get("RATE_LIMIT_PATHS", "/repos/fix-ci,/runtime/logs/parse").split(",")
     if path.strip()
 }
+TRUST_PROXY_HEADERS = os.environ.get("TRUST_PROXY_HEADERS", "false").strip().lower() in {"1", "true", "yes"}
 _rate_limit_lock = Lock()
 _rate_limit_buckets: dict[tuple[str, str], deque[float]] = defaultdict(deque)
+_last_rate_limit_cleanup_at = 0.0
 _metrics_lock = Lock()
 _metrics = {"requests_total": 0, "rate_limited_total": 0}
 
@@ -58,6 +62,29 @@ def validate_session_ledger_startup_config(*, ledger_db_path: str | Path) -> str
     if not ledger_path.exists():
         raise RuntimeError(f"SESSION_LEDGER_DB_PATH is not writable: {ledger_path}")
     return str(ledger_path)
+
+
+def _extract_client_ip(request: Request) -> str:
+    if TRUST_PROXY_HEADERS:
+        forwarded_for = request.headers.get("x-forwarded-for", "")
+        if forwarded_for:
+            for candidate in forwarded_for.split(","):
+                candidate_ip = candidate.strip()
+                if not candidate_ip:
+                    continue
+                try:
+                    ipaddress.ip_address(candidate_ip)
+                    return candidate_ip
+                except ValueError:
+                    continue
+    if request.client and request.client.host:
+        return request.client.host
+    return "unknown"
+
+
+def _prune_bucket(bucket: deque[float], window_start: float) -> None:
+    while bucket and bucket[0] < window_start:
+        bucket.popleft()
 
 
 @asynccontextmanager
@@ -94,6 +121,7 @@ app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
+    global _last_rate_limit_cleanup_at
     with _metrics_lock:
         _metrics["requests_total"] += 1
 
@@ -104,14 +132,27 @@ async def rate_limit_middleware(request: Request, call_next):
         response.headers["x-request-id"] = request_id
         return response
 
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = _extract_client_ip(request)
     now = time.monotonic()
     window_start = now - max(1, RATE_LIMIT_WINDOW_SECONDS)
     bucket_key = (client_ip, request.url.path)
     with _rate_limit_lock:
+        cleanup_interval = max(1, RATE_LIMIT_BUCKET_CLEANUP_INTERVAL_SECONDS)
+        if now - _last_rate_limit_cleanup_at >= cleanup_interval:
+            stale_keys: list[tuple[str, str]] = []
+            for key, stale_bucket in _rate_limit_buckets.items():
+                _prune_bucket(stale_bucket, window_start)
+                if not stale_bucket:
+                    stale_keys.append(key)
+            for key in stale_keys:
+                _rate_limit_buckets.pop(key, None)
+            _last_rate_limit_cleanup_at = now
+
         bucket = _rate_limit_buckets[bucket_key]
-        while bucket and bucket[0] < window_start:
-            bucket.popleft()
+        _prune_bucket(bucket, window_start)
+        if not bucket:
+            _rate_limit_buckets.pop(bucket_key, None)
+            bucket = _rate_limit_buckets[bucket_key]
         if len(bucket) >= max(1, RATE_LIMIT_REQUESTS_PER_WINDOW):
             with _metrics_lock:
                 _metrics["rate_limited_total"] += 1
@@ -195,4 +236,4 @@ def metrics():
         f"mea_requests_total {payload['requests_total']}",
         f"mea_rate_limited_total {payload['rate_limited_total']}",
     ]
-    return "\n".join(lines) + "\n"
+    return Response(content="\n".join(lines) + "\n", media_type="text/plain")

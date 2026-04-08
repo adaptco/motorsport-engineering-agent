@@ -19,16 +19,18 @@ def _find_step(steps: list[dict], uses: str) -> dict:
 def test_mea_kernel_ci_uses_latest_runtime_toolchain() -> None:
     workflow = _load_workflow("ci.yml")
 
-    test_job_steps = workflow["jobs"]["test"]["steps"]
+    lint_and_test_job = workflow["jobs"]["lint-and-test"]
+    test_job_steps = lint_and_test_job["steps"]
 
-    checkout_step_test = _find_step(test_job_steps, "actions/checkout@v6")
-    assert checkout_step_test["uses"] == "actions/checkout@v6"
+    checkout_step_test = _find_step(test_job_steps, "actions/checkout@v4")
+    assert checkout_step_test["uses"] == "actions/checkout@v4"
 
-    setup_node = _find_step(test_job_steps, "actions/setup-node@v6")
-    setup_python = _find_step(test_job_steps, "actions/setup-python@v6")
+    setup_python = _find_step(test_job_steps, "actions/setup-python@v4")
+    setup_uv = _find_step(test_job_steps, "astral-sh/setup-uv@v3")
 
-    assert str(setup_node["with"]["node-version"]) == "24"
-    assert str(setup_python["with"]["python-version"]) == "3.13"
+    assert setup_python["with"]["python-version"] == "${{ matrix.python-version }}"
+    assert setup_uv["uses"] == "astral-sh/setup-uv@v3"
+    assert lint_and_test_job["strategy"]["matrix"]["python-version"] == ["3.11", "3.13"]
 
 
 def test_container_build_workflow_defines_build_images_job() -> None:

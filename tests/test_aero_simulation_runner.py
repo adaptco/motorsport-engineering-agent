@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -97,6 +98,33 @@ def test_wsl_runner_parses_force_coeffs_and_updates_result(tmp_path: Path, monke
     assert result.cd == pytest.approx(0.91)
     assert result.cm_pitch == pytest.approx(-0.028)
     assert any(artifact.label == "force_coeffs" for artifact in result.artifacts)
+    assert (case_dir / "results" / "aero_result.json").exists()
+
+
+def test_wsl_runner_timeout_writes_logs_and_returns_failed_result(tmp_path: Path, monkeypatch) -> None:
+    req = build_gt4_aero_run_request(runtime_target="wsl2", runner_kind="wsl")
+    case_dir = tmp_path / "wsl_timeout_case"
+
+    def _raise_timeout(*_args, **_kwargs):
+        raise subprocess.TimeoutExpired(
+            cmd=["wsl.exe", "-d", "Ubuntu-22.04", "--", "bash", "-lc", "simpleFoam"],
+            timeout=10,
+            output="timeout-stdout",
+            stderr="timeout-stderr",
+        )
+
+    monkeypatch.setattr("control_plane.services.aero_runner.subprocess.run", _raise_timeout)
+
+    result = WslOpenFoamRunner().run(req, case_dir=case_dir)
+
+    assert result.execution_state.runner_kind == "wsl"
+    assert result.execution_state.status == "failed"
+    assert result.execution_state.exit_code == 124
+    stdout_text = (case_dir / "logs" / "wsl.stdout.log").read_text(encoding="utf-8")
+    stderr_text = (case_dir / "logs" / "wsl.stderr.log").read_text(encoding="utf-8")
+    assert "timeout-stdout" in stdout_text
+    assert "timeout-stderr" in stderr_text
+    assert "Solver timed out after" in stderr_text
     assert (case_dir / "results" / "aero_result.json").exists()
 
 

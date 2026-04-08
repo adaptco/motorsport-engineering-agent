@@ -32,6 +32,9 @@ The release strategy is intentionally non-destructive. Legacy v3.5.2 operational
 - Added missing contributor/API/ops docs (`CONTRIBUTING.md`, `docs/API.md`, `docs/ops/GENERAL_RUNBOOK.md`).
 - Promoted Ralph loop from blocked reconciliation to active execution with prioritized closure actions persisted in `.mea_tmp/workflow_state/v3_6_closeout_ranked_actions.json`.
 - Corrected Ralph closure process: reverted non-evidenced shortcut closures, enforced evidence-only checklist closure, and reduced validated remaining actions to `11`.
+- Closed PR `#59` Gemini runtime review findings with concrete fixes in `control_plane/app.py` and `control_plane/services/aero_runner.py`, plus coverage updates in `tests/test_rate_limit_middleware.py` and `tests/test_aero_simulation_runner.py`.
+- Re-ran full local suite after PR59 fixes: `83 passed, 1 skipped`.
+- Re-ran Ralph reconciliation loop with current checklist/ledger/PRD state; persisted truthful blocked status with `19` remaining actions (no non-evidence closures).
 
 ---
 

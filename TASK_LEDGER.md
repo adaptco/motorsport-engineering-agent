@@ -14,6 +14,7 @@
 | Circuit breakers: Redis queue path | 🟢 Done | codex | `control_plane/queue.py`, `shared/circuit_breaker.py` | Explicit fail-closed mode via env toggle. |
 | Circuit breakers: MCP call path | 🟢 Done | codex | `control_plane/services/mcp_client.py`, `shared/circuit_breaker.py` | Guarded client utility added for tool-call transport. |
 | Rate limiting on high-cost POST routes | 🟢 Done | codex | `control_plane/app.py`, `tests/test_rate_limit_middleware.py`, `.env.example` | Added middleware guardrails for `/repos/fix-ci` and `/runtime/logs/parse`. |
+| PR59 Gemini review closure (runtime hardening) | 🟢 Done | codex | `control_plane/app.py`, `control_plane/services/aero_runner.py`, `tests/test_rate_limit_middleware.py`, `tests/test_aero_simulation_runner.py` | Addressed timeout NameError risk, plain-text metrics, proxy-aware IP extraction (opt-in), and rate-limit bucket cleanup with passing tests. |
 | Ingest module surface (V3.5) | 🟢 Done | main | `ingest/logs/*` | Already present at current baseline. |
 | Ingest API wiring | 🟢 Done | main | `control_plane/routes/ingest.py`, `control_plane/app.py` | Already present at current baseline. |
 | Runtime log endpoints | 🟢 Done | main | `control_plane/routes/runtime_logs.py` | Already present at current baseline. |
