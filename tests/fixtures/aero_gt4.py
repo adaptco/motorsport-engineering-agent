@@ -150,8 +150,6 @@ def build_gt4_aero_run_request(
         "dynamic_viscosity_pa_s": 1.81e-05,
         "reference_pressure_pa": 101325.0,
         "reference_temperature_k": 293.15,
-        "reference_area_m2": 2.2608,
-        "reference_length_m": 2.6,
         "wsl_distro_name": "Ubuntu-22.04",
         "wsl_distro_version": "22.04",
         "openfoam_version": "11",
