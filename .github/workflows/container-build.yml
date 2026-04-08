@@ -89,6 +89,7 @@ jobs:
 
       - name: Upload Trivy scan results to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
+        continue-on-error: true
         with:
           sarif_file: '${{ matrix.target }}-trivy-results.sarif'
           category: 'trivy-${{ matrix.target }}'
@@ -115,7 +116,8 @@ jobs:
           docker compose up -d --build
           echo "Waiting for services to be healthy..."
           for i in {1..60}; do
-            if docker compose ps --services --filter "status=healthy" | wc -l | grep -q "[3-4]"; then
+            healthy_count=$(docker compose ps | grep -c "(healthy)" || true)
+            if [ "$healthy_count" -ge 4 ]; then
               echo "✓ Services are healthy"
               break
             fi
