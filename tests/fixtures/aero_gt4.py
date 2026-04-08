@@ -2,29 +2,21 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Literal
-from urllib.parse import quote
 
 from shared.forensic_ledger import sha256_prefixed
 from shared.models import AeroSourceRef, AeroSimulationRunRequest, AeroVehicleIdentity
 
 
-PROFILE_IMAGE_PATH = Path(r"C:\Users\eqhsp\Downloads\GT4_Profile.png")
-FRONT_IMAGE_PATH = Path(r"C:\Users\eqhsp\Downloads\GT4.png")
+FIXTURES_DIR = Path(__file__).resolve().parent
+# Use repo-local absolute fixture paths so URIs are valid across CI runners and OSes.
+PROFILE_IMAGE_PATH = (FIXTURES_DIR / "GT4_Profile.png").resolve()
+FRONT_IMAGE_PATH = (FIXTURES_DIR / "GT4.png").resolve()
+TELEMETRY_CSV_PATH = (FIXTURES_DIR / "sample_export.csv").resolve()
 SPEC_SHEET_URI = "https://manuals.plus/m/e7feaf23c1831eb323faa279d01e5fddf4f184636f782ae88d1f52e8fe07f29d"
 
 
 def _fixture_uri(path: Path) -> str:
-    if path.is_absolute():
-        return path.as_uri()
-
-    raw_path = str(path)
-    if len(raw_path) >= 2 and raw_path[1] == ":":
-        return "file:///" + quote(raw_path.replace("\\", "/"), safe="/:")
-    if raw_path.startswith("\\\\"):
-        unc_path = raw_path.lstrip("\\").replace("\\", "/")
-        return "file:" + quote("//" + unc_path, safe="/:")
-
-    raise ValueError(f"Cannot convert path to file URI: {raw_path}")
+    return path.resolve().as_uri()
 
 
 def _source_ref(
@@ -132,7 +124,7 @@ def build_gt4_aero_run_request(
         source_refs.append(
             _source_ref(
                 kind="telemetry",
-                uri="file:///C:/Users/eqhsp/Downloads/GT4_telemetry.csv",
+                uri=_fixture_uri(TELEMETRY_CSV_PATH),
                 label="gt4-reference-telemetry",
                 metadata={
                     "session_id": "gt4-baseline-session",
