@@ -1,0 +1,212 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/generation-state.schema.json",
+  "title": "GenerationState",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_id",
+    "thread_id",
+    "objective",
+    "release_version",
+    "active_phase",
+    "active_task",
+    "status",
+    "completed_tasks",
+    "planned_files",
+    "generated_files",
+    "validated_files",
+    "failed_files",
+    "token_budget_total",
+    "token_budget_remaining",
+    "token_budget_phase_limit",
+    "token_usage_by_phase",
+    "context_summary",
+    "quality_findings",
+    "checkpoints"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "thread_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1
+    },
+    "release_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "active_phase": {
+      "type": "string",
+      "minLength": 1
+    },
+    "active_task": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "idle",
+        "running",
+        "paused",
+        "blocked",
+        "completed",
+        "failed"
+      ]
+    },
+    "completed_tasks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "planned_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "generated_files": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "validated_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "failed_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "current_manifest": {
+      "type": "object"
+    },
+    "schema_refs": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "openapi_refs": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "token_budget_total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "token_budget_remaining": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "token_budget_phase_limit": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "token_usage_by_phase": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "context_summary": {
+      "type": "string"
+    },
+    "quality_findings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "last_checkpoint_id": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "minLength": 1
+        }
+      ]
+    },
+    "replay_from_phase": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "minLength": 1
+        }
+      ]
+    },
+    "checkpoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "checkpoint_id",
+          "phase",
+          "completed_files",
+          "manifest_digest",
+          "context_summary",
+          "token_usage",
+          "next_phase"
+        ],
+        "properties": {
+          "checkpoint_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "phase": {
+            "type": "string",
+            "minLength": 1
+          },
+          "completed_files": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "manifest_digest": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "context_summary": {
+            "type": "string"
+          },
+          "token_usage": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "next_phase": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "$schema": "./schemas/mcp.runtime.contract.schema.json",
+  "runtime_id": "motorsport-engineering-agent-mcp",
+  "version": "1.0.0",
+  "description": "Declarative MCP contract for planner, researcher, coder, reviewer, and tester agents.",
+  "agents": [
+    {
+      "agent_id": "planner",
+      "name": "Planner",
+      "role": "planner",
+      "concurrency_limit": 1,
+      "capabilities": ["plan", "decompose", "route"],
+      "tool_scopes": ["docs.read", "state.read", "task.write"],
+      "resource_uris": [
+        "repo://PRD.md",
+        "repo://PROGRESS.md",
+        "repo://docs/system_architecture.md"
+      ],
+      "envelope": {
+        "protocol": "ANP",
+        "lease_seconds": 900,
+        "checkpoint_required": true,
+        "handoff_required": true
+      }
+    },
+    {
+      "agent_id": "researcher",
+      "name": "Researcher",
+      "role": "researcher",
+      "concurrency_limit": 2,
+      "capabilities": ["search", "summarize", "collect_evidence"],
+      "tool_scopes": ["repo.search", "docs.read", "web.search"],
+      "resource_uris": [
+        "repo://contracts/",
+        "repo://docs/",
+        "repo://mcp_v1_runtime_bundle/"
+      ],
+      "envelope": {
+        "protocol": "ANP",
+        "lease_seconds": 900,
+        "checkpoint_required": true,
+        "handoff_required": true
+      }
+    },
+    {
+      "agent_id": "coder",
+      "name": "Coder",
+      "role": "coder",
+      "concurrency_limit": 2,
+      "capabilities": ["implement", "refactor", "patch"],
+      "tool_scopes": ["filesystem.read", "filesystem.write", "tests.run"],
+      "resource_uris": [
+        "repo://control_plane/",
+        "repo://mcp_server/",
+        "repo://shared/",
+        "repo://worker/"
+      ],
+      "envelope": {
+        "protocol": "ANP",
+        "lease_seconds": 900,
+        "checkpoint_required": true,
+        "handoff_required": true
+      }
+    },
+    {
+      "agent_id": "reviewer",
+      "name": "Reviewer",
+      "role": "reviewer",
+      "concurrency_limit": 1,
+      "capabilities": ["review", "critique", "approve"],
+      "tool_scopes": ["diff.read", "policy.review", "comments.write"],
+      "resource_uris": [
+        "repo://README.md",
+        "repo://PRD.md",
+        "repo://tests/"
+      ],
+      "envelope": {
+        "protocol": "ANP",
+        "lease_seconds": 900,
+        "checkpoint_required": true,
+        "handoff_required": true
+      }
+    },
+    {
+      "agent_id": "tester",
+      "name": "Tester",
+      "role": "tester",
+      "concurrency_limit": 2,
+      "capabilities": ["test", "verify", "reproduce"],
+      "tool_scopes": ["tests.run", "logs.read", "fixtures.read"],
+      "resource_uris": [
+        "repo://contracts/",
+        "repo://runtime_logs/",
+        "repo://tests/"
+      ],
+      "envelope": {
+        "protocol": "ANP",
+        "lease_seconds": 900,
+        "checkpoint_required": true,
+        "handoff_required": true
+      }
+    }
+  ]
+}

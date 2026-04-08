@@ -1,0 +1,393 @@
+openapi: 3.1.0
+info:
+  title: MCP V1 Orchestration Agent API
+  version: 1.0.0
+  summary: Control-plane API for the single-agent MCP V1 orchestration runtime
+servers:
+  - url: https://orchestrator.example.internal
+tags:
+  - name: agent
+  - name: runs
+  - name: checkpoints
+  - name: evaluation
+  - name: registry
+paths:
+  /agent:
+    get:
+      tags: [agent]
+      operationId: getAgentProfile
+      summary: Get the orchestration agent profile
+      responses:
+        '200':
+          description: Agent profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentProfile'
+  /agent/runs:
+    post:
+      tags: [runs]
+      operationId: createRun
+      summary: Start a new orchestration run
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRunRequest'
+      responses:
+        '202':
+          description: Run accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunAccepted'
+  /agent/runs/{runId}:
+    get:
+      tags: [runs]
+      operationId: getRun
+      summary: Get the authoritative state for a run
+      parameters:
+        - $ref: '#/components/parameters/RunId'
+      responses:
+        '200':
+          description: Run state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationState'
+  /agent/runs/{runId}/resume:
+    post:
+      tags: [runs]
+      operationId: resumeRun
+      summary: Resume a run from its latest checkpoint
+      parameters:
+        - $ref: '#/components/parameters/RunId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResumeRunRequest'
+      responses:
+        '202':
+          description: Run resumed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunAccepted'
+  /agent/checkpoints/{threadId}:
+    get:
+      tags: [checkpoints]
+      operationId: listCheckpoints
+      summary: List checkpoints for a thread
+      parameters:
+        - $ref: '#/components/parameters/ThreadId'
+      responses:
+        '200':
+          description: Checkpoint list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [thread_id, checkpoints]
+                properties:
+                  thread_id:
+                    type: string
+                  checkpoints:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CheckpointRecord'
+  /agent/checkpoints/{threadId}/fork:
+    post:
+      tags: [checkpoints]
+      operationId: forkThreadFromCheckpoint
+      summary: Fork a thread from a prior checkpoint
+      parameters:
+        - $ref: '#/components/parameters/ThreadId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForkCheckpointRequest'
+      responses:
+        '202':
+          description: Fork accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunAccepted'
+  /agent/evaluations/prd:
+    post:
+      tags: [evaluation]
+      operationId: evaluateAgainstPrd
+      summary: Evaluate the generated release against PRD acceptance criteria
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrdEvaluationRequest'
+      responses:
+        '200':
+          description: Evaluation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrdEvaluationResult'
+  /agent/registry:
+    get:
+      tags: [registry]
+      operationId: getAgentRegistryEntry
+      summary: Get the A2A registry entry for the orchestration agent
+      responses:
+        '200':
+          description: A2A registry metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistryEntryResponse'
+components:
+  parameters:
+    RunId:
+      name: runId
+      in: path
+      required: true
+      schema:
+        type: string
+    ThreadId:
+      name: threadId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    CreateRunRequest:
+      type: object
+      additionalProperties: false
+      required: [run_id, thread_id]
+      properties:
+        run_id:
+          type: string
+        thread_id:
+          type: string
+        replay_from_phase:
+          type: string
+          nullable: true
+    ResumeRunRequest:
+      type: object
+      additionalProperties: false
+      required: [thread_id]
+      properties:
+        thread_id:
+          type: string
+        replay_from_phase:
+          type: string
+          nullable: true
+    ForkCheckpointRequest:
+      type: object
+      additionalProperties: false
+      required: [checkpoint_id, new_thread_id]
+      properties:
+        checkpoint_id:
+          type: string
+        new_thread_id:
+          type: string
+    RunAccepted:
+      type: object
+      required: [run_id, thread_id, status]
+      properties:
+        run_id:
+          type: string
+        thread_id:
+          type: string
+        status:
+          type: string
+          enum: [accepted, resumed, forked]
+    CheckpointRecord:
+      type: object
+      additionalProperties: false
+      required:
+        - checkpoint_id
+        - phase
+        - completed_files
+        - manifest_digest
+        - context_summary
+        - token_usage
+        - next_phase
+      properties:
+        checkpoint_id:
+          type: string
+        phase:
+          type: string
+        completed_files:
+          type: array
+          items:
+            type: string
+        manifest_digest:
+          type: string
+          pattern: '^sha256:[a-f0-9]{64}$'
+        context_summary:
+          type: string
+        token_usage:
+          type: integer
+          minimum: 0
+        next_phase:
+          type: string
+    GenerationState:
+      type: object
+      additionalProperties: false
+      required:
+        - run_id
+        - thread_id
+        - objective
+        - release_version
+        - active_phase
+        - active_task
+        - status
+        - completed_tasks
+        - planned_files
+        - generated_files
+        - validated_files
+        - failed_files
+        - token_budget_total
+        - token_budget_remaining
+        - token_budget_phase_limit
+        - token_usage_by_phase
+        - context_summary
+        - quality_findings
+        - checkpoints
+      properties:
+        run_id:
+          type: string
+        thread_id:
+          type: string
+        objective:
+          type: string
+        release_version:
+          type: string
+        active_phase:
+          type: string
+        active_task:
+          type: string
+        status:
+          type: string
+          enum: [idle, running, paused, blocked, completed, failed]
+        completed_tasks:
+          type: array
+          items:
+            type: string
+        planned_files:
+          type: array
+          items:
+            type: string
+        generated_files:
+          type: object
+          additionalProperties:
+            type: string
+        validated_files:
+          type: array
+          items:
+            type: string
+        failed_files:
+          type: array
+          items:
+            type: string
+        token_budget_total:
+          type: integer
+        token_budget_remaining:
+          type: integer
+        token_budget_phase_limit:
+          type: integer
+        token_usage_by_phase:
+          type: object
+          additionalProperties:
+            type: integer
+        context_summary:
+          type: string
+        quality_findings:
+          type: array
+          items:
+            type: string
+        last_checkpoint_id:
+          type: string
+          nullable: true
+        replay_from_phase:
+          type: string
+          nullable: true
+        checkpoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckpointRecord'
+    PrdEvaluationRequest:
+      type: object
+      additionalProperties: false
+      required: [run_id, prd_path]
+      properties:
+        run_id:
+          type: string
+        prd_path:
+          type: string
+    CriterionResult:
+      type: object
+      additionalProperties: false
+      required: [id, status, evidence]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [pass, fail, pending]
+        evidence:
+          type: array
+          items:
+            type: string
+    PrdEvaluationResult:
+      type: object
+      additionalProperties: false
+      required: [status, criteria, summary]
+      properties:
+        status:
+          type: string
+          enum: [ready, not_ready]
+        criteria:
+          type: array
+          items:
+            $ref: '#/components/schemas/CriterionResult'
+        summary:
+          type: string
+    AgentProfile:
+      type: object
+      additionalProperties: false
+      required: [agent_id, name, mode, runtime, entrypoint, api_contract]
+      properties:
+        agent_id:
+          type: string
+        name:
+          type: string
+        mode:
+          type: string
+        runtime:
+          type: string
+        entrypoint:
+          type: string
+        api_contract:
+          type: string
+    RegistryEntryResponse:
+      type: object
+      additionalProperties: false
+      required: [registry_id, agents]
+      properties:
+        registry_id:
+          type: string
+        agents:
+          type: array
+          items:
+            type: object

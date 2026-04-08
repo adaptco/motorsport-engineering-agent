@@ -9,3 +9,10 @@ def default_session_ledger_path() -> Path:
     if configured:
         return Path(configured).expanduser()
     return Path.cwd() / ".mea_tmp" / "workflow_state" / "session-ledger.db"
+
+
+def default_aero_state_root() -> Path:
+    configured = os.environ.get("AERO_STATE_ROOT")
+    if configured:
+        return Path(configured).expanduser()
+    return Path.cwd() / ".mea_tmp" / "aero_state"

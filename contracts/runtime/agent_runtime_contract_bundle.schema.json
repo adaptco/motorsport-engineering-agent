@@ -1,0 +1,1404 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adaptco.dev/mea/contracts/runtime/agent_runtime_contract_bundle.schema.json",
+  "title": "MEA Agent Runtime Contract Bundle",
+  "description": "First-class event-gated runtime contracts for planning, execution, tool use, checkpoints, recovery, and audit.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/RequestReceivedEvent"
+    },
+    {
+      "$ref": "#/$defs/RunCreatedEvent"
+    },
+    {
+      "$ref": "#/$defs/WorkflowPolicyScreenedEvent"
+    },
+    {
+      "$ref": "#/$defs/PlanProposedEvent"
+    },
+    {
+      "$ref": "#/$defs/PlanRepairedEvent"
+    },
+    {
+      "$ref": "#/$defs/PlanFailedEvent"
+    },
+    {
+      "$ref": "#/$defs/StepDispatchedEvent"
+    },
+    {
+      "$ref": "#/$defs/ApprovalResolvedEvent"
+    },
+    {
+      "$ref": "#/$defs/ToolRequestedEvent"
+    },
+    {
+      "$ref": "#/$defs/ToolExecutedEvent"
+    },
+    {
+      "$ref": "#/$defs/ActionProposedEvent"
+    },
+    {
+      "$ref": "#/$defs/ActionRepairedEvent"
+    },
+    {
+      "$ref": "#/$defs/ActionInvalidEvent"
+    },
+    {
+      "$ref": "#/$defs/CheckpointPersistedEvent"
+    },
+    {
+      "$ref": "#/$defs/StateTransitionedEvent"
+    },
+    {
+      "$ref": "#/$defs/BlockedEvent"
+    },
+    {
+      "$ref": "#/$defs/ResumeRequestedEvent"
+    },
+    {
+      "$ref": "#/$defs/RunCompletedEvent"
+    },
+    {
+      "$ref": "#/$defs/RunFailedEvent"
+    },
+    {
+      "$ref": "#/$defs/AuditBundleWrittenEvent"
+    }
+  ],
+  "$defs": {
+    "Id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,128}$"
+    },
+    "Sha256": {
+      "type": "string",
+      "pattern": "^sha256:[A-Fa-f0-9]{64}$"
+    },
+    "SemVer": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "UtcTimestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "Lane": {
+      "type": "string",
+      "enum": [
+        "ui",
+        "orch",
+        "gov",
+        "ctx",
+        "llm",
+        "rt",
+        "mcp",
+        "ext",
+        "hitl",
+        "obs"
+      ]
+    },
+    "FsmState": {
+      "type": "string",
+      "enum": [
+        "REQUEST_RECEIVED",
+        "RUN_CREATED",
+        "POLICY_SCREENED",
+        "CONTEXT_READY",
+        "PLAN_PENDING",
+        "PLAN_ACCEPTED",
+        "PLAN_FAILED",
+        "STEP_DISPATCHED",
+        "WAITING_APPROVAL",
+        "TOOL_PENDING",
+        "TOOL_DONE",
+        "ANALYZE_PENDING",
+        "ACTION_ACCEPTED",
+        "ACTION_INVALID",
+        "CHECKPOINTED",
+        "BLOCKED",
+        "RESUME_READY",
+        "COMPLETED",
+        "FAILED"
+      ]
+    },
+    "ArtifactRef": {
+      "type": "object",
+      "required": [
+        "artifact_id",
+        "artifact_type",
+        "uri",
+        "digest"
+      ],
+      "properties": {
+        "artifact_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "artifact_type": {
+          "type": "string",
+          "enum": [
+            "json",
+            "text",
+            "file",
+            "blob",
+            "trace",
+            "receipt",
+            "checkpoint",
+            "report",
+            "dataset"
+          ]
+        },
+        "uri": {
+          "type": "string",
+          "minLength": 1
+        },
+        "digest": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "BudgetSnapshot": {
+      "type": "object",
+      "required": [
+        "max_steps",
+        "steps_used",
+        "max_tokens_total",
+        "tokens_used",
+        "max_tool_calls",
+        "tool_calls_used",
+        "deadline_at"
+      ],
+      "properties": {
+        "max_steps": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "steps_used": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_tokens_total": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "tokens_used": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_tool_calls": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tool_calls_used": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "deadline_at": {
+          "$ref": "#/$defs/UtcTimestamp"
+        },
+        "retry_count": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "rate_limit_reset_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UtcTimestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ExecutionEnvelope": {
+      "type": "object",
+      "required": [
+        "policy_version",
+        "allowed_tools",
+        "side_effect_mode",
+        "budget"
+      ],
+      "properties": {
+        "policy_version": {
+          "$ref": "#/$defs/Id"
+        },
+        "allowed_tools": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Id"
+          },
+          "uniqueItems": true
+        },
+        "blocked_actions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "side_effect_mode": {
+          "type": "string",
+          "enum": [
+            "read_only",
+            "bounded_write",
+            "approval_required"
+          ]
+        },
+        "budget": {
+          "$ref": "#/$defs/BudgetSnapshot"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ValidationError": {
+      "type": "object",
+      "required": [
+        "code",
+        "path",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/Id"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "RepairMetadata": {
+      "type": "object",
+      "required": [
+        "repair_attempt",
+        "repaired_from_event_id"
+      ],
+      "properties": {
+        "repair_attempt": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "repaired_from_event_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "validation_errors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ValidationError"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "StepContract": {
+      "type": "object",
+      "required": [
+        "step_id",
+        "step_kind",
+        "title",
+        "approval_required"
+      ],
+      "properties": {
+        "step_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "step_kind": {
+          "type": "string",
+          "enum": [
+            "retrieve",
+            "analyze",
+            "tool",
+            "write",
+            "review",
+            "finalize"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "approval_required": {
+          "type": "boolean"
+        },
+        "allowed_tools": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Id"
+          },
+          "uniqueItems": true
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          }
+        },
+        "outputs_expected": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ToolIntent": {
+      "type": "object",
+      "required": [
+        "tool_name",
+        "mode"
+      ],
+      "properties": {
+        "tool_name": {
+          "$ref": "#/$defs/Id"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "read",
+            "write",
+            "read_write"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "BaseEvent": {
+      "type": "object",
+      "required": [
+        "event_type",
+        "schema_version",
+        "event_id",
+        "run_id",
+        "created_at",
+        "lane",
+        "fsm_state",
+        "state_hash",
+        "payload"
+      ],
+      "properties": {
+        "event_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SemVer"
+        },
+        "event_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "run_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "task_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "step_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at": {
+          "$ref": "#/$defs/UtcTimestamp"
+        },
+        "lane": {
+          "$ref": "#/$defs/Lane"
+        },
+        "fsm_state": {
+          "$ref": "#/$defs/FsmState"
+        },
+        "actor": {
+          "type": "string",
+          "enum": [
+            "user",
+            "ui",
+            "orch",
+            "gov",
+            "ctx",
+            "llm",
+            "rt",
+            "mcp",
+            "ext",
+            "hitl",
+            "obs"
+          ]
+        },
+        "prev_hash": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "state_hash": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "policy_version": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "payload": {
+          "type": "object"
+        }
+      }
+    },
+    "RequestReceivedPayload": {
+      "type": "object",
+      "required": [
+        "request_id",
+        "session_id",
+        "input_digest"
+      ],
+      "properties": {
+        "request_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "session_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "input_digest": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RunCreatedPayload": {
+      "type": "object",
+      "required": [
+        "workflow_id",
+        "objective",
+        "execution_envelope"
+      ],
+      "properties": {
+        "workflow_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "objective": {
+          "type": "string",
+          "minLength": 1
+        },
+        "execution_envelope": {
+          "$ref": "#/$defs/ExecutionEnvelope"
+        }
+      },
+      "additionalProperties": false
+    },
+    "WorkflowPolicyScreenedPayload": {
+      "type": "object",
+      "required": [
+        "decision",
+        "execution_envelope"
+      ],
+      "properties": {
+        "decision": {
+          "type": "string",
+          "enum": [
+            "allow",
+            "review_required",
+            "deny"
+          ]
+        },
+        "execution_envelope": {
+          "$ref": "#/$defs/ExecutionEnvelope"
+        },
+        "blocked_actions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "PlanPayload": {
+      "type": "object",
+      "required": [
+        "objective_digest",
+        "context_digest",
+        "steps"
+      ],
+      "properties": {
+        "objective_digest": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "context_digest": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/StepContract"
+          }
+        },
+        "tool_intents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ToolIntent"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "PlanFailurePayload": {
+      "type": "object",
+      "required": [
+        "failure_class",
+        "validation_errors"
+      ],
+      "properties": {
+        "failure_class": {
+          "type": "string",
+          "enum": [
+            "schema_invalid",
+            "policy_invalid",
+            "repair_exhausted"
+          ]
+        },
+        "validation_errors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ValidationError"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "StepDispatchedPayload": {
+      "type": "object",
+      "required": [
+        "step"
+      ],
+      "properties": {
+        "step": {
+          "$ref": "#/$defs/StepContract"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ApprovalResolvedPayload": {
+      "type": "object",
+      "required": [
+        "approval_task_id",
+        "decision"
+      ],
+      "properties": {
+        "approval_task_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "decision": {
+          "type": "string",
+          "enum": [
+            "approved",
+            "rejected",
+            "modified"
+          ]
+        },
+        "approver": {
+          "$ref": "#/$defs/Id"
+        },
+        "modified_constraints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ToolRequestedPayload": {
+      "type": "object",
+      "required": [
+        "tool_name",
+        "idempotency_key",
+        "mode",
+        "arguments_digest"
+      ],
+      "properties": {
+        "tool_name": {
+          "$ref": "#/$defs/Id"
+        },
+        "idempotency_key": {
+          "$ref": "#/$defs/Id"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "read",
+            "write",
+            "read_write"
+          ]
+        },
+        "arguments_digest": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "secret_scope": {
+          "$ref": "#/$defs/Id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ToolExecutedPayload": {
+      "type": "object",
+      "required": [
+        "tool_name",
+        "idempotency_key",
+        "result_status",
+        "latency_ms"
+      ],
+      "properties": {
+        "tool_name": {
+          "$ref": "#/$defs/Id"
+        },
+        "idempotency_key": {
+          "$ref": "#/$defs/Id"
+        },
+        "result_status": {
+          "type": "string",
+          "enum": [
+            "success",
+            "partial",
+            "failed"
+          ]
+        },
+        "latency_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "retriable": {
+          "type": "boolean"
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          }
+        },
+        "side_effect_class": {
+          "type": "string",
+          "enum": [
+            "none",
+            "read_only",
+            "external_write"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ActionPayload": {
+      "type": "object",
+      "required": [
+        "step_id",
+        "output_digest"
+      ],
+      "properties": {
+        "step_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "output_digest": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "summary": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ActionFailurePayload": {
+      "type": "object",
+      "required": [
+        "failure_class",
+        "validation_errors"
+      ],
+      "properties": {
+        "failure_class": {
+          "type": "string",
+          "enum": [
+            "schema_invalid",
+            "safety_failed",
+            "repair_exhausted"
+          ]
+        },
+        "validation_errors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ValidationError"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "CheckpointPersistedPayload": {
+      "type": "object",
+      "required": [
+        "checkpoint_id",
+        "resume_safe",
+        "active_step_id",
+        "budget"
+      ],
+      "properties": {
+        "checkpoint_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "resume_safe": {
+          "type": "boolean"
+        },
+        "active_step_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "completed_step_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Id"
+          },
+          "uniqueItems": true
+        },
+        "budget": {
+          "$ref": "#/$defs/BudgetSnapshot"
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "StateTransitionedPayload": {
+      "type": "object",
+      "required": [
+        "from_state",
+        "to_state",
+        "reason"
+      ],
+      "properties": {
+        "from_state": {
+          "$ref": "#/$defs/FsmState"
+        },
+        "to_state": {
+          "$ref": "#/$defs/FsmState"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "BlockedPayload": {
+      "type": "object",
+      "required": [
+        "reason_code",
+        "retriable"
+      ],
+      "properties": {
+        "reason_code": {
+          "type": "string",
+          "enum": [
+            "timeout",
+            "rate_limit",
+            "token_budget",
+            "tool_failure",
+            "policy_block",
+            "approval_pending",
+            "worker_crash",
+            "no_progress"
+          ]
+        },
+        "retriable": {
+          "type": "boolean"
+        },
+        "next_eligible_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UtcTimestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ResumeRequestedPayload": {
+      "type": "object",
+      "required": [
+        "checkpoint_id",
+        "resume_state",
+        "resume_token"
+      ],
+      "properties": {
+        "checkpoint_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "resume_state": {
+          "$ref": "#/$defs/FsmState"
+        },
+        "resume_token": {
+          "$ref": "#/$defs/Id"
+        },
+        "expires_at": {
+          "$ref": "#/$defs/UtcTimestamp"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RunCompletedPayload": {
+      "type": "object",
+      "required": [
+        "terminal_state",
+        "artifacts"
+      ],
+      "properties": {
+        "terminal_state": {
+          "type": "string",
+          "const": "COMPLETED"
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          }
+        },
+        "result_summary": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RunFailedPayload": {
+      "type": "object",
+      "required": [
+        "terminal_state",
+        "failure_class"
+      ],
+      "properties": {
+        "terminal_state": {
+          "type": "string",
+          "const": "FAILED"
+        },
+        "failure_class": {
+          "type": "string",
+          "enum": [
+            "invalid_plan",
+            "invalid_action",
+            "policy_denied",
+            "budget_exhausted",
+            "external_failure",
+            "worker_failure"
+          ]
+        },
+        "recovery_hint": {
+          "type": "string"
+        },
+        "resume_token": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "AuditBundleWrittenPayload": {
+      "type": "object",
+      "required": [
+        "bundle_id",
+        "bundle_digest"
+      ],
+      "properties": {
+        "bundle_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "bundle_digest": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "RequestReceivedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "request.received"
+            },
+            "lane": {
+              "const": "ui"
+            },
+            "payload": {
+              "$ref": "#/$defs/RequestReceivedPayload"
+            }
+          }
+        }
+      ]
+    },
+    "RunCreatedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "run.created"
+            },
+            "lane": {
+              "const": "orch"
+            },
+            "payload": {
+              "$ref": "#/$defs/RunCreatedPayload"
+            }
+          }
+        }
+      ]
+    },
+    "WorkflowPolicyScreenedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "workflow.policy.screened"
+            },
+            "lane": {
+              "const": "gov"
+            },
+            "payload": {
+              "$ref": "#/$defs/WorkflowPolicyScreenedPayload"
+            }
+          }
+        }
+      ]
+    },
+    "PlanProposedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "plan.proposed"
+            },
+            "lane": {
+              "const": "llm"
+            },
+            "payload": {
+              "$ref": "#/$defs/PlanPayload"
+            }
+          }
+        }
+      ]
+    },
+    "PlanRepairedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "plan.repaired"
+            },
+            "lane": {
+              "const": "llm"
+            },
+            "payload": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/PlanPayload"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "repair_metadata"
+                  ],
+                  "properties": {
+                    "repair_metadata": {
+                      "$ref": "#/$defs/RepairMetadata"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "PlanFailedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "plan.failed"
+            },
+            "lane": {
+              "const": "gov"
+            },
+            "payload": {
+              "$ref": "#/$defs/PlanFailurePayload"
+            }
+          }
+        }
+      ]
+    },
+    "StepDispatchedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "step.dispatched"
+            },
+            "lane": {
+              "const": "orch"
+            },
+            "payload": {
+              "$ref": "#/$defs/StepDispatchedPayload"
+            }
+          }
+        }
+      ]
+    },
+    "ApprovalResolvedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "approval.resolved"
+            },
+            "lane": {
+              "const": "hitl"
+            },
+            "payload": {
+              "$ref": "#/$defs/ApprovalResolvedPayload"
+            }
+          }
+        }
+      ]
+    },
+    "ToolRequestedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "tool.requested"
+            },
+            "lane": {
+              "const": "mcp"
+            },
+            "payload": {
+              "$ref": "#/$defs/ToolRequestedPayload"
+            }
+          }
+        }
+      ]
+    },
+    "ToolExecutedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "tool.executed"
+            },
+            "lane": {
+              "const": "mcp"
+            },
+            "payload": {
+              "$ref": "#/$defs/ToolExecutedPayload"
+            }
+          }
+        }
+      ]
+    },
+    "ActionProposedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "action.proposed"
+            },
+            "lane": {
+              "const": "llm"
+            },
+            "payload": {
+              "$ref": "#/$defs/ActionPayload"
+            }
+          }
+        }
+      ]
+    },
+    "ActionRepairedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "action.repaired"
+            },
+            "lane": {
+              "const": "llm"
+            },
+            "payload": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/ActionPayload"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "repair_metadata"
+                  ],
+                  "properties": {
+                    "repair_metadata": {
+                      "$ref": "#/$defs/RepairMetadata"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "ActionInvalidEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "action.invalid"
+            },
+            "lane": {
+              "const": "gov"
+            },
+            "payload": {
+              "$ref": "#/$defs/ActionFailurePayload"
+            }
+          }
+        }
+      ]
+    },
+    "CheckpointPersistedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "checkpoint.persisted"
+            },
+            "lane": {
+              "const": "ctx"
+            },
+            "payload": {
+              "$ref": "#/$defs/CheckpointPersistedPayload"
+            }
+          }
+        }
+      ]
+    },
+    "StateTransitionedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "state.transitioned"
+            },
+            "lane": {
+              "const": "rt"
+            },
+            "payload": {
+              "$ref": "#/$defs/StateTransitionedPayload"
+            }
+          }
+        }
+      ]
+    },
+    "BlockedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "blocked"
+            },
+            "lane": {
+              "const": "rt"
+            },
+            "payload": {
+              "$ref": "#/$defs/BlockedPayload"
+            }
+          }
+        }
+      ]
+    },
+    "ResumeRequestedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "resume.requested"
+            },
+            "lane": {
+              "const": "orch"
+            },
+            "payload": {
+              "$ref": "#/$defs/ResumeRequestedPayload"
+            }
+          }
+        }
+      ]
+    },
+    "RunCompletedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "run.completed"
+            },
+            "lane": {
+              "const": "orch"
+            },
+            "payload": {
+              "$ref": "#/$defs/RunCompletedPayload"
+            }
+          }
+        }
+      ]
+    },
+    "RunFailedEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "run.failed"
+            },
+            "lane": {
+              "const": "orch"
+            },
+            "payload": {
+              "$ref": "#/$defs/RunFailedPayload"
+            }
+          }
+        }
+      ]
+    },
+    "AuditBundleWrittenEvent": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseEvent"
+        },
+        {
+          "properties": {
+            "event_type": {
+              "const": "audit.bundle.written"
+            },
+            "lane": {
+              "const": "obs"
+            },
+            "payload": {
+              "$ref": "#/$defs/AuditBundleWrittenPayload"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

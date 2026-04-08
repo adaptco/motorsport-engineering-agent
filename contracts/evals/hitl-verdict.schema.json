@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adaptco.dev/contracts/evals/hitl-verdict.schema.json",
+  "title": "HITL Verdict",
+  "type": "object",
+  "required": [
+    "verdict_id",
+    "session_id",
+    "eval_run_id",
+    "reviewer_id",
+    "decision",
+    "created_at"
+  ],
+  "properties": {
+    "verdict_id": { "type": "string" },
+    "session_id": { "type": "string" },
+    "eval_run_id": { "type": "string" },
+    "reviewer_id": { "type": "string" },
+    "decision": {
+      "type": "string",
+      "enum": ["approve", "reject", "escalate", "waive"]
+    },
+    "score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "rationale": { "type": "string" },
+    "evidence_refs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "created_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

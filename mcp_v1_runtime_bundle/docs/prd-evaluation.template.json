@@ -1,0 +1,46 @@
+{
+  "release": "mcp-v1-single-agent",
+  "version": "1.0.0",
+  "criteria": [
+    {
+      "id": "AC-01",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "AC-02",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "AC-03",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "AC-04",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "AC-05",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "AC-06",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "AC-07",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "AC-08",
+      "status": "pending",
+      "evidence": []
+    }
+  ]
+}

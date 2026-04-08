@@ -1,0 +1,19 @@
+id: supervisor
+role: global-orchestrator
+description: Owns task decomposition, routing, and final response assembly.
+model:
+  provider: openai
+  name: gpt-5.4-thinking
+memory:
+  state_scope: workflow
+  retrieval_profile: broad
+tools:
+  - search-memory
+  - queue-handoff
+  - request-telemetry-analysis
+  - request-replay-analysis
+  - submit-hitl-review
+handoff_targets:
+  - telemetry-analyst
+  - replay-analyst
+  - validator

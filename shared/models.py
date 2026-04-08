@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class FixCIRequest(BaseModel):
@@ -262,3 +262,125 @@ class IngestNormalizeResponse(BaseModel):
     column_count: int = 0
     canonical_columns: List[str] = Field(default_factory=list)
     notes: List[str] = Field(default_factory=list)
+
+
+class AeroSourceRef(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["photo", "cad", "telemetry", "public_reference", "measurement", "wind_tunnel", "solver_case"]
+    uri: str
+    label: Optional[str] = None
+    sha256: Optional[str] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AeroVehicleIdentity(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    make: str
+    model: str
+    year: Optional[int] = None
+    trim: Optional[str] = None
+    chassis_code: Optional[str] = None
+    vehicle_class: Optional[str] = None
+
+
+class AeroSimulationRunRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    project_id: str
+    vehicle_program_id: str
+    vehicle_identity: AeroVehicleIdentity
+    source_refs: List[AeroSourceRef] = Field(default_factory=list)
+    simulation_objective: str
+    baseline_geometry_strategy: Literal["public_cad", "proxy_geometry", "imported_cad", "manual_sketch"] = "proxy_geometry"
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AeroSimulationBranchRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    branch_name: str
+    change_mode: Literal["geometry", "setup", "solver", "boundary_condition"]
+    change_summary: str
+    requested_adjustments: Dict[str, Any] = Field(default_factory=dict)
+    expected_delta_cl: Optional[float] = None
+    expected_delta_cd: Optional[float] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AeroSimulationExecutionState(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    runner_kind: Literal["sandbox", "wsl"]
+    status: Literal["not_run", "queued", "running", "complete", "failed", "skipped"]
+    environment: Literal["sandbox", "wsl2"]
+    solver_status: Literal["scaffolded", "meshed", "solved", "failed", "archived"]
+    distro_name: Optional[str] = None
+    distro_version: Optional[str] = None
+    openfoam_version: Optional[str] = None
+    kernel_signature: Optional[str] = None
+    command: List[str] = Field(default_factory=list)
+    exit_code: Optional[int] = None
+    started_at: Optional[datetime] = None
+    finished_at: Optional[datetime] = None
+    stdout_uri: Optional[str] = None
+    stderr_uri: Optional[str] = None
+    result_uri: Optional[str] = None
+    notes: List[str] = Field(default_factory=list)
+
+
+class AeroSimulationSolveResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    solver_family: Literal["openfoam"] = "openfoam"
+    execution_state: AeroSimulationExecutionState
+    cl: Optional[float] = None
+    cd: Optional[float] = None
+    cm_pitch: Optional[float] = None
+    aero_balance_pct: Optional[float] = None
+    drag_area_m2: Optional[float] = None
+    downforce_n: Optional[float] = None
+    confidence: float = 0.0
+    correlation_score: Optional[float] = None
+    residual_score: Optional[float] = None
+    artifacts: List[AeroSourceRef] = Field(default_factory=list)
+    notes: List[str] = Field(default_factory=list)
+
+
+class AeroSimulationStateRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    state_type: Literal["aero_simulation_state"] = "aero_simulation_state"
+    state_version: int = 1
+    simulation_run_id: str
+    project_id: str
+    vehicle_program_id: str
+    loop_family: Literal["aero"] = "aero"
+    loop_layer: Literal["simulation"] = "simulation"
+    lifecycle_state: Literal["draft", "baseline_built", "calibrating", "stable", "branching", "archived"] = "draft"
+    created_at: datetime
+    updated_at: datetime
+    state_hash: str
+    prev_state_hash: Optional[str] = None
+    vehicle_snapshot: Dict[str, Any]
+    geometry_state: Dict[str, Any]
+    solver_state: Dict[str, Any]
+    metric_snapshot: Dict[str, Any]
+    provenance: List[AeroSourceRef] = Field(default_factory=list)
+    branches: List[Dict[str, Any]] = Field(default_factory=list)
+    telemetry_links: List[AeroSourceRef] = Field(default_factory=list)
+    calibration_state: Dict[str, Any] = Field(default_factory=dict)
+    resume_state: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AeroSimulationStateSummary(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    simulation_run_id: str
+    project_id: str
+    vehicle_program_id: str
+    lifecycle_state: Literal["draft", "baseline_built", "calibrating", "stable", "branching", "archived"]
+    state_hash: str
+    updated_at: datetime
+    state_path: str

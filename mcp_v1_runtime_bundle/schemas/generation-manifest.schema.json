@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/generation-manifest.schema.json",
+  "title": "GenerationManifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_id",
+    "version",
+    "objective",
+    "release",
+    "token_budget",
+    "phases",
+    "planned_files",
+    "embedded_artifacts",
+    "evaluation_target"
+  ],
+  "properties": {
+    "manifest_id": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "objective": {
+      "type": "string"
+    },
+    "release": {
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "mode",
+        "runtime"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string"
+        },
+        "runtime": {
+          "type": "string"
+        }
+      }
+    },
+    "token_budget": {
+      "type": "object",
+      "required": [
+        "total",
+        "repair_reserve",
+        "per_phase_limit",
+        "per_node_limit"
+      ],
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "repair_reserve": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "per_phase_limit": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "per_node_limit": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "phases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "phase_id",
+          "description",
+          "outputs",
+          "depends_on"
+        ],
+        "properties": {
+          "phase_id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "outputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "planned_files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "kind",
+          "owner_phase"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "owner_phase": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "embedded_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "target_module_export"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "target_module_export": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "evaluation_target": {
+      "type": "object",
+      "required": [
+        "prd_path",
+        "mode"
+      ],
+      "properties": {
+        "prd_path": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

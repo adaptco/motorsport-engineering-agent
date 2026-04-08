@@ -1,0 +1,17 @@
+id: telemetry-analyst
+role: telemetry-domain-specialist
+description: Converts normalized telemetry into evidence packets and recommendations.
+model:
+  provider: openai
+  name: gpt-5.4-thinking
+memory:
+  state_scope: session
+  retrieval_profile: telemetry
+tools:
+  - fetch-normalized-session
+  - compute-lap-segments
+  - create-evidence-packet
+  - emit-stage-receipt
+handoff_targets:
+  - validator
+  - supervisor

@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   postgres:
-    image: postgres:16
+    image: postgres:16-alpine
     container_name: mea-postgres
     environment:
       POSTGRES_DB: mea
@@ -13,14 +13,37 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./db/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mea -d mea"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
+    networks:
+      - mea-network
+    mem_limit: 512m
+    cpus: "1"
 
   redis:
-    image: redis:7
+    image: redis:7-alpine
     container_name: mea-redis
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
+    networks:
+      - mea-network
+    mem_limit: 256m
+    cpus: "0.5"
+    command: redis-server --appendonly yes --appendfsync everysec
 
   control_plane:
     build:
@@ -32,10 +55,21 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
-      - redis
-      - mcp_server
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mcp_server:
+        condition: service_started
     restart: unless-stopped
+    networks:
+      - mea-network
+    mem_limit: 512m
+    cpus: "1"
+    environment:
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./logs/control_plane:/app/logs
 
   worker:
     build:
@@ -45,10 +79,21 @@ services:
     env_file:
       - .env
     depends_on:
-      - postgres
-      - redis
-      - control_plane
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      control_plane:
+        condition: service_started
     restart: unless-stopped
+    networks:
+      - mea-network
+    mem_limit: 1024m
+    cpus: "2"
+    environment:
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./logs/worker:/app/logs
 
   mcp_server:
     build:
@@ -60,6 +105,19 @@ services:
     ports:
       - "7000:7000"
     restart: unless-stopped
+    networks:
+      - mea-network
+    mem_limit: 512m
+    cpus: "1"
+    environment:
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./logs/mcp_server:/app/logs
 
 volumes:
   postgres_data:
+  redis_data:
+
+networks:
+  mea-network:
+    driver: bridge

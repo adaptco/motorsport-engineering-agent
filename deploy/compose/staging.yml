@@ -1,0 +1,48 @@
+version: "3.9"
+
+# Staging environment overrides - extends base docker-compose.yml
+services:
+  postgres:
+    environment:
+      POSTGRES_DB: mea_staging
+    mem_limit: 1024m
+    cpus: "2"
+
+  redis:
+    mem_limit: 512m
+    cpus: "1"
+
+  control_plane:
+    image: ghcr.io/your-org/your-repo/control-plane:staging
+    environment:
+      ENV: staging
+      LOG_LEVEL: info
+      DATABASE_URL: postgresql://mea:mea@postgres:5432/mea_staging
+    mem_limit: 1024m
+    cpus: "2"
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  worker:
+    image: ghcr.io/your-org/your-repo/worker:staging
+    environment:
+      ENV: staging
+      LOG_LEVEL: info
+      DATABASE_URL: postgresql://mea:mea@postgres:5432/mea_staging
+    mem_limit: 2048m
+    cpus: "4"
+    restart: always
+
+  mcp_server:
+    image: ghcr.io/your-org/your-repo/mcp-server:staging
+    environment:
+      ENV: staging
+      LOG_LEVEL: info
+    mem_limit: 1024m
+    cpus: "2"
+    restart: always

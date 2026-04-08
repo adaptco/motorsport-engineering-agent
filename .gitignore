@@ -17,6 +17,10 @@ mcp_tools/ralph_wiggum_agent.py
 .mea_tmp/workflow_state/
 runtime_logs/workflow_state/
 
+# Aero simulation state artifacts
+.mea_tmp/aero_state/
+runtime_logs/aero_state/
+
 # Local worktree scratch area (must stay outside tracked source)
 /motorsport-engineering-agent.worktrees/
 /motorsport-engineering-agent/

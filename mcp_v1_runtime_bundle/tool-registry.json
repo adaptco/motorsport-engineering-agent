@@ -1,0 +1,248 @@
+{
+  "$schema": "https://example.org/schemas/tool-registry.schema.json",
+  "registry_id": "mcp-v1-single-agent-tool-registry",
+  "version": "1.0.0",
+  "tools": [
+    {
+      "name": "manifest.freeze",
+      "description": "Freeze the generation manifest and derive phase/ref maps.",
+      "side_effect_class": "none",
+      "idempotent": true,
+      "args_schema": {
+        "type": "object",
+        "required": [
+          "manifestPath"
+        ],
+        "properties": {
+          "manifestPath": {
+            "type": "string"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "manifestDigest",
+          "phasePlan"
+        ],
+        "properties": {
+          "manifestDigest": {
+            "type": "string"
+          },
+          "phasePlan": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "name": "schema.generate",
+      "description": "Generate a schema family from the frozen manifest.",
+      "side_effect_class": "file_write",
+      "idempotent": true,
+      "args_schema": {
+        "type": "object",
+        "required": [
+          "family",
+          "targets"
+        ],
+        "properties": {
+          "family": {
+            "type": "string"
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "writtenFiles"
+        ],
+        "properties": {
+          "writtenFiles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "openapi.generate",
+      "description": "Generate an OpenAPI contract and components for the orchestration agent.",
+      "side_effect_class": "file_write",
+      "idempotent": true,
+      "args_schema": {
+        "type": "object",
+        "required": [
+          "resourceGroup"
+        ],
+        "properties": {
+          "resourceGroup": {
+            "type": "string"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "writtenFiles"
+        ],
+        "properties": {
+          "writtenFiles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "typescript.generate",
+      "description": "Generate the governed TypeScript runtime module.",
+      "side_effect_class": "file_write",
+      "idempotent": true,
+      "args_schema": {
+        "type": "object",
+        "required": [
+          "modulePath"
+        ],
+        "properties": {
+          "modulePath": {
+            "type": "string"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "modulePath"
+        ],
+        "properties": {
+          "modulePath": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "validate.bundle",
+      "description": "Run bundle validation across JSON, YAML, and TypeScript surfaces.",
+      "side_effect_class": "none",
+      "idempotent": true,
+      "args_schema": {
+        "type": "object",
+        "required": [
+          "paths"
+        ],
+        "properties": {
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "passed",
+          "findings"
+        ],
+        "properties": {
+          "passed": {
+            "type": "boolean"
+          },
+          "findings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "checkpoint.write",
+      "description": "Persist a phase checkpoint summary.",
+      "side_effect_class": "checkpoint_write",
+      "idempotent": true,
+      "args_schema": {
+        "type": "object",
+        "required": [
+          "phase",
+          "completedFiles"
+        ],
+        "properties": {
+          "phase": {
+            "type": "string"
+          },
+          "completedFiles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "checkpointId"
+        ],
+        "properties": {
+          "checkpointId": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "prd.evaluate",
+      "description": "Evaluate generated outputs against PRD acceptance criteria.",
+      "side_effect_class": "none",
+      "idempotent": true,
+      "args_schema": {
+        "type": "object",
+        "required": [
+          "prdPath",
+          "manifestPath"
+        ],
+        "properties": {
+          "prdPath": {
+            "type": "string"
+          },
+          "manifestPath": {
+            "type": "string"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "status",
+          "criteria"
+        ],
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "criteria": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

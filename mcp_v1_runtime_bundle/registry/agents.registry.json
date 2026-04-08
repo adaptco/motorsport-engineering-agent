@@ -1,0 +1,28 @@
+{
+  "$schema": "https://example.org/schemas/agents-registry.schema.json",
+  "registry_id": "a2a-agent-registry",
+  "version": "1.0.0",
+  "agents": [
+    {
+      "agent_id": "mcp-v1-orchestrator-single",
+      "name": "MCP V1 Orchestration Agent",
+      "protocol": "A2A v1",
+      "role": "orchestrator",
+      "mode": "single-agent",
+      "runtime": "typescript-langgraph",
+      "entrypoint": "src/runtime/mcp-v1-runtime.ts",
+      "api_contract": "openapi/orchestration-agent.openapi.yaml",
+      "documents": {
+        "agent": "Agent.md",
+        "skill": "SKILL.md"
+      },
+      "tool_registry": "tool-registry.json",
+      "capabilities": [
+        "phase-planning",
+        "checkpointed-generation",
+        "prd-evaluation",
+        "registry-publication"
+      ]
+    }
+  ]
+}

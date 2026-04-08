@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adaptco.dev/contracts/telemetry/normalized-frame.schema.json",
+  "title": "Normalized Telemetry Frame",
+  "type": "object",
+  "required": [
+    "session_id",
+    "driver_id",
+    "track_id",
+    "car_id",
+    "timestamp_ns",
+    "tick",
+    "channels"
+  ],
+  "properties": {
+    "session_id": { "type": "string" },
+    "driver_id": { "type": "string" },
+    "track_id": { "type": "string" },
+    "car_id": { "type": "string" },
+    "timestamp_ns": { "type": "integer", "minimum": 0 },
+    "tick": { "type": "integer", "minimum": 0 },
+    "channels": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
+    "quality_flags": {
+      "type": "object",
+      "default": {}
+    }
+  },
+  "additionalProperties": false
+}

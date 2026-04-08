@@ -1,0 +1,83 @@
+version: "3.9"
+
+# Production environment overrides - extends base docker-compose.yml
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: mea_prod
+      POSTGRES_USER: mea_prod
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    mem_limit: 2048m
+    cpus: "4"
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mea_prod -d mea_prod"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    mem_limit: 1024m
+    cpus: "2"
+    restart: always
+    command: redis-server --appendonly yes --appendfsync everysec --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  control_plane:
+    image: ghcr.io/your-org/your-repo/control-plane:latest
+    environment:
+      ENV: production
+      LOG_LEVEL: warning
+      DATABASE_URL: postgresql://mea_prod:${POSTGRES_PASSWORD}@postgres:5432/mea_prod
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      WORKERS: "4"
+    mem_limit: 2048m
+    cpus: "4"
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      replicas: 2
+
+  worker:
+    image: ghcr.io/your-org/your-repo/worker:latest
+    environment:
+      ENV: production
+      LOG_LEVEL: warning
+      DATABASE_URL: postgresql://mea_prod:${POSTGRES_PASSWORD}@postgres:5432/mea_prod
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      WORKER_CONCURRENCY: "8"
+    mem_limit: 4096m
+    cpus: "8"
+    restart: always
+    deploy:
+      replicas: 3
+
+  mcp_server:
+    image: ghcr.io/your-org/your-repo/mcp-server:latest
+    environment:
+      ENV: production
+      LOG_LEVEL: warning
+    mem_limit: 2048m
+    cpus: "4"
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      replicas: 2
