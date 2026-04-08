@@ -1,55 +1,134 @@
-# Multi-stage build for mea-root-kernel main application
-# Stage 1: Builder
-FROM python:3.11-slim as builder
+# Multi-target unified Dockerfile for mea-root-kernel
+# Builds: control_plane, worker, mcp_server
+# Usage:
+#   docker build -t mea-control-plane --target control_plane .
+#   docker build -t mea-worker --target worker .
+#   docker build -t mea-mcp-server --target mcp_server .
+#   docker build -t mea-app .  (default: control_plane)
 
-WORKDIR /build
+# ============================================================
+# STAGE 1: Base - Common Python environment
+# ============================================================
+FROM python:3.11-slim as base
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+# Install common system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    postgresql-client \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user (same UID across all targets for consistency)
+RUN adduser --uid 5678 --disabled-password --gecos "" appuser
+
+# ============================================================
+# STAGE 2: Builder - Install all dependencies
+# ============================================================
+FROM base as builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip early to avoid repeated upgrades
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+WORKDIR /build
 
-# Copy dependency file only (for better layer caching)
+# Copy dependency specifications
 COPY pyproject.toml .
 
-# Install dependencies
-RUN pip install --no-cache-dir -e .
+# Create virtual environment and install all dependencies
+RUN python -m venv /opt/venv && \
+    . /opt/venv/bin/activate && \
+    pip install --upgrade pip setuptools wheel && \
+    pip install -e .
 
-# Stage 2: Runtime
-FROM python:3.11-slim
+# ============================================================
+# STAGE 3: Control Plane
+# ============================================================
+FROM base as control_plane
 
-WORKDIR /app
-
-# Install runtime dependencies only
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy virtual environment from builder
 COPY --from=builder /opt/venv /opt/venv
 
-# Set environment variables
 ENV PATH="/opt/venv/bin:$PATH" \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app
 
-# Create non-root user before copying files
-RUN adduser --uid 5678 --disabled-password --gecos "" appuser
+COPY control_plane/ ./control_plane/
+COPY shared/ ./shared/
+COPY pyproject.toml ./
 
-# Copy application code with correct ownership
-COPY --chown=appuser:appuser . .
+RUN chown -R appuser:appuser /app
 
 USER appuser
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=5)" || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/healthz || exit 1
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--worker-class", "uvicorn.workers.UvicornWorker", "--access-logfile", "-", "--error-logfile", "-", "mcp_tools.__init__:app"]
+CMD ["uvicorn", "control_plane.app:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# ============================================================
+# STAGE 4: Worker
+# ============================================================
+FROM base as worker
+
+# Worker needs git for potential runtime operations
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /opt/venv /opt/venv
+
+ENV PATH="/opt/venv/bin:$PATH" \
+    PYTHONPATH=/app
+
+COPY control_plane/ ./control_plane/
+COPY worker/ ./worker/
+COPY shared/ ./shared/
+COPY pyproject.toml ./
+
+RUN chown -R appuser:appuser /app
+
+USER appuser
+
+# No EXPOSE or HEALTHCHECK: worker is background job processor
+
+CMD ["python", "-m", "worker.backend_worker"]
+
+# ============================================================
+# STAGE 5: MCP Server
+# ============================================================
+FROM base as mcp_server
+
+COPY --from=builder /opt/venv /opt/venv
+
+ENV PATH="/opt/venv/bin:$PATH" \
+    PYTHONPATH=/app
+
+COPY mcp_server/ ./mcp_server/
+COPY mcp_tools/ ./mcp_tools/
+COPY shared/ ./shared/
+COPY pyproject.toml ./
+
+RUN chown -R appuser:appuser /app
+
+USER appuser
+
+EXPOSE 7000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:7000/healthz || exit 1
+
+CMD ["uvicorn", "mcp_server.app:app", "--host", "0.0.0.0", "--port", "7000"]
+
+# ============================================================
+# STAGE 6: Default target (control_plane)
+# ============================================================
+FROM control_plane as latest

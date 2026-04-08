@@ -14,10 +14,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build control_plane image
-        run: docker build --file control_plane/Dockerfile --tag mea/control-plane:${{ github.sha }} .
+        run: docker build --file Dockerfile --target control_plane --tag mea/control-plane:${{ github.sha }} .
 
       - name: Build worker image
-        run: docker build --file worker/Dockerfile --tag mea/worker:${{ github.sha }} .
+        run: docker build --file Dockerfile --target worker --tag mea/worker:${{ github.sha }} .
 
       - name: Build mcp_server image
-        run: docker build --file mcp_server/Dockerfile --tag mea/mcp-server:${{ github.sha }} .
+        run: docker build --file Dockerfile --target mcp_server --tag mea/mcp-server:${{ github.sha }} .

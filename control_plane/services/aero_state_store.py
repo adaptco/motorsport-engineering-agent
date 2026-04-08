@@ -24,6 +24,7 @@ from shared.runtime_paths import default_aero_state_root
 
 RUNS_DIR_NAME = "runs"
 CASES_DIR_NAME = "cases"
+SUMMARY_SUFFIX = ".summary.json"
 
 
 def _utcnow() -> datetime:
@@ -39,6 +40,10 @@ def _state_root() -> Path:
 
 def _state_path(run_id: str) -> Path:
     return _state_root() / RUNS_DIR_NAME / f"{run_id}.json"
+
+
+def _summary_path(run_id: str) -> Path:
+    return _state_root() / RUNS_DIR_NAME / f"{run_id}{SUMMARY_SUFFIX}"
 
 
 def _case_dir(run_id: str) -> Path:
@@ -225,6 +230,13 @@ def _state_summary(state: AeroSimulationStateRecord) -> AeroSimulationStateSumma
     )
 
 
+def _write_state_summary(state: AeroSimulationStateRecord) -> None:
+    summary = _state_summary(state).model_dump(mode="json")
+    _summary_path(state.simulation_run_id).write_text(
+        json.dumps(summary, indent=2, sort_keys=True), encoding="utf-8"
+    )
+
+
 def build_initial_state(req: AeroSimulationRunRequest) -> AeroSimulationStateRecord:
     run_id = str(uuid.uuid4())
     now = _utcnow()
@@ -336,7 +348,9 @@ def save_aero_state(state: AeroSimulationStateRecord) -> AeroSimulationStateReco
     _validate_state_payload(payload)
     path = _state_path(state.simulation_run_id)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
-    return AeroSimulationStateRecord.model_validate(payload)
+    validated_state = AeroSimulationStateRecord.model_validate(payload)
+    _write_state_summary(validated_state)
+    return validated_state
 
 
 def load_aero_state(run_id: str) -> AeroSimulationStateRecord | None:
@@ -352,6 +366,14 @@ def list_aero_states() -> list[AeroSimulationStateSummary]:
     root = _state_root() / RUNS_DIR_NAME
     summaries: list[AeroSimulationStateSummary] = []
     for path in sorted(root.glob("*.json"), key=lambda item: item.stat().st_mtime, reverse=True):
+        if path.name.endswith(SUMMARY_SUFFIX):
+            continue
+        summary_path = _summary_path(path.stem)
+        if summary_path.exists():
+            summary_payload = json.loads(summary_path.read_text(encoding="utf-8"))
+            summaries.append(AeroSimulationStateSummary.model_validate(summary_payload))
+            continue
+
         payload = json.loads(path.read_text(encoding="utf-8"))
         _validate_state_payload(payload)
         state = AeroSimulationStateRecord.model_validate(payload)

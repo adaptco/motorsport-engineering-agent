@@ -1,0 +1,57 @@
+# Development overrides for docker-compose.yml
+# Usage: docker compose -f docker-compose.override.yml up
+#
+# This file provides:
+# - Hot code reload via file watches
+# - Bind mounts for live development
+# - Debug port exposure
+
+services:
+  control_plane:
+    volumes:
+      - ./control_plane:/app/control_plane
+      - ./shared:/app/shared
+    develop:
+      watch:
+        - path: ./control_plane
+          action: sync
+          target: /app/control_plane
+        - path: ./shared
+          action: sync
+          target: /app/shared
+
+  worker:
+    volumes:
+      - ./worker:/app/worker
+      - ./shared:/app/shared
+    develop:
+      watch:
+        - path: ./worker
+          action: sync
+          target: /app/worker
+        - path: ./shared
+          action: sync
+          target: /app/shared
+
+  mcp_server:
+    volumes:
+      - ./mcp_server:/app/mcp_server
+      - ./mcp_tools:/app/mcp_tools
+      - ./shared:/app/shared
+    develop:
+      watch:
+        - path: ./mcp_server
+          action: sync
+          target: /app/mcp_server
+        - path: ./mcp_tools
+          action: sync
+          target: /app/mcp_tools
+        - path: ./shared
+          action: sync
+          target: /app/shared
+
+  postgres:
+    container_name: mea-postgres-dev
+
+  redis:
+    container_name: mea-redis-dev
