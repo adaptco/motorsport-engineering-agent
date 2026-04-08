@@ -4,16 +4,17 @@ import json
 import re
 import shlex
 import subprocess
+import hashlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from shared.forensic_ledger import sha256_prefixed
 from shared.models import AeroSimulationExecutionState, AeroSimulationSolveResult, AeroSimulationRunRequest, AeroSourceRef
 
 
 _FLOAT_PATTERN = re.compile(r"[-+]?(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][-+]?\d+)?")
+SOLVER_RUN_TIMEOUT_SECONDS = 20 * 60
 
 
 @dataclass(frozen=True)
@@ -65,20 +66,24 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False), encoding="utf-8")
 
 
+def _sha256_file_prefixed(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    return f"sha256:{hasher.hexdigest()}"
+
+
 def _artifact_ref(path: Path, *, label: str, kind: str = "solver_case", root: Path | None = None) -> AeroSourceRef:
     try:
         relative_path = path.relative_to(root).as_posix() if root is not None else path.name
     except ValueError:
         relative_path = path.name
-    if path.suffix in {".log", ".dat", ".json", ".txt", ".md", ".sh"}:
-        payload_for_hash: Any = path.read_text(encoding="utf-8")
-    else:
-        payload_for_hash = path.read_bytes().hex()
     return AeroSourceRef(
         kind=kind,  # type: ignore[arg-type]
         uri=str(path),
         label=label,
-        sha256=sha256_prefixed(payload_for_hash),
+        sha256=_sha256_file_prefixed(path),
         metadata={"relative_path": str(relative_path)},
     )
 
@@ -343,7 +348,59 @@ class WslOpenFoamRunner:
         case_dir.mkdir(parents=True, exist_ok=True)
         started_at = _utcnow()
         command = self.launch_command(case_dir, include_simple_foam=include_simple_foam)
-        completed = subprocess.run(command, capture_output=True, text=True, check=False)
+        try:
+            completed = subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=SOLVER_RUN_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired as exc:
+            finished_at = _utcnow()
+            logs_dir = case_dir / "logs"
+            results_dir = case_dir / "results"
+            stdout_path = logs_dir / "wsl.stdout.log"
+            stderr_path = logs_dir / "wsl.stderr.log"
+            _write_text(stdout_path, exc.stdout or "")
+            _write_text(stderr_path, (exc.stderr or "") + f"\nSolver timed out after {SOLVER_RUN_TIMEOUT_SECONDS}s\n")
+
+            execution_notes = [
+                "WSL execution timed out.",
+                f"Timeout seconds: {SOLVER_RUN_TIMEOUT_SECONDS}",
+            ]
+            execution_state = _build_execution_state(
+                runner_kind="wsl",
+                status="failed",
+                solver_status="failed",
+                environment="wsl2",
+                profile=self.profile,
+                command=command,
+                started_at=started_at,
+                finished_at=finished_at,
+                exit_code=124,
+                stdout_uri=str(stdout_path),
+                stderr_uri=str(stderr_path),
+                result_uri=str(results_dir / "aero_result.json"),
+                kernel_signature=None,
+                notes=execution_notes,
+            )
+            timed_out_result = AeroSimulationSolveResult(
+                execution_state=execution_state,
+                cl=None,
+                cd=None,
+                cm_pitch=None,
+                aero_balance_pct=None,
+                drag_area_m2=None,
+                downforce_n=None,
+                confidence=0.0,
+                correlation_score=None,
+                residual_score=None,
+                artifacts=_result_artifact_refs(case_dir=case_dir, stdout_path=stdout_path, stderr_path=stderr_path, force_coeffs_path=None),
+                notes=execution_notes,
+            )
+            _write_json(results_dir / "aero_result.json", timed_out_result.model_dump(mode="json"))
+            return timed_out_result
         finished_at = _utcnow()
 
         logs_dir = case_dir / "logs"

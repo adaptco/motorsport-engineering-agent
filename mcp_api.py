@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import secrets
 import uuid
 from datetime import UTC, datetime
 from functools import lru_cache
@@ -104,7 +105,7 @@ def load_config() -> MCPRuntimeConfig:
 
 def _check_shared_token(authorization: str | None) -> None:
     expected = os.environ.get("MCP_SHARED_BEARER_TOKEN", "").strip()
-    if expected and authorization != f"Bearer {expected}":
+    if expected and not secrets.compare_digest(authorization or "", f"Bearer {expected}"):
         raise HTTPException(status_code=401, detail="invalid_bearer_token")
 
 
