@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import quote
 
 from shared.forensic_ledger import sha256_prefixed
 from shared.models import AeroSourceRef, AeroSimulationRunRequest, AeroVehicleIdentity
@@ -13,7 +14,17 @@ SPEC_SHEET_URI = "https://manuals.plus/m/e7feaf23c1831eb323faa279d01e5fddf4f1846
 
 
 def _fixture_uri(path: Path) -> str:
-    return path.as_uri()
+    if path.is_absolute():
+        return path.as_uri()
+
+    raw_path = str(path)
+    if len(raw_path) >= 2 and raw_path[1] == ":":
+        return "file:///" + quote(raw_path.replace("\\", "/"), safe="/:")
+    if raw_path.startswith("\\\\"):
+        unc_path = raw_path.lstrip("\\").replace("\\", "/")
+        return "file:" + quote("//" + unc_path, safe="/:")
+
+    raise ValueError(f"Cannot convert path to file URI: {raw_path}")
 
 
 def _source_ref(
