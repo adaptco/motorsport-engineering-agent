@@ -36,3 +36,4 @@ def test_container_build_workflow_defines_build_images_job() -> None:
     build_job_steps = workflow["jobs"]["build-images"]["steps"]
 
     checkout_step_build = _find_step(build_job_steps, "actions/checkout@v4")
+    assert checkout_step_build["uses"] == "actions/checkout@v4"
