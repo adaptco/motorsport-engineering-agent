@@ -47,7 +47,7 @@ COPY pyproject.toml uv.lock ./
 RUN python -m venv /opt/venv && \
     . /opt/venv/bin/activate && \
     pip install --upgrade pip setuptools wheel uv && \
-    uv sync --frozen --no-install-project --python /opt/venv/bin/python
+    uv sync --frozen --no-install-project --python /opt/venv/bin/python --active
 
 # ============================================================
 # STAGE 3: Control Plane

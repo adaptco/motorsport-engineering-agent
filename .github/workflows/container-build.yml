@@ -44,6 +44,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix=${{ matrix.target }}-
+            type=raw,value=${{ github.sha }}
             type=raw,value=${{ matrix.target }}-latest,enable={{is_default_branch}}
 
       - name: Build and push ${{ matrix.target }}
@@ -67,8 +68,18 @@ jobs:
       matrix:
         target: [control_plane, worker, mcp_server]
     steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.target }}:${{ github.sha }}
           format: 'sarif'
