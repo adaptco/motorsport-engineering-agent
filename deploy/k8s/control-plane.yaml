@@ -24,7 +24,7 @@ spec:
       serviceAccountName: mea-sa
       containers:
       - name: control-plane
-        image: ghcr.io/your-org/your-repo/control-plane:latest
+        image: ghcr.io/adaptco/motorsport-engineering-agent:control-plane-latest
         imagePullPolicy: Always
         ports:
         - name: http

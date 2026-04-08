@@ -37,3 +37,33 @@ def test_container_build_workflow_defines_build_images_job() -> None:
 
     checkout_step_build = _find_step(build_job_steps, "actions/checkout@v4")
     assert checkout_step_build["uses"] == "actions/checkout@v4"
+
+
+def _load_yaml(path: str) -> dict:
+    file_path = Path(path)
+    assert file_path.exists(), f"Expected config file is missing: {path}"
+    return yaml.safe_load(file_path.read_text(encoding="utf-8"))
+
+
+def test_deploy_compose_overlays_target_ci_published_image_tags() -> None:
+    staging = _load_yaml("deploy/compose/staging.yml")
+    production = _load_yaml("deploy/compose/production.yml")
+
+    for compose in (staging, production):
+        services = compose["services"]
+        assert services["control_plane"]["image"].endswith(":control-plane-latest")
+        assert services["worker"]["image"].endswith(":worker-latest")
+        assert services["mcp_server"]["image"].endswith(":mcp-server-latest")
+        assert "your-org/your-repo" not in services["control_plane"]["image"]
+        assert "your-org/your-repo" not in services["worker"]["image"]
+        assert "your-org/your-repo" not in services["mcp_server"]["image"]
+
+
+def test_k8s_manifests_target_ci_published_image_tags() -> None:
+    control_plane_manifest = Path("deploy/k8s/control-plane.yaml").read_text(encoding="utf-8")
+    worker_manifest = Path("deploy/k8s/worker.yaml").read_text(encoding="utf-8")
+    mcp_manifest = Path("deploy/k8s/mcp-server.yaml").read_text(encoding="utf-8")
+
+    assert "ghcr.io/adaptco/motorsport-engineering-agent:control-plane-latest" in control_plane_manifest
+    assert "ghcr.io/adaptco/motorsport-engineering-agent:worker-latest" in worker_manifest
+    assert "ghcr.io/adaptco/motorsport-engineering-agent:mcp-server-latest" in mcp_manifest

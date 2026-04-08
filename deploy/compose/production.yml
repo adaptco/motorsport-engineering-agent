@@ -32,7 +32,7 @@ services:
       start_period: 10s
 
   control_plane:
-    image: ghcr.io/your-org/your-repo/control-plane:latest
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:control-plane-latest
     environment:
       ENV: production
       LOG_LEVEL: warning
@@ -48,11 +48,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      replicas: 2
 
   worker:
-    image: ghcr.io/your-org/your-repo/worker:latest
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:worker-latest
     environment:
       ENV: production
       LOG_LEVEL: warning
@@ -62,11 +60,9 @@ services:
     mem_limit: 4096m
     cpus: "8"
     restart: always
-    deploy:
-      replicas: 3
 
   mcp_server:
-    image: ghcr.io/your-org/your-repo/mcp-server:latest
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:mcp-server-latest
     environment:
       ENV: production
       LOG_LEVEL: warning
@@ -79,5 +75,3 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      replicas: 2

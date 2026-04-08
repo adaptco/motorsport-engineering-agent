@@ -6,7 +6,7 @@ set -euo pipefail
 
 CLUSTER="${1:-minikube}"
 NAMESPACE="${2:-default}"
-REGISTRY="ghcr.io/your-org/your-repo"
+REGISTRY="${REGISTRY:-ghcr.io/adaptco/motorsport-engineering-agent}"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -33,6 +33,7 @@ fi
 
 # Set context
 log_info "Using cluster: $CLUSTER, namespace: $NAMESPACE"
+log_info "Image registry reference: $REGISTRY"
 kubectl config use-context "$CLUSTER" || {
     log_error "Failed to switch to cluster: $CLUSTER"
     exit 1
