@@ -65,9 +65,9 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False), encoding="utf-8")
 
 
-def _artifact_ref(path: Path, *, label: str, kind: str = "solver_case") -> AeroSourceRef:
+def _artifact_ref(path: Path, *, label: str, kind: str = "solver_case", root: Path | None = None) -> AeroSourceRef:
     try:
-        relative_path = path.relative_to(path.parents[2]) if len(path.parents) > 2 else path.name
+        relative_path = path.relative_to(root) if root is not None else path.name
     except ValueError:
         relative_path = path.name
     if path.suffix in {".log", ".dat", ".json", ".txt", ".md", ".sh"}:
@@ -218,16 +218,22 @@ def _parse_force_coeffs_file(path: Path | None) -> dict[str, float] | None:
     return parsed or None
 
 
-def _result_artifact_refs(*, stdout_path: Path, stderr_path: Path, force_coeffs_path: Path | None) -> list[AeroSourceRef]:
+def _result_artifact_refs(
+    *,
+    case_dir: Path,
+    stdout_path: Path,
+    stderr_path: Path,
+    force_coeffs_path: Path | None,
+) -> list[AeroSourceRef]:
     artifacts: list[AeroSourceRef] = []
     for path, label in (
         (stdout_path, "solver_stdout"),
         (stderr_path, "solver_stderr"),
     ):
         if path.exists():
-            artifacts.append(_artifact_ref(path, label=label))
+            artifacts.append(_artifact_ref(path, label=label, root=case_dir))
     if force_coeffs_path is not None and force_coeffs_path.exists():
-        artifacts.append(_artifact_ref(force_coeffs_path, label="force_coeffs"))
+        artifacts.append(_artifact_ref(force_coeffs_path, label="force_coeffs", root=case_dir))
     return artifacts
 
 
@@ -282,7 +288,7 @@ class AeroSandboxRunner:
             confidence=metrics["confidence"],
             correlation_score=metrics["correlation_score"],
             residual_score=metrics["residual_score"],
-            artifacts=_result_artifact_refs(stdout_path=stdout_path, stderr_path=stderr_path, force_coeffs_path=coeffs_path),
+            artifacts=_result_artifact_refs(case_dir=case_dir, stdout_path=stdout_path, stderr_path=stderr_path, force_coeffs_path=coeffs_path),
             notes=execution_notes,
         )
 
@@ -379,7 +385,7 @@ class WslOpenFoamRunner:
                 confidence=0.0,
                 correlation_score=None,
                 residual_score=None,
-                artifacts=_result_artifact_refs(stdout_path=stdout_path, stderr_path=stderr_path, force_coeffs_path=None),
+                artifacts=_result_artifact_refs(case_dir=case_dir, stdout_path=stdout_path, stderr_path=stderr_path, force_coeffs_path=None),
                 notes=execution_notes,
             )
             _write_json(results_dir / "aero_result.json", failed_result.model_dump(mode="json"))
@@ -441,7 +447,7 @@ class WslOpenFoamRunner:
             confidence=metrics["confidence"],
             correlation_score=metrics["correlation_score"],
             residual_score=metrics["residual_score"],
-            artifacts=_result_artifact_refs(stdout_path=stdout_path, stderr_path=stderr_path, force_coeffs_path=coeffs_path),
+            artifacts=_result_artifact_refs(case_dir=case_dir, stdout_path=stdout_path, stderr_path=stderr_path, force_coeffs_path=coeffs_path),
             notes=execution_notes,
         )
         _write_json(results_dir / "aero_result.json", result.model_dump(mode="json"))
