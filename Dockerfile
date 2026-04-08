@@ -60,6 +60,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONPATH=/app
 
 COPY control_plane/ ./control_plane/
+COPY ingest/ ./ingest/
 COPY shared/ ./shared/
 COPY pyproject.toml ./
 COPY VERSION.json ./
@@ -94,6 +95,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONPATH=/app
 
 COPY control_plane/ ./control_plane/
+COPY ingest/ ./ingest/
 COPY worker/ ./worker/
 COPY shared/ ./shared/
 COPY pyproject.toml ./
