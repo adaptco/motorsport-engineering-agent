@@ -108,7 +108,9 @@ def test_reconcile_remaining_actions_parses_task_and_prd_sources(tmp_path: Path)
     assert "MCP PRD AC-01: Manifest exists" in report["remaining_actions"]
 
 
-def test_run_task_reconciliation_loop_blocks_after_max_iterations(tmp_path: Path, monkeypatch) -> None:
+def test_run_task_reconciliation_loop_blocks_after_max_iterations(
+    tmp_path: Path, monkeypatch
+) -> None:
     monkeypatch.setattr(bg, "STATE_DIR", tmp_path)
     monkeypatch.setattr(bg, "MAX_HISTORY", 10)
 
@@ -153,7 +155,7 @@ def test_run_task_reconciliation_loop_blocks_after_max_iterations(tmp_path: Path
     assert len(state["pending_actions"]) == 3
 
 
-def test_derive_completed_acceptance_criteria(tmp_path: Path) -> None:
+def test_derive_completed_acceptance_criteria_partial(tmp_path: Path) -> None:
     (tmp_path / "schemas").mkdir(parents=True)
     (tmp_path / "src" / "runtime").mkdir(parents=True)
     (tmp_path / "openapi").mkdir(parents=True)
@@ -161,12 +163,18 @@ def test_derive_completed_acceptance_criteria(tmp_path: Path) -> None:
     (tmp_path / "docs").mkdir(parents=True)
 
     (tmp_path / "generation-manifest.json").write_text("{}", encoding="utf-8")
-    (tmp_path / "schemas" / "generation-state.schema.json").write_text('{"checkpoint":{}}', encoding="utf-8")
-    (tmp_path / "src" / "runtime" / "mcp-v1-runtime.ts").write_text("// checkpoint model", encoding="utf-8")
+    (tmp_path / "schemas" / "generation-state.schema.json").write_text(
+        '{"checkpoint":{}}', encoding="utf-8"
+    )
+    (tmp_path / "src" / "runtime" / "mcp-v1-runtime.ts").write_text(
+        "// checkpoint model", encoding="utf-8"
+    )
     (tmp_path / "Agent.md").write_text("# Agent", encoding="utf-8")
     (tmp_path / "SKILL.md").write_text("# Skill", encoding="utf-8")
     (tmp_path / "tool-registry.json").write_text("{}", encoding="utf-8")
-    (tmp_path / "openapi" / "orchestration-agent.openapi.yaml").write_text("openapi: 3.0.0", encoding="utf-8")
+    (tmp_path / "openapi" / "orchestration-agent.openapi.yaml").write_text(
+        "openapi: 3.0.0", encoding="utf-8"
+    )
     (tmp_path / "Agents.md").write_text("# Agents", encoding="utf-8")
     (tmp_path / "registry" / "agents.registry.json").write_text("{}", encoding="utf-8")
     (tmp_path / "docs" / "prd-evaluation.json").write_text("{}", encoding="utf-8")
@@ -177,7 +185,9 @@ def test_derive_completed_acceptance_criteria(tmp_path: Path) -> None:
 
 def test_propose_closure_actions_prioritizes_ledger_and_prd(tmp_path: Path) -> None:
     task_file = tmp_path / "TASK-007.md"
-    task_file.write_text("- [ ] critical runtime blocker\n- [ ] optional cleanup\n", encoding="utf-8")
+    task_file.write_text(
+        "- [ ] critical runtime blocker\n- [ ] optional cleanup\n", encoding="utf-8"
+    )
     ledger_file = tmp_path / "TASK_LEDGER.md"
     ledger_file.write_text(
         "\n".join(
@@ -279,6 +289,6 @@ def test_close_checklist_items_requires_evidence(tmp_path: Path) -> None:
             checklist_path=checklist,
             closures=[{"contains": "create docs", "evidence": []}],
         )
-        assert False, "expected ValueError for missing evidence"
+        raise AssertionError("expected ValueError for missing evidence")
     except ValueError as exc:
         assert "Evidence is required" in str(exc)

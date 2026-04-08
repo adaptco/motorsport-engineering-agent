@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any
 import csv
 import io
 import json
+from pathlib import Path
+from typing import Annotated, Any
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
@@ -14,6 +14,7 @@ router = APIRouter(prefix="/runtime", tags=["runtime"])
 LOG_DIR = Path("runtime_logs")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
+
 class RuntimeLogSummary(BaseModel):
     session_id: str
     filename: str
@@ -21,9 +22,11 @@ class RuntimeLogSummary(BaseModel):
     columns: list[str]
     preview: list[dict[str, Any]] = Field(default_factory=list)
 
+
 class ParseResponse(BaseModel):
     source_type: str
     summary: RuntimeLogSummary
+
 
 class SessionIndexItem(BaseModel):
     session_id: str
@@ -31,9 +34,11 @@ class SessionIndexItem(BaseModel):
     rows: int
     columns: list[str]
 
+
 def _safe_session_id(name: str) -> str:
     stem = Path(name).stem
     return "".join(ch if ch.isalnum() or ch in ("-", "_") else "_" for ch in stem)
+
 
 def _csv_summary(raw: bytes, filename: str) -> RuntimeLogSummary:
     text = raw.decode("utf-8", errors="replace")
@@ -51,17 +56,21 @@ def _csv_summary(raw: bytes, filename: str) -> RuntimeLogSummary:
     (LOG_DIR / f"{session_id}.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return RuntimeLogSummary(**payload)
 
+
 @router.post("/logs/parse", response_model=ParseResponse)
-async def parse_runtime_log(file: UploadFile = File(...)) -> ParseResponse:
+async def parse_runtime_log(file: Annotated[UploadFile, File(...)]) -> ParseResponse:
     """Parse uploaded CSV/TXT runtime logs into indexed session artifacts."""
     raw = await file.read()
     if not file.filename:
         raise HTTPException(status_code=400, detail="filename required")
     suffix = Path(file.filename).suffix.lower()
     if suffix not in {".csv", ".txt"}:
-        raise HTTPException(status_code=415, detail="Only CSV/TXT runtime logs supported by this route")
+        raise HTTPException(
+            status_code=415, detail="Only CSV/TXT runtime logs supported by this route"
+        )
     summary = _csv_summary(raw, file.filename)
     return ParseResponse(source_type="csv", summary=summary)
+
 
 @router.get("/sessions", response_model=list[SessionIndexItem])
 def list_sessions() -> list[SessionIndexItem]:
@@ -69,13 +78,16 @@ def list_sessions() -> list[SessionIndexItem]:
     items: list[SessionIndexItem] = []
     for p in sorted(LOG_DIR.glob("*.json")):
         data = json.loads(p.read_text(encoding="utf-8"))
-        items.append(SessionIndexItem(
-            session_id=data["session_id"],
-            filename=data["filename"],
-            rows=data["rows"],
-            columns=data["columns"],
-        ))
+        items.append(
+            SessionIndexItem(
+                session_id=data["session_id"],
+                filename=data["filename"],
+                rows=data["rows"],
+                columns=data["columns"],
+            )
+        )
     return items
+
 
 @router.get("/sessions/{session_id}")
 def get_session(session_id: str) -> dict[str, Any]:
@@ -84,6 +96,7 @@ def get_session(session_id: str) -> dict[str, Any]:
     if not p.exists():
         raise HTTPException(status_code=404, detail="session not found")
     return json.loads(p.read_text(encoding="utf-8"))
+
 
 @router.get("/sessions/{session_id}/debrief")
 def get_session_debrief(session_id: str) -> dict[str, Any]:
@@ -100,7 +113,7 @@ def get_session_debrief(session_id: str) -> dict[str, Any]:
         "observations": [
             "Parser currently supports CSV/TXT runtime exports through this endpoint.",
             "Native vendor normalization remains owned by /ingest/normalize.",
-            "This endpoint is intended for quick GUI review of simulator output logs."
+            "This endpoint is intended for quick GUI review of simulator output logs.",
         ],
         "top_columns": data["columns"][:12],
     }

@@ -4,7 +4,7 @@ import json
 import os
 import re
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -30,7 +30,7 @@ _MCP_ACCEPTANCE_PATHS: dict[str, list[str]] = {
 
 
 def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _state_path(session_id: str, workflow_id: str) -> Path:
@@ -103,7 +103,9 @@ def advance_workflow_position(
         "current_position": current_position,
         "status": status,
         "summary": summary if summary is not None else existing.get("summary", ""),
-        "pending_actions": pending_actions if pending_actions is not None else existing.get("pending_actions", []),
+        "pending_actions": pending_actions
+        if pending_actions is not None
+        else existing.get("pending_actions", []),
         "artifacts": artifacts if artifacts is not None else existing.get("artifacts", []),
         "metadata": metadata if metadata is not None else existing.get("metadata", {}),
     }
@@ -135,19 +137,27 @@ def reconcile_remaining_actions(
     completed_acceptance_criteria: list[str] | None = None,
 ) -> dict[str, Any]:
     remaining_actions: list[str] = []
-    completed_criteria = {value.strip() for value in (completed_acceptance_criteria or []) if value.strip()}
+    completed_criteria = {
+        value.strip() for value in (completed_acceptance_criteria or []) if value.strip()
+    }
 
     for task_file in task_files:
         path = Path(task_file)
         checklist = _parse_markdown_checklist(path)
         remaining_actions.extend([f"{path.name}: {entry}" for entry in checklist["open"]])
 
-    ledger_open_rows = _parse_task_ledger_open_rows(Path(task_ledger_path)) if task_ledger_path else []
+    ledger_open_rows = (
+        _parse_task_ledger_open_rows(Path(task_ledger_path)) if task_ledger_path else []
+    )
     remaining_actions.extend([f"TASK_LEDGER.md: {entry}" for entry in ledger_open_rows])
 
     acceptance_criteria = _parse_prd_acceptance_criteria(Path(mcp_prd_path)) if mcp_prd_path else []
-    remaining_criteria = [entry for entry in acceptance_criteria if entry["id"] not in completed_criteria]
-    remaining_actions.extend([f"MCP PRD {entry['id']}: {entry['criterion']}" for entry in remaining_criteria])
+    remaining_criteria = [
+        entry for entry in acceptance_criteria if entry["id"] not in completed_criteria
+    ]
+    remaining_actions.extend(
+        [f"MCP PRD {entry['id']}: {entry['criterion']}" for entry in remaining_criteria]
+    )
 
     return {
         "remaining_actions": remaining_actions,
@@ -155,21 +165,6 @@ def reconcile_remaining_actions(
         "acceptance_criteria_total": len(acceptance_criteria),
         "acceptance_criteria_remaining": len(remaining_criteria),
     }
-
-
-def derive_completed_acceptance_criteria(mcp_bundle_root: str | Path) -> list[str]:
-    root = Path(mcp_bundle_root)
-    checks = {
-        "AC-01": _all_exist(root, ["generation-manifest.json"]),
-        "AC-02": _all_exist(root, ["schemas/generation-state.schema.json"]),
-        "AC-03": _all_exist(root, ["src/runtime/mcp-v1-runtime.ts"]),
-        "AC-04": _all_exist(root, ["Agent.md", "SKILL.md", "tool-registry.json"]),
-        "AC-05": _all_exist(root, ["openapi/orchestration-agent.openapi.yaml"]),
-        "AC-06": _all_exist(root, ["Agents.md", "registry/agents.registry.json"]),
-        "AC-07": _looks_checkpoint_aware(root),
-        "AC-08": _all_exist(root, ["docs/prd-evaluation.json"]),
-    }
-    return [criteria for criteria, done in checks.items() if done]
 
 
 def propose_closure_actions(
@@ -203,7 +198,9 @@ def derive_completed_acceptance_criteria(mcp_runtime_root: str | Path) -> list[s
     return completed
 
 
-def propose_closure_actions_by_priority(remaining_actions: list[str], limit: int = 10) -> list[dict[str, Any]]:
+def propose_closure_actions_by_priority(
+    remaining_actions: list[str], limit: int = 10
+) -> list[dict[str, Any]]:
     normalized_seen: set[str] = set()
     ranked: list[dict[str, Any]] = []
 
@@ -248,8 +245,7 @@ def close_checklist_items_with_evidence(
             if contains not in line:
                 continue
             lines[index] = (
-                line.replace("- [ ] ", "- [x] ", 1)
-                + f" (Evidence: {', '.join(evidence)})"
+                line.replace("- [ ] ", "- [x] ", 1) + f" (Evidence: {', '.join(evidence)})"
             )
             closed_count += 1
             break
@@ -425,7 +421,9 @@ def _prioritize_actions(actions: list[str]) -> list[dict[str, Any]]:
             priority = "P0"
         if action.startswith("MCP PRD AC-"):
             priority = "P0"
-        if any(token in normalized for token in ["critical", "blocker", "must fix", "phase 1", "p1"]):
+        if any(
+            token in normalized for token in ["critical", "blocker", "must fix", "phase 1", "p1"]
+        ):
             priority = "P1" if priority != "P0" else "P0"
         if any(token in normalized for token in ["phase 2", "phase 3", "nice to have", "optional"]):
             priority = "P2"
@@ -442,8 +440,13 @@ def _classify_action_priority(action: str) -> int:
     probe = action.lower()
     if any(token in probe for token in ("critical", "blocker", "🔴", " p0 ", "p0:")):
         return 0
-    if any(token in probe for token in ("p1", "missing", "deploy", "forensic", "rate limit", "circuit breaker")):
+    if any(
+        token in probe
+        for token in ("p1", "missing", "deploy", "forensic", "rate limit", "circuit breaker")
+    ):
         return 1
-    if any(token in probe for token in ("p2", "quality", "documentation", "runbook", "lint", "mypy")):
+    if any(
+        token in probe for token in ("p2", "quality", "documentation", "runbook", "lint", "mypy")
+    ):
         return 2
     return 3
