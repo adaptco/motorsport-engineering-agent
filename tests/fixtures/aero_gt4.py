@@ -9,8 +9,8 @@ from shared.models import AeroSourceRef, AeroSimulationRunRequest, AeroVehicleId
 
 FIXTURES_DIR = Path(__file__).resolve().parent
 # Use repo-local absolute fixture paths so URIs are valid across CI runners and OSes.
-PROFILE_IMAGE_PATH = Path(__file__).resolve()
-FRONT_IMAGE_PATH = Path(__file__).resolve()
+PROFILE_IMAGE_PATH = (FIXTURES_DIR / "GT4_Profile.png").resolve()
+FRONT_IMAGE_PATH = (FIXTURES_DIR / "GT4.png").resolve()
 TELEMETRY_CSV_PATH = (FIXTURES_DIR / "sample_export.csv").resolve()
 SPEC_SHEET_URI = "https://manuals.plus/m/e7feaf23c1831eb323faa279d01e5fddf4f184636f782ae88d1f52e8fe07f29d"
 
