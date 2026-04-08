@@ -67,7 +67,7 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 
 def _artifact_ref(path: Path, *, label: str, kind: str = "solver_case", root: Path | None = None) -> AeroSourceRef:
     try:
-        relative_path = path.relative_to(root) if root is not None else path.name
+        relative_path = path.relative_to(root).as_posix() if root is not None else path.name
     except ValueError:
         relative_path = path.name
     if path.suffix in {".log", ".dat", ".json", ".txt", ".md", ".sh"}:
