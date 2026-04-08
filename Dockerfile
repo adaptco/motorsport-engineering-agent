@@ -106,7 +106,6 @@ RUN chown -R appuser:appuser /app
 USER appuser
 
 # No EXPOSE or HEALTHCHECK: worker is background job processor
-
 CMD ["python", "-m", "worker.backend_worker"]
 
 # ============================================================

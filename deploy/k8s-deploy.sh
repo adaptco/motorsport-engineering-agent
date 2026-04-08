@@ -2,11 +2,14 @@
 set -euo pipefail
 
 # Kubernetes deployment script for mea-root-kernel
-# Usage: ./k8s-deploy.sh [cluster] [namespace]
+# Usage: ./k8s-deploy.sh [cluster] [namespace] [version]
 
 CLUSTER="${1:-minikube}"
 NAMESPACE="${2:-default}"
-REGISTRY="ghcr.io/your-org/your-repo"
+VERSION="${3:-latest}"
+REGISTRY="${REGISTRY:-ghcr.io}"
+IMAGE_NAME="${IMAGE_NAME:-adaptco/motorsport-engineering-agent}"
+export REGISTRY IMAGE_NAME VERSION
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -33,6 +36,8 @@ fi
 
 # Set context
 log_info "Using cluster: $CLUSTER, namespace: $NAMESPACE"
+log_info "Image registry reference: ${REGISTRY}/${IMAGE_NAME}"
+log_info "Image version suffix: $VERSION"
 kubectl config use-context "$CLUSTER" || {
     log_error "Failed to switch to cluster: $CLUSTER"
     exit 1
@@ -75,10 +80,20 @@ EOF
 log_info "Applying RBAC..."
 kubectl apply -f k8s/rbac.yaml -n "$NAMESPACE"
 
+if ! command -v envsubst &> /dev/null; then
+    log_error "envsubst is required to render image variables in Kubernetes manifests"
+    exit 1
+fi
+
+apply_manifest() {
+    local manifest_path="$1"
+    envsubst < "$manifest_path" | kubectl apply -f - -n "$NAMESPACE"
+}
+
 # Apply databases
 log_info "Applying PostgreSQL and Redis..."
-kubectl apply -f k8s/postgres.yaml -n "$NAMESPACE"
-kubectl apply -f k8s/redis.yaml -n "$NAMESPACE"
+apply_manifest k8s/postgres.yaml
+apply_manifest k8s/redis.yaml
 
 # Wait for databases to be ready
 log_info "Waiting for PostgreSQL to be ready..."
@@ -89,9 +104,9 @@ kubectl rollout status statefulset/redis -n "$NAMESPACE" --timeout=300s
 
 # Apply applications
 log_info "Applying applications..."
-kubectl apply -f k8s/control-plane.yaml -n "$NAMESPACE"
-kubectl apply -f k8s/worker.yaml -n "$NAMESPACE"
-kubectl apply -f k8s/mcp-server.yaml -n "$NAMESPACE"
+apply_manifest k8s/control-plane.yaml
+apply_manifest k8s/worker.yaml
+apply_manifest k8s/mcp-server.yaml
 
 # Wait for deployments
 log_info "Waiting for deployments to be ready..."
