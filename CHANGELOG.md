@@ -1,3 +1,10 @@
+## v3.6.2 / 0.3.6.2
+
+- fixed staging deployment by updating `.github/workflows/deploy.yml` to use consolidated root Dockerfile and multi-target builds
+- resolved missing prompt issue by including `prompts/` directory in Docker images and whitelisting `.txt` files in `.dockerignore`
+- added `render-build.sh` and `agent.py` to support Render deployment requirements on main branch
+- updated version alignment to V3.6.2
+
 ## v3.5.2 / 0.3.5.2
 
 - added declarative MCP contract stub and aligned release metadata for the V3.5.2 baseline
