@@ -1,0 +1,59 @@
+version: "3.9"
+
+x-mea-base: &mea-base
+  build:
+    context: .
+    dockerfile: ./deploy/containers/mea-v3.6/Dockerfile
+  env_file:
+    - .env
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: mea-v3.6-postgres
+    environment:
+      POSTGRES_DB: mea
+      POSTGRES_USER: mea
+      POSTGRES_PASSWORD: mea
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d
+
+  redis:
+    image: redis:7
+    container_name: mea-v3.6-redis
+    ports:
+      - "6379:6379"
+
+  control_plane:
+    <<: *mea-base
+    container_name: mea-v3.6-control-plane
+    command: ["uvicorn", "control_plane.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+      - mcp_server
+
+  worker:
+    <<: *mea-base
+    container_name: mea-v3.6-worker
+    command: ["python", "-m", "worker.backend_worker"]
+    depends_on:
+      - postgres
+      - redis
+      - control_plane
+
+  mcp_server:
+    <<: *mea-base
+    container_name: mea-v3.6-mcp-server
+    command: ["uvicorn", "mcp_server.app:app", "--host", "0.0.0.0", "--port", "7000"]
+    ports:
+      - "7000:7000"
+
+volumes:
+  postgres_data:

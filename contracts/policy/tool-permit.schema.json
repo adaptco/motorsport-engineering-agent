@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adaptco.dev/contracts/policy/tool-permit.schema.json",
+  "title": "Tool Permit",
+  "type": "object",
+  "required": [
+    "permit_id",
+    "agent_id",
+    "tool_name",
+    "scope",
+    "mode"
+  ],
+  "properties": {
+    "permit_id": { "type": "string" },
+    "agent_id": { "type": "string" },
+    "tool_name": { "type": "string" },
+    "scope": { "type": "string" },
+    "mode": { "type": "string", "enum": ["read", "write", "execute"] },
+    "constraints": { "type": "object", "default": {} }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,43 @@
+services:
+  control-plane:
+    build: ../../apps/control-plane
+    ports: ["8000:8000"]
+    depends_on: [postgres, redis, orchestrator, memory, ledger, telemetry-ingest, eval-engine]
+  mcp-gateway:
+    build: ../../apps/mcp-gateway
+    ports: ["8001:8001"]
+    depends_on: [orchestrator]
+  hitl-console:
+    build: ../../apps/hitl-console
+    ports: ["3000:3000"]
+    depends_on: [control-plane, eval-engine]
+  orchestrator:
+    build: ../../services/orchestrator
+    depends_on: [redis, memory, ledger, telemetry-ingest, eval-engine]
+  telemetry-ingest:
+    build: ../../services/telemetry-ingest
+    depends_on: [object-store]
+  memory:
+    build: ../../services/memory
+    depends_on: [postgres]
+  eval-engine:
+    build: ../../services/eval-engine
+    depends_on: [postgres, ledger]
+  ledger:
+    build: ../../services/ledger
+    depends_on: [postgres]
+  agent-supervisor:
+    build: ../../services/agent-supervisor
+    depends_on: [orchestrator, mcp-gateway, memory]
+  agent-telemetry-analyst:
+    build: ../../services/agent-telemetry-analyst
+    depends_on: [orchestrator, memory, telemetry-ingest]
+  agent-replay-analyst:
+    build: ../../services/agent-replay-analyst
+    depends_on: [orchestrator, memory, eval-engine]
+  postgres:
+    image: postgres:16
+  redis:
+    image: redis:7
+  object-store:
+    image: minio/minio

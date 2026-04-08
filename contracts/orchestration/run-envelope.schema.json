@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adaptco.dev/contracts/orchestration/run-envelope.schema.json",
+  "title": "Run Envelope",
+  "type": "object",
+  "required": [
+    "run_id",
+    "session_id",
+    "trace_id",
+    "workflow_id",
+    "agent_id",
+    "task_type",
+    "input_refs",
+    "policy_version",
+    "created_at"
+  ],
+  "properties": {
+    "run_id": { "type": "string", "minLength": 1 },
+    "session_id": { "type": "string", "minLength": 1 },
+    "trace_id": { "type": "string", "minLength": 1 },
+    "workflow_id": { "type": "string", "minLength": 1 },
+    "agent_id": { "type": "string", "minLength": 1 },
+    "task_type": { "type": "string", "minLength": 1 },
+    "input_refs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ref" },
+      "default": []
+    },
+    "policy_version": { "type": "string", "minLength": 1 },
+    "metadata": { "type": "object", "default": {} },
+    "created_at": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "ref": {
+      "type": "object",
+      "required": ["kind", "uri"],
+      "properties": {
+        "kind": { "type": "string" },
+        "uri": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

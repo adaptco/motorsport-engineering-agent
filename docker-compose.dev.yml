@@ -1,0 +1,147 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mea-postgres-dev
+    environment:
+      POSTGRES_DB: mea
+      POSTGRES_USER: mea
+      POSTGRES_PASSWORD: mea
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mea -d mea"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - mea-network-dev
+
+  redis:
+    image: redis:7-alpine
+    container_name: mea-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_dev:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - mea-network-dev
+    command: redis-server --appendonly yes
+
+  control_plane:
+    build:
+      context: .
+      dockerfile: ./control_plane/Dockerfile
+    container_name: mea-control-plane-dev
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mcp_server:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - mea-network-dev
+    environment:
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./control_plane:/app/control_plane
+      - ./shared:/app/shared
+      - ./logs/control_plane:/app/logs
+    develop:
+      watch:
+        - path: ./control_plane
+          action: sync
+          target: /app/control_plane
+        - path: ./shared
+          action: sync
+          target: /app/shared
+
+  worker:
+    build:
+      context: .
+      dockerfile: ./worker/Dockerfile
+    container_name: mea-worker-dev
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      control_plane:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - mea-network-dev
+    environment:
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./worker:/app/worker
+      - ./shared:/app/shared
+      - ./logs/worker:/app/logs
+    develop:
+      watch:
+        - path: ./worker
+          action: sync
+          target: /app/worker
+        - path: ./shared
+          action: sync
+          target: /app/shared
+
+  mcp_server:
+    build:
+      context: .
+      dockerfile: ./mcp_server/Dockerfile
+    container_name: mea-mcp-server-dev
+    env_file:
+      - .env
+    ports:
+      - "7000:7000"
+    restart: unless-stopped
+    networks:
+      - mea-network-dev
+    environment:
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./mcp_server:/app/mcp_server
+      - ./mcp_tools:/app/mcp_tools
+      - ./shared:/app/shared
+      - ./logs/mcp_server:/app/logs
+    develop:
+      watch:
+        - path: ./mcp_server
+          action: sync
+          target: /app/mcp_server
+        - path: ./mcp_tools
+          action: sync
+          target: /app/mcp_tools
+        - path: ./shared
+          action: sync
+          target: /app/shared
+
+volumes:
+  postgres_data_dev:
+  redis_data_dev:
+
+networks:
+  mea-network-dev:
+    driver: bridge

@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 
 from control_plane.queue import enqueue
 from control_plane.routes.agent import router as agent_router
+from control_plane.routes.aero import router as aero_router
 from control_plane.routes.ingest import router as ingest_router
 from control_plane.routes.runtime_logs import router as runtime_logs_router
 from control_plane.repository import create_job, get_job, list_trace
@@ -65,6 +66,7 @@ app.include_router(session_router)
 app.include_router(replay_router)
 app.include_router(verifier_router)
 app.include_router(agent_router)
+app.include_router(aero_router)
 app.include_router(ingest_router)
 app.include_router(runtime_logs_router)
 

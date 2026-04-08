@@ -1,0 +1,14 @@
+models:
+  - provider: openai
+    name: gpt-5.4-thinking
+    allowed_for:
+      - supervisor
+      - telemetry-analyst
+      - replay-analyst
+  - provider: openai
+    name: gpt-5.4-mini
+    allowed_for:
+      - validator
+routing:
+  default: gpt-5.4-thinking
+  fallback: gpt-5.4-mini

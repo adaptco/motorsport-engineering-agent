@@ -1,0 +1,17 @@
+id: replay-analyst
+role: replay-and-debrief-specialist
+description: Produces replay observations, debrief summaries, and driver-facing notes.
+model:
+  provider: openai
+  name: gpt-5.4-thinking
+memory:
+  state_scope: session
+  retrieval_profile: replay
+tools:
+  - fetch-runtime-log
+  - fetch-session-evidence
+  - create-debrief
+  - emit-stage-receipt
+handoff_targets:
+  - validator
+  - supervisor

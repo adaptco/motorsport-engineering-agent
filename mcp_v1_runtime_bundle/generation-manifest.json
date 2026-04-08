@@ -1,0 +1,165 @@
+{
+  "$schema": "./schemas/generation-manifest.schema.json",
+  "manifest_id": "mcp-v1-single-agent-generation-manifest",
+  "version": "1.0.0",
+  "objective": "Generate a complete governed single-agent MCP V1 release bundle.",
+  "release": {
+    "name": "mcp-v1-single-agent",
+    "version": "1.0.0",
+    "mode": "single-agent",
+    "runtime": "typescript-langgraph"
+  },
+  "token_budget": {
+    "total": 180000,
+    "repair_reserve": 30000,
+    "per_phase_limit": 35000,
+    "per_node_limit": 12000
+  },
+  "phases": [
+    {
+      "phase_id": "freeze_plan",
+      "description": "Freeze manifest and derive reference map.",
+      "outputs": [
+        "generation-manifest.json"
+      ],
+      "depends_on": []
+    },
+    {
+      "phase_id": "generate_schemas",
+      "description": "Generate state and supporting schemas.",
+      "outputs": [
+        "schemas/generation-state.schema.json",
+        "schemas/generation-manifest.schema.json"
+      ],
+      "depends_on": [
+        "freeze_plan"
+      ]
+    },
+    {
+      "phase_id": "generate_runtime_module",
+      "description": "Generate the governed TypeScript runtime module.",
+      "outputs": [
+        "src/runtime/mcp-v1-runtime.ts"
+      ],
+      "depends_on": [
+        "generate_schemas"
+      ]
+    },
+    {
+      "phase_id": "generate_docs_and_registry",
+      "description": "Generate embedded markdown and A2A registry assets.",
+      "outputs": [
+        "Agent.md",
+        "SKILL.md",
+        "tool-registry.json",
+        "Agents.md",
+        "registry/agents.registry.json"
+      ],
+      "depends_on": [
+        "generate_runtime_module"
+      ]
+    },
+    {
+      "phase_id": "generate_api",
+      "description": "Generate orchestration agent API contract.",
+      "outputs": [
+        "openapi/orchestration-agent.openapi.yaml"
+      ],
+      "depends_on": [
+        "generate_runtime_module",
+        "generate_docs_and_registry"
+      ]
+    },
+    {
+      "phase_id": "evaluate_release",
+      "description": "Evaluate release against PRD acceptance criteria.",
+      "outputs": [
+        "PRD.md",
+        "docs/prd-evaluation.template.json"
+      ],
+      "depends_on": [
+        "generate_api"
+      ]
+    }
+  ],
+  "planned_files": [
+    {
+      "path": "generation-manifest.json",
+      "kind": "json",
+      "owner_phase": "freeze_plan"
+    },
+    {
+      "path": "schemas/generation-manifest.schema.json",
+      "kind": "json",
+      "owner_phase": "generate_schemas"
+    },
+    {
+      "path": "schemas/generation-state.schema.json",
+      "kind": "json",
+      "owner_phase": "generate_schemas"
+    },
+    {
+      "path": "src/runtime/mcp-v1-runtime.ts",
+      "kind": "typescript",
+      "owner_phase": "generate_runtime_module"
+    },
+    {
+      "path": "Agent.md",
+      "kind": "markdown",
+      "owner_phase": "generate_docs_and_registry"
+    },
+    {
+      "path": "SKILL.md",
+      "kind": "markdown",
+      "owner_phase": "generate_docs_and_registry"
+    },
+    {
+      "path": "tool-registry.json",
+      "kind": "json",
+      "owner_phase": "generate_docs_and_registry"
+    },
+    {
+      "path": "Agents.md",
+      "kind": "markdown",
+      "owner_phase": "generate_docs_and_registry"
+    },
+    {
+      "path": "registry/agents.registry.json",
+      "kind": "json",
+      "owner_phase": "generate_docs_and_registry"
+    },
+    {
+      "path": "PRD.md",
+      "kind": "markdown",
+      "owner_phase": "evaluate_release"
+    },
+    {
+      "path": "docs/prd-evaluation.template.json",
+      "kind": "json",
+      "owner_phase": "evaluate_release"
+    },
+    {
+      "path": "openapi/orchestration-agent.openapi.yaml",
+      "kind": "yaml",
+      "owner_phase": "generate_api"
+    }
+  ],
+  "embedded_artifacts": [
+    {
+      "name": "Agent.md",
+      "target_module_export": "AGENT_MD"
+    },
+    {
+      "name": "SKILL.md",
+      "target_module_export": "SKILL_MD"
+    },
+    {
+      "name": "tool-registry.json",
+      "target_module_export": "TOOL_REGISTRY"
+    }
+  ],
+  "evaluation_target": {
+    "prd_path": "PRD.md",
+    "mode": "single-agent"
+  }
+}

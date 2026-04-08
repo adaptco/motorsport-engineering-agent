@@ -1,6 +1,7 @@
-## v3.5.1 / 0.3.5.1
+## v3.5.2 / 0.3.5.2
 
-- resolved merge conflicts and reconciled `PROGRESS.md` for V3.5.1 baseline
+- added declarative MCP contract stub and aligned release metadata for the V3.5.2 baseline
+- resolved merge conflicts and reconciled `PROGRESS.md` for the current baseline
 - migrated `control_plane/app.py` from deprecated `on_event` hooks to `lifespan` context manager
 - implemented production-hardening: circuit breakers for GitHub/MCP and persistent forensic ledger paths
 - updated version alignment across `VERSION.json`, `pyproject.toml`, and `README.md`
