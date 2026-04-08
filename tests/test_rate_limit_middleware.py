@@ -23,7 +23,11 @@ def test_rate_limit_blocks_excess_post_requests(monkeypatch) -> None:
     monkeypatch.setattr(app_module, "create_job", lambda *_args, **_kwargs: "job-1")
     monkeypatch.setattr(app_module, "enqueue", lambda _job: None)
 
-    payload = {"repo": "adaptco/motorsport-engineering-agent", "branch": "main", "patch": "diff --git a b"}
+    payload = {
+        "repo": "adaptco/motorsport-engineering-agent",
+        "branch": "main",
+        "patch": "diff --git a b",
+    }
     with TestClient(app_module.app) as client:
         first = client.post("/repos/fix-ci", json=payload)
         second = client.post("/repos/fix-ci", json=payload)
@@ -49,9 +53,15 @@ def test_rate_limit_uses_remote_client_by_default(monkeypatch) -> None:
     monkeypatch.setattr(app_module, "create_job", lambda *_args, **_kwargs: "job-2")
     monkeypatch.setattr(app_module, "enqueue", lambda _job: None)
 
-    payload = {"repo": "adaptco/motorsport-engineering-agent", "branch": "main", "patch": "diff --git a b"}
+    payload = {
+        "repo": "adaptco/motorsport-engineering-agent",
+        "branch": "main",
+        "patch": "diff --git a b",
+    }
     with TestClient(app_module.app) as client:
-        response = client.post("/repos/fix-ci", json=payload, headers={"x-forwarded-for": "203.0.113.42"})
+        response = client.post(
+            "/repos/fix-ci", json=payload, headers={"x-forwarded-for": "203.0.113.42"}
+        )
 
     assert response.status_code == 200
     keys = list(app_module._rate_limit_buckets.keys())
@@ -71,9 +81,15 @@ def test_rate_limit_uses_forwarded_for_when_proxy_trust_enabled(monkeypatch) -> 
     monkeypatch.setattr(app_module, "create_job", lambda *_args, **_kwargs: "job-3")
     monkeypatch.setattr(app_module, "enqueue", lambda _job: None)
 
-    payload = {"repo": "adaptco/motorsport-engineering-agent", "branch": "main", "patch": "diff --git a b"}
+    payload = {
+        "repo": "adaptco/motorsport-engineering-agent",
+        "branch": "main",
+        "patch": "diff --git a b",
+    }
     with TestClient(app_module.app) as client:
-        response = client.post("/repos/fix-ci", json=payload, headers={"x-forwarded-for": "203.0.113.77, 10.0.0.1"})
+        response = client.post(
+            "/repos/fix-ci", json=payload, headers={"x-forwarded-for": "203.0.113.77, 10.0.0.1"}
+        )
 
     assert response.status_code == 200
     keys = list(app_module._rate_limit_buckets.keys())
@@ -96,7 +112,11 @@ def test_rate_limit_cleanup_evicts_stale_buckets(monkeypatch) -> None:
     monkeypatch.setattr(app_module, "create_job", lambda *_args, **_kwargs: "job-4")
     monkeypatch.setattr(app_module, "enqueue", lambda _job: None)
 
-    payload = {"repo": "adaptco/motorsport-engineering-agent", "branch": "main", "patch": "diff --git a b"}
+    payload = {
+        "repo": "adaptco/motorsport-engineering-agent",
+        "branch": "main",
+        "patch": "diff --git a b",
+    }
     with TestClient(app_module.app) as client:
         response = client.post("/repos/fix-ci", json=payload)
 
