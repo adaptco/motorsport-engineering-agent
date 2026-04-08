@@ -46,7 +46,7 @@ fi
 
 # Create ConfigMap and Secrets
 log_info "Applying ConfigMaps and Secrets..."
-kubectl apply -f - << 'EOF'
+kubectl apply -f - << EOF
 apiVersion: v1
 kind: ConfigMap
 metadata:
