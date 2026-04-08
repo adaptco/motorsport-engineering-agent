@@ -291,3 +291,27 @@ def verify_chain(db_path: str | Path, session_id: str) -> dict[str, Any]:
             prev_hash = row["state_hash"]
             expected_clock += 1
         return {"ok": True, "receipts": len(rows), "head": prev_hash, "details": details}
+
+
+def list_receipts(
+    db_path: str | Path,
+    session_id: str,
+    *,
+    after_logical_clock: int = 0,
+    receipt_type: str | None = None,
+    limit: int | None = None,
+) -> list[dict[str, Any]]:
+    init_ledger(db_path)
+    query = "SELECT * FROM receipts WHERE session_id = ? AND logical_clock > ?"
+    params: list[Any] = [session_id, after_logical_clock]
+    if receipt_type:
+        query += " AND receipt_type = ?"
+        params.append(receipt_type)
+    query += " ORDER BY logical_clock ASC, id ASC"
+    if limit is not None:
+        query += " LIMIT ?"
+        params.append(limit)
+
+    with ledger_connection(db_path) as conn:
+        rows = conn.execute(query, tuple(params)).fetchall()
+        return [dict(row) for row in rows]

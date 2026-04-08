@@ -235,6 +235,134 @@ class A2AInvokeResponse(BaseModel):
     message: str
 
 
+RuntimeLocation = Literal["local", "worktree", "cloud"]
+RuntimeTaskState = Literal["queued", "running", "blocked", "done"]
+RuntimeEventType = Literal["agent_upsert", "task_upsert", "assignment_upsert", "heartbeat"]
+
+
+class RuntimeAgentRecord(BaseModel):
+    agent_id: str
+    display_name: str
+    runtime: RuntimeLocation
+    host: str = "unknown"
+    branch: str = "unknown"
+    commit_hash: str = "unknown"
+    dirty: bool = False
+    note: str = ""
+    last_seen_at: datetime
+
+
+class RuntimeTaskRecord(BaseModel):
+    task_id: str
+    title: str
+    state: RuntimeTaskState
+    assigned_agent: Optional[str] = None
+    source: str = ""
+    note: str = ""
+    updated_by: str = "operator"
+    updated_at: datetime
+
+
+class RuntimeAgentUpsertPayload(BaseModel):
+    agent_id: str
+    display_name: Optional[str] = None
+    runtime: RuntimeLocation
+    host: str = "unknown"
+    branch: str = "unknown"
+    commit_hash: str = "unknown"
+    note: str = ""
+    dirty: bool = False
+
+
+class RuntimeTaskUpsertPayload(BaseModel):
+    task_id: str
+    title: Optional[str] = None
+    state: RuntimeTaskState
+    source: str = ""
+    note: str = ""
+    updated_by: str = "operator"
+
+
+class RuntimeAssignmentUpsertPayload(BaseModel):
+    task_id: str
+    agent_id: Optional[str] = None
+    updated_by: str = "operator"
+
+
+class RuntimeHeartbeatPayload(BaseModel):
+    agent_id: str
+    at: Optional[datetime] = None
+
+
+class RuntimeStateAgentUpsertEvent(BaseModel):
+    event_type: Literal["agent_upsert"]
+    payload: RuntimeAgentUpsertPayload
+
+
+class RuntimeStateTaskUpsertEvent(BaseModel):
+    event_type: Literal["task_upsert"]
+    payload: RuntimeTaskUpsertPayload
+
+
+class RuntimeStateAssignmentUpsertEvent(BaseModel):
+    event_type: Literal["assignment_upsert"]
+    payload: RuntimeAssignmentUpsertPayload
+
+
+class RuntimeStateHeartbeatEvent(BaseModel):
+    event_type: Literal["heartbeat"]
+    payload: RuntimeHeartbeatPayload
+
+
+RuntimeStateEvent = RuntimeStateAgentUpsertEvent | RuntimeStateTaskUpsertEvent | RuntimeStateAssignmentUpsertEvent | RuntimeStateHeartbeatEvent
+
+
+class RuntimeStateMutationRequest(BaseModel):
+    idempotency_key: str
+    session_id: str
+    event_type: RuntimeEventType
+    payload: Dict[str, Any] = Field(default_factory=dict)
+    client_ts: Optional[datetime] = None
+
+
+class RuntimeStateMutationResponse(BaseModel):
+    status: Literal["accepted", "duplicate"]
+    session_id: str
+    applied_seq: int
+    state_hash: str
+    event_type: RuntimeEventType
+
+
+class RuntimeStateSummary(BaseModel):
+    agent_count: int
+    runtime_counts: Dict[str, int]
+    task_counts: Dict[str, int]
+
+
+class RuntimeStateSnapshot(BaseModel):
+    session_id: str
+    generated_at: datetime
+    last_seq: int
+    last_state_hash: str
+    summary: RuntimeStateSummary
+    agents: Dict[str, RuntimeAgentRecord] = Field(default_factory=dict)
+    tasks: Dict[str, RuntimeTaskRecord] = Field(default_factory=dict)
+
+
+class RuntimeStateDeltaEvent(BaseModel):
+    seq: int
+    state_hash: str
+    idempotency_key: str
+    event_type: RuntimeEventType
+    payload: Dict[str, Any] = Field(default_factory=dict)
+    accepted_at: datetime
+
+
+class RuntimeStateEventListResponse(BaseModel):
+    session_id: str
+    events: List[RuntimeStateDeltaEvent] = Field(default_factory=list)
+
+
 class IngestSourceStatus(BaseModel):
     vendor: str
     native_extensions: List[str] = Field(default_factory=list)
