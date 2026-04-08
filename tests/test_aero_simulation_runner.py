@@ -9,12 +9,19 @@ from types import SimpleNamespace
 import pytest
 
 from control_plane.services.aero_runner import AeroSandboxRunner, WslOpenFoamRunner
-from control_plane.services.aero_state_store import apply_aero_solver_result, build_initial_state, save_aero_state
+from control_plane.services.aero_state_store import (
+    apply_aero_solver_result,
+    build_initial_state,
+    save_aero_state,
+)
 from tests.fixtures import build_gt4_aero_run_request
 
 
 def _wsl_integration_enabled() -> bool:
-    return bool(os.environ.get("MEA_RUN_WSL_OPENFOAM_INTEGRATION")) and shutil.which("wsl.exe") is not None
+    return (
+        bool(os.environ.get("MEA_RUN_WSL_OPENFOAM_INTEGRATION"))
+        and shutil.which("wsl.exe") is not None
+    )
 
 
 def test_sandbox_runner_returns_deterministic_gt4_baseline(tmp_path: Path) -> None:
@@ -86,8 +93,12 @@ def test_wsl_runner_parses_force_coeffs_and_updates_result(tmp_path: Path, monke
         encoding="utf-8",
     )
 
-    fake_completed = SimpleNamespace(returncode=0, stdout="blockMesh\ncheckMesh\nsimpleFoam\n", stderr="")
-    monkeypatch.setattr("control_plane.services.aero_runner.subprocess.run", lambda *args, **kwargs: fake_completed)
+    fake_completed = SimpleNamespace(
+        returncode=0, stdout="blockMesh\ncheckMesh\nsimpleFoam\n", stderr=""
+    )
+    monkeypatch.setattr(
+        "control_plane.services.aero_runner.subprocess.run", lambda *args, **kwargs: fake_completed
+    )
 
     result = WslOpenFoamRunner().run(req, case_dir=case_dir)
 
@@ -101,7 +112,9 @@ def test_wsl_runner_parses_force_coeffs_and_updates_result(tmp_path: Path, monke
     assert (case_dir / "results" / "aero_result.json").exists()
 
 
-def test_wsl_runner_timeout_writes_logs_and_returns_failed_result(tmp_path: Path, monkeypatch) -> None:
+def test_wsl_runner_timeout_writes_logs_and_returns_failed_result(
+    tmp_path: Path, monkeypatch
+) -> None:
     req = build_gt4_aero_run_request(runtime_target="wsl2", runner_kind="wsl")
     case_dir = tmp_path / "wsl_timeout_case"
 
@@ -128,7 +141,10 @@ def test_wsl_runner_timeout_writes_logs_and_returns_failed_result(tmp_path: Path
     assert (case_dir / "results" / "aero_result.json").exists()
 
 
-@pytest.mark.skipif(not _wsl_integration_enabled(), reason="WSL/OpenFOAM integration is gated by MEA_RUN_WSL_OPENFOAM_INTEGRATION and wsl.exe availability")
+@pytest.mark.skipif(
+    not _wsl_integration_enabled(),
+    reason="WSL/OpenFOAM integration is gated by MEA_RUN_WSL_OPENFOAM_INTEGRATION and wsl.exe availability",
+)
 def test_wsl_integration_run_writes_back_to_aero_state(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("AERO_STATE_ROOT", str(tmp_path / "aero_state"))
 

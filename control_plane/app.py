@@ -1,43 +1,54 @@
+import ipaddress
 import os
 import time
 import uuid
-import ipaddress
+from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 from pathlib import Path
-from collections import defaultdict, deque
 from threading import Lock
 
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.responses import JSONResponse
 
 from control_plane.queue import enqueue
-from control_plane.routes.agent import router as agent_router
-from control_plane.routes.aero import router as aero_router
-from control_plane.routes.ingest import router as ingest_router
-from control_plane.routes.runtime_logs import router as runtime_logs_router
 from control_plane.repository import create_job, get_job, list_trace
+from control_plane.routes.aero import router as aero_router
+from control_plane.routes.agent import router as agent_router
+from control_plane.routes.ingest import router as ingest_router
 from control_plane.routes.replay import router as replay_router
+from control_plane.routes.runtime_logs import router as runtime_logs_router
 from control_plane.routes.session import router as session_router
 from control_plane.routes.verifier import router as verifier_router
-from control_plane.webhooks import get_webhook_secret, router as github_router
+from control_plane.webhooks import get_webhook_secret
+from control_plane.webhooks import router as github_router
 from shared.db import close_pool, pool_health
 from shared.forensic_ledger import init_ledger
 from shared.models import FixCIRequest
 from shared.runtime_paths import default_session_ledger_path
 from shared.version import load_version_info
 
-RATE_LIMIT_ENABLED = os.environ.get("RATE_LIMIT_ENABLED", "true").strip().lower() in {"1", "true", "yes"}
+RATE_LIMIT_ENABLED = os.environ.get("RATE_LIMIT_ENABLED", "true").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+}
 RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get("RATE_LIMIT_WINDOW_SECONDS", "60"))
 RATE_LIMIT_REQUESTS_PER_WINDOW = int(os.environ.get("RATE_LIMIT_REQUESTS_PER_WINDOW", "60"))
-RATE_LIMIT_BUCKET_CLEANUP_INTERVAL_SECONDS = int(os.environ.get("RATE_LIMIT_BUCKET_CLEANUP_INTERVAL_SECONDS", "30"))
+RATE_LIMIT_BUCKET_CLEANUP_INTERVAL_SECONDS = int(
+    os.environ.get("RATE_LIMIT_BUCKET_CLEANUP_INTERVAL_SECONDS", "30")
+)
 RATE_LIMIT_PATHS = {
     path.strip()
     for path in os.environ.get("RATE_LIMIT_PATHS", "/repos/fix-ci,/runtime/logs/parse").split(",")
     if path.strip()
 }
-TRUST_PROXY_HEADERS = os.environ.get("TRUST_PROXY_HEADERS", "false").strip().lower() in {"1", "true", "yes"}
+TRUST_PROXY_HEADERS = os.environ.get("TRUST_PROXY_HEADERS", "false").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+}
 _rate_limit_lock = Lock()
 _rate_limit_buckets: dict[tuple[str, str], deque[float]] = defaultdict(deque)
 _last_rate_limit_cleanup_at = 0.0
@@ -97,7 +108,9 @@ async def lifespan(app: FastAPI):
         webhook_required=webhook_required,
     )
     ledger_db_path = os.environ.get("SESSION_LEDGER_DB_PATH", str(default_session_ledger_path()))
-    app.state.session_ledger_db_path = validate_session_ledger_startup_config(ledger_db_path=ledger_db_path)
+    app.state.session_ledger_db_path = validate_session_ledger_startup_config(
+        ledger_db_path=ledger_db_path
+    )
 
     yield
 
@@ -127,7 +140,11 @@ async def rate_limit_middleware(request: Request, call_next):
 
     request_id = request.headers.get("x-request-id", str(uuid.uuid4()))
     request.state.request_id = request_id
-    if not RATE_LIMIT_ENABLED or request.method.upper() != "POST" or request.url.path not in RATE_LIMIT_PATHS:
+    if (
+        not RATE_LIMIT_ENABLED
+        or request.method.upper() != "POST"
+        or request.url.path not in RATE_LIMIT_PATHS
+    ):
         response = await call_next(request)
         response.headers["x-request-id"] = request_id
         return response

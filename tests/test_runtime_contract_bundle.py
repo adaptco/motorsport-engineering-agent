@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from jsonschema import ValidationError
@@ -9,7 +9,7 @@ from shared.runtime_contracts import validate_runtime_event
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _base_event(event_type: str, lane: str, fsm_state: str) -> dict[str, object]:
