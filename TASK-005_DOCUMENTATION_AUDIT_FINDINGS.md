@@ -66,16 +66,16 @@ Content: v3.5 feature list, quick start, release authority reference
 - Only `.env.example` with bare variable names
 
 **Missing Documentation:**
-- [ ] Prerequisites (Python 3.11+, PostgreSQL, Redis, Docker)
-- [ ] Environment variables with descriptions (not just names)
-- [ ] Database initialization procedure
-- [ ] Docker Compose startup steps
-- [ ] Health check validation
-- [ ] Scaling guidance (horizontal, vertical, queue tuning)
-- [ ] Performance tuning (connection pooling, caching)
-- [ ] Backup/disaster recovery procedures
-- [ ] SSL/TLS configuration
-- [ ] Monitoring setup (metrics, logs, alerts)
+- [x] Prerequisites (Python 3.11+, PostgreSQL, Redis, Docker) (Evidence: docs/deployment.md)
+- [x] Environment variables with descriptions (not just names) (Evidence: .env.example)
+- [x] Database initialization procedure (Evidence: docs/deployment.md)
+- [x] Docker Compose startup steps (Evidence: docs/deployment.md)
+- [x] Health check validation (Evidence: docs/deployment.md)
+- [x] Scaling guidance (horizontal, vertical, queue tuning) (Evidence: docs/deployment.md)
+- [x] Performance tuning (connection pooling, caching) (Evidence: docs/deployment.md)
+- [x] Backup/disaster recovery procedures (Evidence: docs/ops/BACKUP_RESTORE.md)
+- [x] SSL/TLS configuration (Evidence: docs/deployment.md)
+- [x] Monitoring setup (metrics, logs, alerts) (Evidence: docs/deployment.md)
 
 **Severity:** 🔴 **RED** (BLOCKER) - Operations team cannot deploy without this guide. Docker Compose exists but deployment sequence is unclear.
 
@@ -98,14 +98,14 @@ Content: v3.5 feature list, quick start, release authority reference
 - ❌ **Missing:** General operational runbook
 
 **Gaps:**
-- [ ] No runbook for service startup/shutdown
-- [ ] No runbook for job failure recovery
-- [ ] No runbook for database maintenance
-- [ ] No runbook for Redis queue monitoring
-- [ ] No runbook for investigating performance issues
-- [ ] No runbook for rolling back deployments
-- [ ] No runbook for security incident response
-- [ ] No runbook for log analysis/debugging
+- [x] No runbook for service startup/shutdown (Evidence: docs/runbook.md)
+- [x] No runbook for job failure recovery (Evidence: docs/runbook.md)
+- [x] No runbook for database maintenance (Evidence: docs/runbook.md)
+- [x] No runbook for Redis queue monitoring (Evidence: docs/runbook.md)
+- [x] No runbook for investigating performance issues (Evidence: docs/runbook.md)
+- [x] No runbook for rolling back deployments (Evidence: docs/deployment.md, docs/ops/GENERAL_RUNBOOK.md)
+- [x] No runbook for security incident response (Evidence: docs/runbook.md)
+- [x] No runbook for log analysis/debugging (Evidence: docs/runbook.md)
 
 **Severity:** 🟡 **YELLOW** - GitHub PR operations well-covered, but general ops procedures missing.
 
@@ -207,13 +207,13 @@ Content: v3.5 feature list, quick start, release authority reference
 - No contribution workflow documented
 
 **Missing Sections:**
-- [ ] Code style and formatting (ruff, black, isort rules)
-- [ ] Testing requirements (how to run tests, coverage targets)
-- [ ] Git workflow (branching strategy, commit messages)
-- [ ] PR review process
-- [ ] Development environment setup
-- [ ] Debugging guidance
-- [ ] Common tasks (adding endpoints, adding tests, database changes)
+- [x] Code style and formatting (ruff, black, isort rules) (Evidence: CONTRIBUTING.md, pyproject.toml)
+- [x] Testing requirements (how to run tests, coverage targets) (Evidence: CONTRIBUTING.md)
+- [x] Git workflow (branching strategy, commit messages) (Evidence: CONTRIBUTING.md)
+- [x] PR review process (Evidence: CONTRIBUTING.md)
+- [x] Development environment setup (Evidence: CONTRIBUTING.md)
+- [x] Debugging guidance (Evidence: CONTRIBUTING.md)
+- [x] Common tasks (adding endpoints, adding tests, database changes) (Evidence: CONTRIBUTING.md)
 
 **Severity:** 🟡 **YELLOW** - New contributors cannot easily understand workflows.
 
@@ -413,21 +413,21 @@ If the following are completed, production readiness upgrades to **GREEN**:
 
 ### Phase 1: CRITICAL (Days 1-2, ~6 hours)
 
-- [ ] **1.1** Create `docs/DEPLOYMENT.md` (~150 lines)
+- [x] **1.1** Create `docs/DEPLOYMENT.md` (~150 lines)
   - Prerequisites and environment setup
   - Docker Compose startup sequence
   - Database initialization
   - Health check validation
   - Common deployment scenarios
 
-- [ ] **1.2** Add docstrings to all FastAPI endpoints (~2 hours)
+- [x] **1.2** Add docstrings to all FastAPI endpoints (~2 hours)
   - `@app.get("/healthz")`
   - `@app.post("/repos/fix-ci")`
   - `@app.get("/jobs/{job_id}")`
   - `@app.get("/jobs/{job_id}/trace")`
   - All route handlers
 
-- [ ] **1.3** Create `docs/API.md` (~100 lines)
+- [x] **1.3** Create `docs/API.md` (~100 lines)
   - Curl examples for key endpoints
   - Python client examples
   - Error handling and retry strategy
@@ -435,19 +435,19 @@ If the following are completed, production readiness upgrades to **GREEN**:
 
 ### Phase 2: HIGH (Days 2-3, ~4 hours)
 
-- [ ] **2.1** Create `CONTRIBUTING.md` (~150 lines)
+- [x] **2.1** Create `CONTRIBUTING.md` (~150 lines)
   - Development environment setup
   - Code style guidelines
   - Testing expectations
   - Git and PR workflow
 
-- [ ] **2.2** Create `docs/ops/GENERAL_RUNBOOK.md` (~200 lines)
+- [x] **2.2** Create `docs/ops/GENERAL_RUNBOOK.md` (~200 lines)
   - Service lifecycle
   - Failure recovery
   - Database maintenance
   - Performance monitoring
 
-- [ ] **2.3** Expand root `README.md` (~200 lines)
+- [x] **2.3** Expand root `README.md` (~200 lines)
   - Project purpose (1 paragraph)
   - Architecture overview with diagram
   - Quick start (local + Docker)
@@ -457,16 +457,16 @@ If the following are completed, production readiness upgrades to **GREEN**:
 
 - [ ] **3.1** Add module docstrings to all Python files
 - [ ] **3.2** Add inline comments to complex functions (webhook validation, job runner)
-- [ ] **3.3** Enhance `.env.example` with descriptions
+- [x] **3.3** Enhance `.env.example` with descriptions
 
 ### Verification
 
 After remediation:
 - [ ] All 8 acceptance criteria marked COMPLETE
 - [ ] New developer onboarding time < 2 hours
-- [ ] Deployment procedure documented and tested
-- [ ] All endpoints have docstrings and examples
-- [ ] Runbook covers common operations
+- [x] Deployment procedure documented and tested
+- [x] All endpoints have docstrings and examples
+- [x] Runbook covers common operations
 
 ---
 
@@ -527,10 +527,7 @@ After remediation:
    - pr_remote_audit.md
 
 ❌ MISSING:
-   - DEPLOYMENT.md
-   - API.md
-   - GENERAL_RUNBOOK.md
-   - CONTRIBUTING.md
+   - README expansion to target baseline
 ```
 
 ---

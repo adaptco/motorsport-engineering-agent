@@ -90,6 +90,7 @@ yarn-error.log
 # Documentation and Meta Files
 # ============================================================
 *.md
+!DEPENDENCIES.md
 LICENSE
 *.txt
 .env

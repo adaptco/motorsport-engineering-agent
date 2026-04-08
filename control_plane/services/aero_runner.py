@@ -1,17 +1,21 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import shlex
 import subprocess
-import hashlib
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from shared.models import AeroSimulationExecutionState, AeroSimulationSolveResult, AeroSimulationRunRequest, AeroSourceRef
-
+from shared.models import (
+    AeroSimulationExecutionState,
+    AeroSimulationRunRequest,
+    AeroSimulationSolveResult,
+    AeroSourceRef,
+)
 
 _FLOAT_PATTERN = re.compile(r"[-+]?(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][-+]?\d+)?")
 SOLVER_RUN_TIMEOUT_SECONDS = 20 * 60
@@ -29,7 +33,7 @@ class OpenFoamRuntimeProfile:
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _has_cad_source(req: AeroSimulationRunRequest) -> bool:
@@ -63,7 +67,9 @@ def _write_text(path: Path, content: str) -> None:
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False), encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False), encoding="utf-8"
+    )
 
 
 def _sha256_file_prefixed(path: Path) -> str:
@@ -74,7 +80,9 @@ def _sha256_file_prefixed(path: Path) -> str:
     return f"sha256:{hasher.hexdigest()}"
 
 
-def _artifact_ref(path: Path, *, label: str, kind: str = "solver_case", root: Path | None = None) -> AeroSourceRef:
+def _artifact_ref(
+    path: Path, *, label: str, kind: str = "solver_case", root: Path | None = None
+) -> AeroSourceRef:
     try:
         relative_path = path.relative_to(root).as_posix() if root is not None else path.name
     except ValueError:
@@ -96,7 +104,9 @@ def _baseline_metrics(
     cm_pitch: float | None = None,
 ) -> dict[str, Any]:
     has_cad = _has_cad_source(req)
-    width_m = float((_dimensions(req).get("width_with_mirrors_m") or _dimensions(req).get("width_m") or 1.0))
+    width_m = float(
+        _dimensions(req).get("width_with_mirrors_m") or _dimensions(req).get("width_m") or 1.0
+    )
     height_m = float(_dimensions(req).get("height_m") or 1.0)
     reference_area = _frontal_area_m2(req)
     reference_velocity = float(req.metadata.get("reference_velocity_m_s", 55.0))
@@ -171,13 +181,16 @@ def _build_execution_state(
 
 def _write_force_coeffs_file(case_dir: Path, metrics: dict[str, Any]) -> Path:
     force_coeffs_path = case_dir / "postProcessing" / "forceCoeffs" / "0" / "forceCoeffs.dat"
-    content = "\n".join(
-        [
-            "# Time Cd Cl CmRoll CmPitch CmYaw",
-            f"0.0 {metrics['cd'] - 0.04:.6f} {metrics['cl'] + 0.04:.6f} 0.000000 {metrics['cm_pitch'] + 0.01:.6f} 0.000000",
-            f"1.0 {metrics['cd']:.6f} {metrics['cl']:.6f} 0.000000 {metrics['cm_pitch']:.6f} 0.000000",
-        ]
-    ) + "\n"
+    content = (
+        "\n".join(
+            [
+                "# Time Cd Cl CmRoll CmPitch CmYaw",
+                f"0.0 {metrics['cd'] - 0.04:.6f} {metrics['cl'] + 0.04:.6f} 0.000000 {metrics['cm_pitch'] + 0.01:.6f} 0.000000",
+                f"1.0 {metrics['cd']:.6f} {metrics['cl']:.6f} 0.000000 {metrics['cm_pitch']:.6f} 0.000000",
+            ]
+        )
+        + "\n"
+    )
     _write_text(force_coeffs_path, content)
     return force_coeffs_path
 
@@ -193,7 +206,9 @@ def _parse_force_coeffs_file(path: Path | None) -> dict[str, float] | None:
         if not line:
             continue
         if line.startswith("#"):
-            header_tokens = [token.lower() for token in re.split(r"[\s()]+", line.lstrip("#").strip()) if token]
+            header_tokens = [
+                token.lower() for token in re.split(r"[\s()]+", line.lstrip("#").strip()) if token
+            ]
             if len(header_tokens) > 1:
                 headers = header_tokens
             continue
@@ -211,7 +226,9 @@ def _parse_force_coeffs_file(path: Path | None) -> dict[str, float] | None:
 
     cd = mapped.get("cd", values[1] if len(values) > 1 else None)
     cl = mapped.get("cl", values[2] if len(values) > 2 else None)
-    cm_pitch = mapped.get("cmpitch", mapped.get("cm_pitch", mapped.get("cm", values[4] if len(values) > 4 else None)))
+    cm_pitch = mapped.get(
+        "cmpitch", mapped.get("cm_pitch", mapped.get("cm", values[4] if len(values) > 4 else None))
+    )
 
     parsed: dict[str, float] = {}
     if cd is not None:
@@ -246,7 +263,9 @@ class AeroSandboxRunner:
     def __init__(self, profile: OpenFoamRuntimeProfile | None = None) -> None:
         self.profile = profile or OpenFoamRuntimeProfile()
 
-    def run(self, req: AeroSimulationRunRequest, *, run_id: str, case_dir: Path) -> AeroSimulationSolveResult:
+    def run(
+        self, req: AeroSimulationRunRequest, *, run_id: str, case_dir: Path
+    ) -> AeroSimulationSolveResult:
         case_dir.mkdir(parents=True, exist_ok=True)
         logs_dir = case_dir / "logs"
         results_dir = case_dir / "results"
@@ -293,7 +312,12 @@ class AeroSandboxRunner:
             confidence=metrics["confidence"],
             correlation_score=metrics["correlation_score"],
             residual_score=metrics["residual_score"],
-            artifacts=_result_artifact_refs(case_dir=case_dir, stdout_path=stdout_path, stderr_path=stderr_path, force_coeffs_path=coeffs_path),
+            artifacts=_result_artifact_refs(
+                case_dir=case_dir,
+                stdout_path=stdout_path,
+                stderr_path=stderr_path,
+                force_coeffs_path=coeffs_path,
+            ),
             notes=execution_notes,
         )
 
@@ -306,20 +330,23 @@ class WslOpenFoamRunner:
         self.profile = profile or OpenFoamRuntimeProfile()
 
     def bootstrap_script(self) -> str:
-        return "\n".join(
-            [
-                "#!/usr/bin/env bash",
-                "set -euo pipefail",
-                "export DEBIAN_FRONTEND=noninteractive",
-                "sudo apt-get update",
-                "sudo apt-get install -y software-properties-common ca-certificates curl gnupg lsb-release",
-                f"if ! command -v blockMesh >/dev/null 2>&1 || ! command -v checkMesh >/dev/null 2>&1 || ! command -v simpleFoam >/dev/null 2>&1; then sudo apt-get install -y {self.profile.openfoam_package}; fi",
-                f"if [ -f {shlex.quote(self.profile.openfoam_bashrc)} ]; then source {shlex.quote(self.profile.openfoam_bashrc)}; fi",
-                "command -v blockMesh",
-                "command -v checkMesh",
-                "command -v simpleFoam",
-            ]
-        ) + "\n"
+        return (
+            "\n".join(
+                [
+                    "#!/usr/bin/env bash",
+                    "set -euo pipefail",
+                    "export DEBIAN_FRONTEND=noninteractive",
+                    "sudo apt-get update",
+                    "sudo apt-get install -y software-properties-common ca-certificates curl gnupg lsb-release",
+                    f"if ! command -v blockMesh >/dev/null 2>&1 || ! command -v checkMesh >/dev/null 2>&1 || ! command -v simpleFoam >/dev/null 2>&1; then sudo apt-get install -y {self.profile.openfoam_package}; fi",
+                    f"if [ -f {shlex.quote(self.profile.openfoam_bashrc)} ]; then source {shlex.quote(self.profile.openfoam_bashrc)}; fi",
+                    "command -v blockMesh",
+                    "command -v checkMesh",
+                    "command -v simpleFoam",
+                ]
+            )
+            + "\n"
+        )
 
     def launch_command(self, case_dir: Path, *, include_simple_foam: bool = True) -> list[str]:
         wsl_case_dir = shlex.quote(str(case_dir))
@@ -344,7 +371,9 @@ class WslOpenFoamRunner:
             body,
         ]
 
-    def run(self, req: AeroSimulationRunRequest, *, case_dir: Path, include_simple_foam: bool = True) -> AeroSimulationSolveResult:
+    def run(
+        self, req: AeroSimulationRunRequest, *, case_dir: Path, include_simple_foam: bool = True
+    ) -> AeroSimulationSolveResult:
         case_dir.mkdir(parents=True, exist_ok=True)
         started_at = _utcnow()
         command = self.launch_command(case_dir, include_simple_foam=include_simple_foam)
@@ -362,8 +391,13 @@ class WslOpenFoamRunner:
             results_dir = case_dir / "results"
             stdout_path = logs_dir / "wsl.stdout.log"
             stderr_path = logs_dir / "wsl.stderr.log"
-            _write_text(stdout_path, exc.stdout or "")
-            _write_text(stderr_path, (exc.stderr or "") + f"\nSolver timed out after {SOLVER_RUN_TIMEOUT_SECONDS}s\n")
+            stdout_path.parent.mkdir(parents=True, exist_ok=True)
+            stderr_path.parent.mkdir(parents=True, exist_ok=True)
+            stdout_path.write_text(exc.stdout or "", encoding="utf-8")
+            stderr_path.write_text(
+                (exc.stderr or "") + f"\nSolver timed out after {SOLVER_RUN_TIMEOUT_SECONDS}s\n",
+                encoding="utf-8",
+            )
 
             execution_notes = [
                 "WSL execution timed out.",
@@ -396,7 +430,12 @@ class WslOpenFoamRunner:
                 confidence=0.0,
                 correlation_score=None,
                 residual_score=None,
-                artifacts=_result_artifact_refs(case_dir=case_dir, stdout_path=stdout_path, stderr_path=stderr_path, force_coeffs_path=None),
+                artifacts=_result_artifact_refs(
+                    case_dir=case_dir,
+                    stdout_path=stdout_path,
+                    stderr_path=stderr_path,
+                    force_coeffs_path=None,
+                ),
                 notes=execution_notes,
             )
             _write_json(results_dir / "aero_result.json", timed_out_result.model_dump(mode="json"))
@@ -442,7 +481,12 @@ class WslOpenFoamRunner:
                 confidence=0.0,
                 correlation_score=None,
                 residual_score=None,
-                artifacts=_result_artifact_refs(case_dir=case_dir, stdout_path=stdout_path, stderr_path=stderr_path, force_coeffs_path=None),
+                artifacts=_result_artifact_refs(
+                    case_dir=case_dir,
+                    stdout_path=stdout_path,
+                    stderr_path=stderr_path,
+                    force_coeffs_path=None,
+                ),
                 notes=execution_notes,
             )
             _write_json(results_dir / "aero_result.json", failed_result.model_dump(mode="json"))
@@ -504,7 +548,12 @@ class WslOpenFoamRunner:
             confidence=metrics["confidence"],
             correlation_score=metrics["correlation_score"],
             residual_score=metrics["residual_score"],
-            artifacts=_result_artifact_refs(case_dir=case_dir, stdout_path=stdout_path, stderr_path=stderr_path, force_coeffs_path=coeffs_path),
+            artifacts=_result_artifact_refs(
+                case_dir=case_dir,
+                stdout_path=stdout_path,
+                stderr_path=stderr_path,
+                force_coeffs_path=coeffs_path,
+            ),
             notes=execution_notes,
         )
         _write_json(results_dir / "aero_result.json", result.model_dump(mode="json"))

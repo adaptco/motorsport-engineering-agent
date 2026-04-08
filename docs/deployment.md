@@ -67,3 +67,20 @@ Readiness checks should fail rollout if:
    - `/healthz`
    - `/healthz/dependencies`
 4. Confirm queue drains normally and worker can fetch GitHub installation token.
+
+## Scaling Guidance
+
+- Horizontal scale control plane behind gateway/load balancer.
+- Scale worker replicas based on queue depth and DB pool limits.
+- Tune `DB_POOL_MAX_SIZE` and Redis capacity together to avoid head-of-line blocking.
+
+## SSL/TLS
+
+- Terminate TLS at ingress/gateway (recommended).
+- Enforce HTTPS between browser and gateway for production.
+
+## Monitoring
+
+- Track `/healthz` and `/healthz/dependencies`.
+- Collect service logs centrally.
+- Track queue depth, job throughput, and error-rate alerts.

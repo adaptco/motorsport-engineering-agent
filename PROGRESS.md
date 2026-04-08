@@ -19,6 +19,23 @@ This tracker is the canonical execution board for the additive migration path:
 
 The release strategy is intentionally non-destructive. Legacy v3.5.2 operational surfaces remain compatibility-backed while newer slices are layered in behind versioned routes and additive migrations.
 
+## Latest Execution Update (2026-04-08)
+
+- Added persistent reconciliation loop primitives in `worker/background_workers.py` for task findings, `TASK_LEDGER.md`, and MCP PRD acceptance criteria.
+- Added/extended loop coverage in `tests/test_background_workers_state.py`.
+- Created skill `skills/agent-ralph-wiggum/` to run checkpointed closeout loops.
+- Resolved dependency lock workflow blocker by generating `uv.lock` and removing stale root `requirements.txt`.
+- Added project lint/type configuration (`ruff`, `mypy`) in `pyproject.toml`.
+- Added E2E ingest lifecycle integration coverage in `tests/integration/test_ingest_e2e_lifecycle.py`.
+- Added runtime contract validation utility and tests (`shared/runtime_contracts.py`, `tests/test_runtime_contract_bundle.py`).
+- Added MCP PRD evaluation artifact `mcp_v1_runtime_bundle/docs/prd-evaluation.json` for AC-08 closure tracking.
+- Added missing contributor/API/ops docs (`CONTRIBUTING.md`, `docs/API.md`, `docs/ops/GENERAL_RUNBOOK.md`).
+- Promoted Ralph loop from blocked reconciliation to active execution with prioritized closure actions persisted in `.mea_tmp/workflow_state/v3_6_closeout_ranked_actions.json`.
+- Corrected Ralph closure process: reverted non-evidenced shortcut closures, enforced evidence-only checklist closure, and reduced validated remaining actions to `11`.
+- Closed PR `#59` Gemini runtime review findings with concrete fixes in `control_plane/app.py` and `control_plane/services/aero_runner.py`, plus coverage updates in `tests/test_rate_limit_middleware.py` and `tests/test_aero_simulation_runner.py`.
+- Re-ran full local suite after PR59 fixes: `83 passed, 1 skipped`.
+- Re-ran Ralph reconciliation loop with current checklist/ledger/PRD state; persisted truthful blocked status with `19` remaining actions (no non-evidence closures).
+
 ---
 
 ## Four-Phase Timeline

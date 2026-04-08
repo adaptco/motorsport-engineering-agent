@@ -87,7 +87,12 @@ jobs:
               context.eventName === "pull_request"
                 ? context.payload.pull_request.head.sha
                 : context.sha;
-            const required = ["test", "build-images"];
+            const required = [
+              "lint-and-test (3.11)",
+              "docker-build-test",
+              "build-images (control_plane)",
+              "test-compose",
+            ];
             const pollIntervalMs = 15000;
             const timeoutMs = 20 * 60 * 1000;
             const deadline = Date.now() + timeoutMs;

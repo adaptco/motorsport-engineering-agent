@@ -12,7 +12,11 @@ except Exception:  # pragma: no cover
 from shared.circuit_breaker import CircuitBreaker
 
 QUEUE_NAME = "mea.jobs"
-QUEUE_ALLOW_IN_MEMORY_FALLBACK = os.environ.get("QUEUE_ALLOW_IN_MEMORY_FALLBACK", "true").strip().lower() in {
+APP_ENV = os.environ.get("APP_ENV", "development").strip().lower()
+_fallback_default = "false" if APP_ENV in {"prod", "production"} else "true"
+QUEUE_ALLOW_IN_MEMORY_FALLBACK = os.environ.get(
+    "QUEUE_ALLOW_IN_MEMORY_FALLBACK", _fallback_default
+).strip().lower() in {
     "1",
     "true",
     "yes",
@@ -22,7 +26,9 @@ _redis_breaker = CircuitBreaker.from_env("REDIS")
 
 if redis is not None:
     try:
-        r = redis.from_url(os.environ.get("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True)
+        r = redis.from_url(
+            os.environ.get("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True
+        )
         r.ping()
     except Exception:  # pragma: no cover
         r = None

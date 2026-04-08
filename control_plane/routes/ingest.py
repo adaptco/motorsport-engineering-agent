@@ -10,11 +10,13 @@ router = APIRouter(prefix="/ingest", tags=["ingest"])
 
 @router.get("/sources", response_model=list[IngestSourceStatus])
 def list_ingest_sources():
+    """List available ingest parsers and their readiness state."""
     return [IngestSourceStatus(**item) for item in parser_statuses()]
 
 
 @router.post("/normalize", response_model=IngestNormalizeResponse)
 def normalize_native_log(request: IngestNormalizeRequest):
+    """Normalize a native telemetry file into canonical ingest artifacts."""
     artifacts = normalize_log_file(
         input_path=request.input_path,
         output_dir=request.output_dir,

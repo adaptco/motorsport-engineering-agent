@@ -3,30 +3,36 @@ import json as jsonlib
 import logging
 import os
 import shutil
+import signal
 import subprocess
-import time
 import urllib.error
 import urllib.request
 import uuid
 from pathlib import Path
+from threading import Event
 
 # Attempt to use requests, fallback to urllib if missing
 try:
     import requests
 except ModuleNotFoundError:
+
     class _FallbackResponse:
         def __init__(self, status_code: int, payload: dict):
             self.status_code = status_code
             self._payload = payload
+
         def raise_for_status(self) -> None:
             if self.status_code >= 400:
                 raise RuntimeError(f"HTTP {self.status_code}: {self._payload}")
+
         def json(self) -> dict:
             return self._payload
 
     class _FallbackRequests:
         @staticmethod
-        def post(url: str, headers: dict | None = None, json: dict | None = None, timeout: int = 30) -> _FallbackResponse:
+        def post(
+            url: str, headers: dict | None = None, json: dict | None = None, timeout: int = 30
+        ) -> _FallbackResponse:
             body = None if json is None else str.encode(jsonlib.dumps(json), "utf-8")
             req = urllib.request.Request(url, data=body, headers=headers or {}, method="POST")
             try:
@@ -44,6 +50,7 @@ except ModuleNotFoundError:
                     except jsonlib.JSONDecodeError:
                         payload = {"message": raw}
                 return _FallbackResponse(http_error.code, payload)
+
     requests = _FallbackRequests()
 
 from control_plane.queue import dequeue
@@ -53,16 +60,26 @@ from worker import repository as repo
 logger = logging.getLogger(__name__)
 
 GITHUB_API_URL = "https://api.github.com"
-ALLOWED_REPOS = {r.strip() for r in os.environ.get("GITHUB_ALLOWED_REPOS", "").split(",") if r.strip()}
+ALLOWED_REPOS = {
+    r.strip() for r in os.environ.get("GITHUB_ALLOWED_REPOS", "").split(",") if r.strip()
+}
 MAX_PATCH_LINES = int(os.environ.get("MAX_PATCH_LINES", "1000"))
 ALLOW_WORKFLOW_CHANGES = os.environ.get("ALLOW_WORKFLOW_CHANGES", "false").lower() == "true"
 EMPTY_POLL_BACKOFF_SECONDS_MIN = 1.0
 EMPTY_POLL_BACKOFF_SECONDS_MAX = 60.0
 WORKER_TEMP_ROOT = Path(os.environ.get("MEA_WORKER_TEMP_ROOT", str(Path.cwd() / ".mea_tmp")))
+_shutdown_event = Event()
+
+
+def _request_shutdown(signum, _frame) -> None:
+    logger.info("Received signal %s, shutting down worker loop gracefully", signum)
+    _shutdown_event.set()
+
 
 def run(cmd: list[str], cwd: Path) -> None:
     """Execute a shell command. Raises subprocess.CalledProcessError if the command fails."""
     subprocess.run(cmd, cwd=cwd, check=True)
+
 
 def validate_patch(patch: str) -> None:
     """Validate the incoming patch for security and size constraints."""
@@ -70,32 +87,35 @@ def validate_patch(patch: str) -> None:
         raise ValueError("Patch is empty")
     if patch.count("\n") > MAX_PATCH_LINES:
         raise ValueError("Patch too large")
-    
+
     sensitive_markers = ["GITHUB_TOKEN", "BEGIN PRIVATE KEY", "AWS_SECRET_ACCESS_KEY"]
     if any(marker in patch for marker in sensitive_markers):
         raise ValueError("Patch contains sensitive markers")
-    
+
     if not ALLOW_WORKFLOW_CHANGES and ".github/workflows" in patch:
         raise ValueError("Workflow edits disabled")
+
 
 def worker_loop():
     """Main worker loop with exponential backoff."""
     consecutive_empty_polls = 0
-    while True:
+    while not _shutdown_event.is_set():
         job = dequeue()
         if not job:
             consecutive_empty_polls += 1
             sleep_seconds = min(
-                EMPTY_POLL_BACKOFF_SECONDS_MAX, 
-                EMPTY_POLL_BACKOFF_SECONDS_MIN * consecutive_empty_polls
+                EMPTY_POLL_BACKOFF_SECONDS_MAX,
+                EMPTY_POLL_BACKOFF_SECONDS_MIN * consecutive_empty_polls,
             )
             if consecutive_empty_polls == 1 or consecutive_empty_polls % 10 == 0:
                 logger.info(f"Worker sleeping for {sleep_seconds:.1f}s (empty poll)")
-            time.sleep(sleep_seconds)
+            _shutdown_event.wait(timeout=sleep_seconds)
             continue
-        
+
         consecutive_empty_polls = 0
         process_fix_ci_job(job)
+    logger.info("Worker loop exited cleanly")
+
 
 def process_fix_ci_job(job: dict) -> None:
     """Process a single CI fix job."""
@@ -114,7 +134,7 @@ def process_fix_ci_job(job: dict) -> None:
         if repo_slug not in ALLOWED_REPOS:
             raise ValueError("Repo not allowlisted")
         validate_patch(patch)
-        
+
         repo.add_span(job_id, trace_id, "policy_check", "ok", {"repo": repo_slug})
         # FIXED: Added 2 empty args to meet 5-arg contract (payload, error_message)
         repo.set_job_phase(job_id, "running", "policy_check", {}, None)
@@ -133,7 +153,10 @@ def process_fix_ci_job(job: dict) -> None:
         try:
             # 4. Clone
             clone_url = f"https://x-access-token:{installation_token}@github.com/{repo_slug}.git"
-            run(["git", "clone", "--depth", "1", "--branch", base_branch, "--", clone_url, "."], cwd=tmpdir)
+            run(
+                ["git", "clone", "--depth", "1", "--branch", base_branch, "--", clone_url, "."],
+                cwd=tmpdir,
+            )
             repo.add_span(job_id, trace_id, "clone_repo", "ok", {"branch": base_branch})
             # FIXED: Added 2 empty args to meet 5-arg contract
             repo.set_job_phase(job_id, "running", "cloned", {}, None)
@@ -143,7 +166,13 @@ def process_fix_ci_job(job: dict) -> None:
             run(["git", "checkout", "-b", fix_branch], cwd=tmpdir)
             (tmpdir / "patch.diff").write_text(patch, encoding="utf-8")
             run(["git", "apply", "patch.diff"], cwd=tmpdir)
-            repo.add_span(job_id, trace_id, "apply_patch", "ok", {"patch_hash": hashlib.sha256(patch.encode()).hexdigest()})
+            repo.add_span(
+                job_id,
+                trace_id,
+                "apply_patch",
+                "ok",
+                {"patch_hash": hashlib.sha256(patch.encode()).hexdigest()},
+            )
             # FIXED: Added 2 empty args to meet 5-arg contract
             repo.set_job_phase(job_id, "running", "patched", {}, None)
 
@@ -153,14 +182,22 @@ def process_fix_ci_job(job: dict) -> None:
                 run(["pytest"], cwd=tmpdir)
             except subprocess.CalledProcessError:
                 tests_ok = False
-            
-            repo.add_span(job_id, trace_id, "test_suite", "ok" if tests_ok else "warning", {"tests_ok": tests_ok})
-            
+
+            repo.add_span(
+                job_id,
+                trace_id,
+                "test_suite",
+                "ok" if tests_ok else "warning",
+                {"tests_ok": tests_ok},
+            )
+
             if not tests_ok:
                 # FIXED: Aligned to 5 args
-                repo.set_job_phase(job_id, "failed", "validation_failed", {"tests_ok": False}, "Test suite failed")
+                repo.set_job_phase(
+                    job_id, "failed", "validation_failed", {"tests_ok": False}, "Test suite failed"
+                )
                 return
-            
+
             # FIXED: Added 1 empty arg to meet 5-arg contract
             repo.set_job_phase(job_id, "running", "validated", {"tests_ok": True}, None)
 
@@ -193,9 +230,11 @@ def process_fix_ci_job(job: dict) -> None:
             )
             resp.raise_for_status()
             pr_url = resp.json()["html_url"]
-            
+
             repo.add_span(job_id, trace_id, "create_pr", "ok", {"pr_url": pr_url})
-            repo.complete_job(job_id, fix_branch, pr_url, {"summary": "PR opened", "tests_ok": tests_ok})
+            repo.complete_job(
+                job_id, fix_branch, pr_url, {"summary": "PR opened", "tests_ok": tests_ok}
+            )
 
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
@@ -206,5 +245,8 @@ def process_fix_ci_job(job: dict) -> None:
         if identity:
             repo.add_span(job_id, trace_id, "job_error", "error", {"error": str(e)})
 
+
 if __name__ == "__main__":
+    signal.signal(signal.SIGTERM, _request_shutdown)
+    signal.signal(signal.SIGINT, _request_shutdown)
     worker_loop()
