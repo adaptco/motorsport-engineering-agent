@@ -81,12 +81,11 @@ jobs:
   deploy-staging:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'push' &&
-      github.ref == 'refs/heads/main' &&
-      secrets.STAGING_DEPLOY_KEY != '' &&
-      secrets.STAGING_HOST != '' &&
-      secrets.STAGING_USER != ''
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      DEPLOY_KEY: ${{ secrets.STAGING_DEPLOY_KEY }}
+      DEPLOY_HOST: ${{ secrets.STAGING_HOST }}
+      DEPLOY_USER: ${{ secrets.STAGING_USER }}
     environment:
       name: staging
       url: https://staging.example.com
@@ -94,11 +93,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Skip staging deploy when secrets are missing
+        if: env.DEPLOY_KEY == '' || env.DEPLOY_HOST == '' || env.DEPLOY_USER == ''
+        run: echo "Skipping staging deploy because required secrets are not configured."
+
       - name: Deploy to staging
-        env:
-          DEPLOY_KEY: ${{ secrets.STAGING_DEPLOY_KEY }}
-          DEPLOY_HOST: ${{ secrets.STAGING_HOST }}
-          DEPLOY_USER: ${{ secrets.STAGING_USER }}
+        if: env.DEPLOY_KEY != '' && env.DEPLOY_HOST != '' && env.DEPLOY_USER != ''
         run: |
           mkdir -p ~/.ssh
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
@@ -117,11 +117,11 @@ jobs:
   deploy-production:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: >
-      startsWith(github.ref, 'refs/tags/v') &&
-      secrets.PROD_DEPLOY_KEY != '' &&
-      secrets.PROD_HOST != '' &&
-      secrets.PROD_USER != ''
+    if: startsWith(github.ref, 'refs/tags/v')
+    env:
+      DEPLOY_KEY: ${{ secrets.PROD_DEPLOY_KEY }}
+      DEPLOY_HOST: ${{ secrets.PROD_HOST }}
+      DEPLOY_USER: ${{ secrets.PROD_USER }}
     environment:
       name: production
       url: https://example.com
@@ -136,11 +136,12 @@ jobs:
             exit 1
           fi
 
+      - name: Skip production deploy when secrets are missing
+        if: env.DEPLOY_KEY == '' || env.DEPLOY_HOST == '' || env.DEPLOY_USER == ''
+        run: echo "Skipping production deploy because required secrets are not configured."
+
       - name: Deploy to production
-        env:
-          DEPLOY_KEY: ${{ secrets.PROD_DEPLOY_KEY }}
-          DEPLOY_HOST: ${{ secrets.PROD_HOST }}
-          DEPLOY_USER: ${{ secrets.PROD_USER }}
+        if: env.DEPLOY_KEY != '' && env.DEPLOY_HOST != '' && env.DEPLOY_USER != ''
         run: |
           mkdir -p ~/.ssh
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
