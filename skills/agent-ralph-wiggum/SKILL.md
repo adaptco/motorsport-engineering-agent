@@ -34,8 +34,21 @@ Track open checklist items and PRD acceptance criteria as durable workflow state
 ## Guardrails
 
 - Never mark an item complete without concrete file-level evidence.
+- Never bulk-close checklist items by policy, summary, or "closure note" text.
+- Close checklist items only through `close_checklist_items_with_evidence(...)`.
+- Every closure must cite one or more real paths that exist in the workspace.
+- If an item cannot be evidenced in this turn, keep it open and carry it forward in `pending_actions`.
 - Keep loop iterations bounded and persist blocked state when max iterations are exhausted.
 - Treat PRD acceptance criteria (`AC-*`) as first-class gate checks, not optional notes.
+
+## Evidence-First Closure Process
+
+1. Reconcile open work with `reconcile_remaining_actions(...)`.
+2. Implement artifact/code changes.
+3. Close only evidence-backed checklist items using:
+   - `close_checklist_items_with_evidence(checklist_path=..., closures=[...])`
+4. Re-run reconciliation.
+5. Repeat until remaining count is zero or work is genuinely blocked by external dependency.
 
 ## Reference
 

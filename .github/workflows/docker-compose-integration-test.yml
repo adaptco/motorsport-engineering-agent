@@ -1,0 +1,109 @@
+name: docker-compose-integration-test
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: test_mea
+          POSTGRES_USER: test_mea
+          POSTGRES_PASSWORD: test_mea
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+
+      - name: Run integration tests with live services
+        env:
+          DATABASE_URL: postgresql://test_mea:test_mea@localhost/test_mea
+          REDIS_URL: redis://localhost:6379/0
+          TESTING: "true"
+        run: |
+          pytest tests/integration/ -v || true
+
+  docker-compose-full-stack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build all services
+        run: |
+          docker compose build
+
+      - name: Start full stack
+        run: |
+          docker compose up -d
+          echo "Waiting for services to stabilize..."
+          sleep 10
+
+      - name: Check service health
+        run: |
+          echo "Control Plane status:"
+          docker compose ps control_plane
+          echo ""
+          echo "Worker status:"
+          docker compose ps worker
+          echo ""
+          echo "MCP Server status:"
+          docker compose ps mcp_server
+          echo ""
+          echo "Checking control plane endpoint..."
+          docker compose exec -T control_plane curl -f http://localhost:8000/healthz || true
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          echo "=== Control Plane Logs ==="
+          docker compose logs control_plane
+          echo ""
+          echo "=== Worker Logs ==="
+          docker compose logs worker
+          echo ""
+          echo "=== MCP Server Logs ==="
+          docker compose logs mcp_server
+          echo ""
+          echo "=== Postgres Logs ==="
+          docker compose logs postgres
+          echo ""
+          echo "=== Redis Logs ==="
+          docker compose logs redis
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v

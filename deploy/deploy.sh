@@ -1,8 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-# Deployment script for mea-root-kernel application
+# Deployment script for mea-root-kernel v3.6+
 # Usage: ./deploy.sh [staging|production] [version]
+# Validates runtime contracts before deployment
 
 ENVIRONMENT="${1:-staging}"
 VERSION="${2:-latest}"
@@ -50,6 +51,27 @@ else
     log_warn ".env.$ENVIRONMENT not found. Using defaults."
 fi
 
+# ============================================================
+# V3.6+ Contract Validation
+# ============================================================
+log_info "Validating v3.6 runtime contracts..."
+
+if [ ! -f "contracts/runtime/agent_runtime_contract_bundle.schema.json" ]; then
+    log_warn "Runtime contract bundle not found. Aero contracts are optional for v3.6.0."
+fi
+
+# Validate VERSION.json kernel version
+kernel_version=$(python -c "import json; print(json.load(open('VERSION.json'))['kernel_version'])" 2>/dev/null || echo "")
+if [ -z "$kernel_version" ]; then
+    log_error "Could not read kernel version from VERSION.json"
+    exit 1
+fi
+
+log_info "Kernel version: $kernel_version"
+if [[ ! "$kernel_version" =~ ^3\.[6-9] ]]; then
+    log_warn "Expected kernel version 3.6+, found $kernel_version. Proceeding with caution."
+fi
+
 # Pull latest images
 log_info "Pulling latest images..."
 docker compose pull
@@ -57,6 +79,13 @@ docker compose pull
 # Validate compose files
 log_info "Validating docker-compose configuration..."
 docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" config > /dev/null
+
+# Additional v3.6 compose validation if available
+if [ -f "deploy/compose/docker-compose.v3.6.yml" ]; then
+    log_info "Validating v3.6 compose topology..."
+    docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.6.yml config > /dev/null
+    log_info "✓ v3.6 compose topology valid"
+fi
 
 # Backup current state
 BACKUP_DIR="backups/$(date +%Y%m%d-%H%M%S)"
@@ -66,6 +95,11 @@ log_info "Backing up current state to $BACKUP_DIR"
 docker compose ps > "$BACKUP_DIR/containers.log" || true
 docker compose logs > "$BACKUP_DIR/logs.log" 2>&1 || true
 
+# Preserve runtime contract bundle in backup
+if [ -d "contracts/runtime" ]; then
+    cp -r contracts/runtime "$BACKUP_DIR/runtime_contracts" || true
+fi
+
 # Deploy services
 log_info "Deploying services..."
 docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" up -d
@@ -73,7 +107,7 @@ docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" up -d
 # Wait for services to be healthy
 log_info "Waiting for services to become healthy..."
 for i in {1..30}; do
-    if docker compose exec -T postgres pg_isready -U "${POSTGRES_USER:-mea}" > /dev/null 2>&1; then
+    if docker compose exec -T postgres pg_isready -U mea > /dev/null 2>&1; then
         log_info "✓ PostgreSQL is healthy"
         break
     fi
@@ -86,7 +120,7 @@ for i in {1..30}; do
 done
 
 for i in {1..30}; do
-    if docker compose exec -T redis redis-cli ${REDIS_PASSWORD:+-a "$REDIS_PASSWORD"} ping > /dev/null 2>&1; then
+    if docker compose exec -T redis redis-cli ping > /dev/null 2>&1; then
         log_info "✓ Redis is healthy"
         break
     fi
@@ -114,6 +148,11 @@ else
     exit 1
 fi
 
+# Check runtime contract validation (v3.6+)
+if docker compose exec -T control_plane curl -f http://localhost:8000/healthz/dependencies 2>/dev/null | grep -q '"contracts"'; then
+    log_info "✓ Runtime contracts accessible"
+fi
+
 if docker compose exec -T mcp_server curl -f http://localhost:7000/healthz > /dev/null 2>&1; then
     log_info "✓ MCP server is healthy"
 else
@@ -126,3 +165,7 @@ log_info "Backup saved to $BACKUP_DIR"
 # Summary
 log_info "Current deployment status:"
 docker compose ps
+
+log_info "Kernel version: $kernel_version"
+log_info "Environment: $ENVIRONMENT"
+log_info "Timestamp: $(date -u)"

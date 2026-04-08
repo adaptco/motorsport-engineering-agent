@@ -15,6 +15,10 @@ on:
           - staging
           - production
 
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
   packages: write
@@ -22,9 +26,39 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  MIN_KERNEL_VERSION: "3.6"
 
 jobs:
+  validate-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate v3.6 kernel version
+        run: |
+          kernel_version=$(python -c "import json; print(json.load(open('VERSION.json'))['kernel_version'])")
+          echo "Kernel version: $kernel_version"
+          if [[ "$kernel_version" != "3.6" && "$kernel_version" != "3.7" && "$kernel_version" != "3.8" ]]; then
+            echo "ERROR: Kernel version must be 3.6+ for deployment. Current: $kernel_version"
+            exit 1
+          fi
+          echo "✓ Kernel version validated: $kernel_version"
+
+      - name: Validate runtime contracts present
+        run: |
+          if [ ! -f "contracts/runtime/agent_runtime_contract_bundle.schema.json" ]; then
+            echo "ERROR: Runtime contract bundle not found at contracts/runtime/agent_runtime_contract_bundle.schema.json"
+            exit 1
+          fi
+          echo "✓ Runtime contract bundle found"
+          
+          if [ ! -f "contracts/aero/aero_simulation_state.schema.json" ]; then
+            echo "WARN: Aero simulation contract not found (optional for v3.6)"
+          fi
+
   build-and-push:
+    needs: validate-version
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -78,14 +112,27 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  test-compose:
+    needs: validate-version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate docker-compose.yml
+        run: docker compose -f docker-compose.yml config > /dev/null
+
+      - name: Validate v3.6 compose (if exists)
+        run: |
+          if [ -f "deploy/compose/docker-compose.v3.6.yml" ]; then
+            docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.6.yml config > /dev/null
+            echo "✓ v3.6 compose topology validated"
+          fi
+
   deploy-staging:
-    needs: build-and-push
+    needs: [build-and-push, test-compose]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    env:
-      DEPLOY_KEY: ${{ secrets.STAGING_DEPLOY_KEY }}
-      DEPLOY_HOST: ${{ secrets.STAGING_HOST }}
-      DEPLOY_USER: ${{ secrets.STAGING_USER }}
     environment:
       name: staging
       url: https://staging.example.com
@@ -99,6 +146,10 @@ jobs:
 
       - name: Deploy to staging
         if: env.DEPLOY_KEY != '' && env.DEPLOY_HOST != '' && env.DEPLOY_USER != ''
+        env:
+          DEPLOY_KEY: ${{ secrets.STAGING_DEPLOY_KEY }}
+          DEPLOY_HOST: ${{ secrets.STAGING_HOST }}
+          DEPLOY_USER: ${{ secrets.STAGING_USER }}
         run: |
           mkdir -p ~/.ssh
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
@@ -114,14 +165,34 @@ jobs:
           docker compose -f docker-compose.yml -f deploy/compose/staging.yml exec -T control_plane alembic upgrade head
           EOF
 
+      - name: Verify staging health
+        if: env.DEPLOY_KEY != '' && env.DEPLOY_HOST != '' && env.DEPLOY_USER != ''
+        env:
+          DEPLOY_KEY: ${{ secrets.STAGING_DEPLOY_KEY }}
+          DEPLOY_HOST: ${{ secrets.STAGING_HOST }}
+          DEPLOY_USER: ${{ secrets.STAGING_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
+          set -e
+          cd /opt/mea
+          echo "Waiting for control plane to be healthy..."
+          for i in {1..30}; do
+            if docker compose exec -T control_plane curl -f http://localhost:8000/healthz > /dev/null 2>&1; then
+              echo "✓ Control plane is healthy"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "ERROR: Control plane health check failed"
+              exit 1
+            fi
+            sleep 2
+          done
+          EOF
+
   deploy-production:
-    needs: build-and-push
+    needs: [build-and-push, test-compose]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
-    env:
-      DEPLOY_KEY: ${{ secrets.PROD_DEPLOY_KEY }}
-      DEPLOY_HOST: ${{ secrets.PROD_HOST }}
-      DEPLOY_USER: ${{ secrets.PROD_USER }}
     environment:
       name: production
       url: https://example.com
@@ -142,6 +213,10 @@ jobs:
 
       - name: Deploy to production
         if: env.DEPLOY_KEY != '' && env.DEPLOY_HOST != '' && env.DEPLOY_USER != ''
+        env:
+          DEPLOY_KEY: ${{ secrets.PROD_DEPLOY_KEY }}
+          DEPLOY_HOST: ${{ secrets.PROD_HOST }}
+          DEPLOY_USER: ${{ secrets.PROD_USER }}
         run: |
           mkdir -p ~/.ssh
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
@@ -158,6 +233,30 @@ jobs:
           docker compose -f docker-compose.yml -f deploy/compose/production.yml exec -T control_plane alembic upgrade head
           EOF
 
+      - name: Verify production health
+        if: env.DEPLOY_KEY != '' && env.DEPLOY_HOST != '' && env.DEPLOY_USER != ''
+        env:
+          DEPLOY_KEY: ${{ secrets.PROD_DEPLOY_KEY }}
+          DEPLOY_HOST: ${{ secrets.PROD_HOST }}
+          DEPLOY_USER: ${{ secrets.PROD_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
+          set -e
+          cd /opt/mea
+          echo "Waiting for control plane to be healthy..."
+          for i in {1..30}; do
+            if docker compose exec -T control_plane curl -f http://localhost:8000/healthz > /dev/null 2>&1; then
+              echo "✓ Control plane is healthy"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "ERROR: Control plane health check failed"
+              exit 1
+            fi
+            sleep 2
+          done
+          EOF
+
   rollback:
     if: failure()
     needs: [deploy-staging, deploy-production]
@@ -167,3 +266,4 @@ jobs:
         run: |
           echo "Deployment failed. Manual rollback may be required."
           echo "Check deployment logs for details."
+          echo "To rollback, run: ./deploy/rollback.sh <backup_directory>"

@@ -13,6 +13,7 @@
 | Circuit breakers: GitHub API | 🟢 Done | codex | `control_plane/github_app.py`, `shared/circuit_breaker.py` | Bounded retries and breaker open-state protection. |
 | Circuit breakers: Redis queue path | 🟢 Done | codex | `control_plane/queue.py`, `shared/circuit_breaker.py` | Explicit fail-closed mode via env toggle. |
 | Circuit breakers: MCP call path | 🟢 Done | codex | `control_plane/services/mcp_client.py`, `shared/circuit_breaker.py` | Guarded client utility added for tool-call transport. |
+| Rate limiting on high-cost POST routes | 🟢 Done | codex | `control_plane/app.py`, `tests/test_rate_limit_middleware.py`, `.env.example` | Added middleware guardrails for `/repos/fix-ci` and `/runtime/logs/parse`. |
 | Ingest module surface (V3.5) | 🟢 Done | main | `ingest/logs/*` | Already present at current baseline. |
 | Ingest API wiring | 🟢 Done | main | `control_plane/routes/ingest.py`, `control_plane/app.py` | Already present at current baseline. |
 | Runtime log endpoints | 🟢 Done | main | `control_plane/routes/runtime_logs.py` | Already present at current baseline. |
@@ -26,8 +27,9 @@
 | --- | --- | --- | --- | --- |
 | Migrate FastAPI hooks to Lifespan | 🟢 Done | codex | `control_plane/app.py` | Migrated `on_event` to `lifespan` context manager. |
 | Version alignment across docs | 🟢 Done | codex | `README.md`, `VERSION.json` | Reconciled README and package version for v3.5.1. |
-| Project-wide Linting Config | ⚪ Open | — | `pyproject.toml` | P1: Add `ruff` and `mypy` configurations for technical debt reduction. |
-| Dockerfile Standardization | ⚪ Open | — | `Dockerfile`, `control_plane/Dockerfile` | P1: Standardize all images to `python:3.12-slim`. |
-| Enforce strict Redis fallback | ⚪ Open | — | `control_plane/queue.py` | P1: Set `QUEUE_ALLOW_IN_MEMORY_FALLBACK=false` for production environments. |
-| E2E Ingest integration suite | ⚪ Open | — | `tests/integration/` | P2: Consolidate fragmented tests into single end-to-end scenario. |
+| Project-wide Linting Config | 🟢 Done | codex | `pyproject.toml` | Added Ruff + mypy config blocks and dev dependencies. |
+| Dockerfile Standardization | 🟢 Done | codex | `Dockerfile` | Unified runtime base image standardized to `python:3.12-slim`. |
+| Enforce strict Redis fallback | 🟢 Done | codex | `.env.example`, `control_plane/queue.py` | Production env defaults to `QUEUE_ALLOW_IN_MEMORY_FALLBACK=false`; queue logic honors strict fail-closed mode. |
+| E2E Ingest integration suite | 🟢 Done | codex | `tests/integration/test_ingest_runtime_debrief_e2e.py` | Added normalize -> runtime parse -> debrief lifecycle integration test. |
 | Dependency lock strategy | 🟢 Done | codex | `pyproject.toml`, `uv.lock`, `TASK-004_DEPENDENCY_MANAGEMENT_FINDINGS.md` | Stale `requirements.txt` removed; lockfile workflow now grounded on `uv lock` + `uv sync`. |
+| Documentation closure package (deployment/API/contrib/runbook) | 🟢 Done | codex | `docs/deployment.md`, `docs/API.md`, `CONTRIBUTING.md`, `docs/ops/GENERAL_RUNBOOK.md` | Production-facing doc blockers closed with concrete guides. |

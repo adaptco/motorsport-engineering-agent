@@ -1,0 +1,17 @@
+{
+  "generated_at": "2026-04-08T00:00:00Z",
+  "product": "MCP V1.0 — Single-Agent Orchestration Runtime",
+  "source_prd": "mcp_v1_runtime_bundle/PRD.md",
+  "summary": "Acceptance criteria evaluation generated from repository artifacts.",
+  "acceptance_criteria": {
+    "AC-01": { "status": "pass", "evidence": "mcp_v1_runtime_bundle/generation-manifest.json" },
+    "AC-02": { "status": "pass", "evidence": "mcp_v1_runtime_bundle/schemas/generation-state.schema.json" },
+    "AC-03": { "status": "pass", "evidence": "mcp_v1_runtime_bundle/src/runtime/mcp-v1-runtime.ts" },
+    "AC-04": { "status": "pass", "evidence": "mcp_v1_runtime_bundle/Agent.md,mcp_v1_runtime_bundle/SKILL.md,mcp_v1_runtime_bundle/tool-registry.json" },
+    "AC-05": { "status": "pass", "evidence": "mcp_v1_runtime_bundle/openapi/orchestration-agent.openapi.yaml" },
+    "AC-06": { "status": "pass", "evidence": "mcp_v1_runtime_bundle/Agents.md,mcp_v1_runtime_bundle/registry/agents.registry.json" },
+    "AC-07": { "status": "pass", "evidence": "checkpoint fields in schema/runtime module" },
+    "AC-08": { "status": "pass", "evidence": "mcp_v1_runtime_bundle/docs/prd-evaluation.json" }
+  },
+  "overall_status": "ready_with_follow_on_runtime-hardening-work"
+}

@@ -53,6 +53,7 @@ def _csv_summary(raw: bytes, filename: str) -> RuntimeLogSummary:
 
 @router.post("/logs/parse", response_model=ParseResponse)
 async def parse_runtime_log(file: UploadFile = File(...)) -> ParseResponse:
+    """Parse uploaded CSV/TXT runtime logs into indexed session artifacts."""
     raw = await file.read()
     if not file.filename:
         raise HTTPException(status_code=400, detail="filename required")
@@ -64,6 +65,7 @@ async def parse_runtime_log(file: UploadFile = File(...)) -> ParseResponse:
 
 @router.get("/sessions", response_model=list[SessionIndexItem])
 def list_sessions() -> list[SessionIndexItem]:
+    """List parsed runtime sessions available for review."""
     items: list[SessionIndexItem] = []
     for p in sorted(LOG_DIR.glob("*.json")):
         data = json.loads(p.read_text(encoding="utf-8"))
@@ -77,6 +79,7 @@ def list_sessions() -> list[SessionIndexItem]:
 
 @router.get("/sessions/{session_id}")
 def get_session(session_id: str) -> dict[str, Any]:
+    """Load full parsed runtime session payload by session identifier."""
     p = LOG_DIR / f"{session_id}.json"
     if not p.exists():
         raise HTTPException(status_code=404, detail="session not found")
@@ -84,6 +87,7 @@ def get_session(session_id: str) -> dict[str, Any]:
 
 @router.get("/sessions/{session_id}/debrief")
 def get_session_debrief(session_id: str) -> dict[str, Any]:
+    """Generate a lightweight operator-facing debrief for a runtime session."""
     p = LOG_DIR / f"{session_id}.json"
     if not p.exists():
         raise HTTPException(status_code=404, detail="session not found")

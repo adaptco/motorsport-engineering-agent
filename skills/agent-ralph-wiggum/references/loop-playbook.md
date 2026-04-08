@@ -32,5 +32,6 @@ state = run_task_reconciliation_loop(
 
 - Run reconciliation before changing status tables.
 - Execute concrete fixes.
+- Close only evidence-backed checklist lines via `close_checklist_items_with_evidence(...)`.
 - Rerun reconciliation.
 - Update `TASK_LEDGER.md` and `PROGRESS.md` only after evidence is present.

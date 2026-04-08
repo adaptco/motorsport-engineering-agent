@@ -2,6 +2,7 @@ import hashlib
 import json as jsonlib
 import logging
 import os
+import signal
 import shutil
 import subprocess
 import time
@@ -9,6 +10,7 @@ import urllib.error
 import urllib.request
 import uuid
 from pathlib import Path
+from threading import Event
 
 # Attempt to use requests, fallback to urllib if missing
 try:
@@ -59,6 +61,12 @@ ALLOW_WORKFLOW_CHANGES = os.environ.get("ALLOW_WORKFLOW_CHANGES", "false").lower
 EMPTY_POLL_BACKOFF_SECONDS_MIN = 1.0
 EMPTY_POLL_BACKOFF_SECONDS_MAX = 60.0
 WORKER_TEMP_ROOT = Path(os.environ.get("MEA_WORKER_TEMP_ROOT", str(Path.cwd() / ".mea_tmp")))
+_shutdown_event = Event()
+
+
+def _request_shutdown(signum, _frame) -> None:
+    logger.info("Received signal %s, shutting down worker loop gracefully", signum)
+    _shutdown_event.set()
 
 def run(cmd: list[str], cwd: Path) -> None:
     """Execute a shell command. Raises subprocess.CalledProcessError if the command fails."""
@@ -81,7 +89,7 @@ def validate_patch(patch: str) -> None:
 def worker_loop():
     """Main worker loop with exponential backoff."""
     consecutive_empty_polls = 0
-    while True:
+    while not _shutdown_event.is_set():
         job = dequeue()
         if not job:
             consecutive_empty_polls += 1
@@ -91,11 +99,12 @@ def worker_loop():
             )
             if consecutive_empty_polls == 1 or consecutive_empty_polls % 10 == 0:
                 logger.info(f"Worker sleeping for {sleep_seconds:.1f}s (empty poll)")
-            time.sleep(sleep_seconds)
+            _shutdown_event.wait(timeout=sleep_seconds)
             continue
         
         consecutive_empty_polls = 0
         process_fix_ci_job(job)
+    logger.info("Worker loop exited cleanly")
 
 def process_fix_ci_job(job: dict) -> None:
     """Process a single CI fix job."""
@@ -207,4 +216,6 @@ def process_fix_ci_job(job: dict) -> None:
             repo.add_span(job_id, trace_id, "job_error", "error", {"error": str(e)})
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGTERM, _request_shutdown)
+    signal.signal(signal.SIGINT, _request_shutdown)
     worker_loop()

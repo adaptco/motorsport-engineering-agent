@@ -23,6 +23,12 @@ services:
       retries: 5
       start_period: 10s
     restart: unless-stopped
+    command:
+      - postgres
+      - -c
+      - log_min_duration_statement=100
+      - -c
+      - log_statement=none
     networks:
       - mea-network
     mem_limit: 512m

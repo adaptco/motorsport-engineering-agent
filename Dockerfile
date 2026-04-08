@@ -9,7 +9,7 @@
 # ============================================================
 # STAGE 1: Base - Common Python environment
 # ============================================================
-FROM python:3.11-slim as base
+FROM python:3.12-slim as base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -41,12 +41,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /build
 
 # Copy dependency specifications
-COPY pyproject.toml .
+COPY pyproject.toml uv.lock ./
 
-# Create virtual environment and install all dependencies
+# Create virtual environment and install all dependencies from lockfile
 RUN python -m venv /opt/venv && \
     . /opt/venv/bin/activate && \
-    pip install --upgrade pip setuptools wheel && \
+    pip install --upgrade pip setuptools wheel uv && \
+    uv sync --frozen --no-install-project --python /opt/venv/bin/python && \
     pip install -e .
 
 # ============================================================
@@ -62,6 +63,8 @@ ENV PATH="/opt/venv/bin:$PATH" \
 COPY control_plane/ ./control_plane/
 COPY shared/ ./shared/
 COPY pyproject.toml ./
+COPY LICENSES/ ./LICENSES/
+COPY DEPENDENCIES.md ./DEPENDENCIES.md
 
 RUN chown -R appuser:appuser /app
 
@@ -93,6 +96,8 @@ COPY control_plane/ ./control_plane/
 COPY worker/ ./worker/
 COPY shared/ ./shared/
 COPY pyproject.toml ./
+COPY LICENSES/ ./LICENSES/
+COPY DEPENDENCIES.md ./DEPENDENCIES.md
 
 RUN chown -R appuser:appuser /app
 
@@ -116,6 +121,8 @@ COPY mcp_server/ ./mcp_server/
 COPY mcp_tools/ ./mcp_tools/
 COPY shared/ ./shared/
 COPY pyproject.toml ./
+COPY LICENSES/ ./LICENSES/
+COPY DEPENDENCIES.md ./DEPENDENCIES.md
 
 RUN chown -R appuser:appuser /app
 

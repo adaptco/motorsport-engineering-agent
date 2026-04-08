@@ -1,10 +1,15 @@
 import os
+import time
+import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
+from collections import defaultdict, deque
+from threading import Lock
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from starlette.responses import JSONResponse
 
 from control_plane.queue import enqueue
 from control_plane.routes.agent import router as agent_router
@@ -21,6 +26,19 @@ from shared.forensic_ledger import init_ledger
 from shared.models import FixCIRequest
 from shared.runtime_paths import default_session_ledger_path
 from shared.version import load_version_info
+
+RATE_LIMIT_ENABLED = os.environ.get("RATE_LIMIT_ENABLED", "true").strip().lower() in {"1", "true", "yes"}
+RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get("RATE_LIMIT_WINDOW_SECONDS", "60"))
+RATE_LIMIT_REQUESTS_PER_WINDOW = int(os.environ.get("RATE_LIMIT_REQUESTS_PER_WINDOW", "60"))
+RATE_LIMIT_PATHS = {
+    path.strip()
+    for path in os.environ.get("RATE_LIMIT_PATHS", "/repos/fix-ci,/runtime/logs/parse").split(",")
+    if path.strip()
+}
+_rate_limit_lock = Lock()
+_rate_limit_buckets: dict[tuple[str, str], deque[float]] = defaultdict(deque)
+_metrics_lock = Lock()
+_metrics = {"requests_total": 0, "rate_limited_total": 0}
 
 
 def _is_truthy(value: str | None) -> bool:
@@ -73,6 +91,46 @@ app.include_router(runtime_logs_router)
 # Serve the premium Google Antigravity Agent Manager UI
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    with _metrics_lock:
+        _metrics["requests_total"] += 1
+
+    request_id = request.headers.get("x-request-id", str(uuid.uuid4()))
+    request.state.request_id = request_id
+    if not RATE_LIMIT_ENABLED or request.method.upper() != "POST" or request.url.path not in RATE_LIMIT_PATHS:
+        response = await call_next(request)
+        response.headers["x-request-id"] = request_id
+        return response
+
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.monotonic()
+    window_start = now - max(1, RATE_LIMIT_WINDOW_SECONDS)
+    bucket_key = (client_ip, request.url.path)
+    with _rate_limit_lock:
+        bucket = _rate_limit_buckets[bucket_key]
+        while bucket and bucket[0] < window_start:
+            bucket.popleft()
+        if len(bucket) >= max(1, RATE_LIMIT_REQUESTS_PER_WINDOW):
+            with _metrics_lock:
+                _metrics["rate_limited_total"] += 1
+            return JSONResponse(
+                status_code=429,
+                content={
+                    "detail": "rate_limit_exceeded",
+                    "path": request.url.path,
+                    "window_seconds": RATE_LIMIT_WINDOW_SECONDS,
+                    "limit": RATE_LIMIT_REQUESTS_PER_WINDOW,
+                    "request_id": request_id,
+                },
+            )
+        bucket.append(now)
+    response = await call_next(request)
+    response.headers["x-request-id"] = request_id
+    return response
+
+
 @app.get("/", include_in_schema=False)
 def get_agent_manager_window():
     return FileResponse("frontend/index.html")
@@ -80,6 +138,7 @@ def get_agent_manager_window():
 
 @app.get("/healthz")
 def healthz():
+    """Return control-plane liveness and version metadata."""
     version_info = load_version_info()
     return {
         "status": "ok",
@@ -90,6 +149,7 @@ def healthz():
 
 @app.get("/healthz/dependencies")
 def healthz_dependencies():
+    """Return dependency readiness details used by rollout checks."""
     return {
         "status": "ok",
         "db_pool": pool_health(),
@@ -99,6 +159,7 @@ def healthz_dependencies():
 
 @app.post("/repos/fix-ci")
 def fix_ci(req: FixCIRequest):
+    """Queue a fix-ci job for the requested repository and branch."""
     if not req.patch.strip():
         raise HTTPException(status_code=400, detail="Patch is empty")
     payload = req.model_dump()
@@ -109,6 +170,7 @@ def fix_ci(req: FixCIRequest):
 
 @app.get("/jobs/{job_id}")
 def job_status(job_id: str):
+    """Fetch the latest persisted job status payload."""
     job = get_job(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="job_not_found")
@@ -117,7 +179,20 @@ def job_status(job_id: str):
 
 @app.get("/jobs/{job_id}/trace")
 def job_trace(job_id: str):
+    """Return trace events recorded for a queued job."""
     trace = list_trace(job_id)
     if not trace:
         raise HTTPException(status_code=404, detail="trace_not_found")
     return trace
+
+
+@app.get("/metrics")
+def metrics():
+    """Expose basic Prometheus-style counters for control-plane runtime."""
+    with _metrics_lock:
+        payload = dict(_metrics)
+    lines = [
+        f"mea_requests_total {payload['requests_total']}",
+        f"mea_rate_limited_total {payload['rate_limited_total']}",
+    ]
+    return "\n".join(lines) + "\n"

@@ -486,49 +486,49 @@ dev = [
 - [x] Install UV: `pip install uv`
 - [x] Generate lock: `uv lock`
 - [ ] Commit `uv.lock` to git
-- [ ] Update CI: Replace `pip install` with `uv sync`
-- [ ] Document in README: "Use `uv sync` to install all dependencies"
+- [x] Update CI: Replace `pip install` with `uv sync` (Evidence: .github/workflows/ci.yml)
+- [x] Document in README: "Use `uv sync` to install all dependencies" (Evidence: README.md)
 
 **1.3 Verify Docker Builds**
-- [ ] Update Dockerfiles to use lock file approach
+- [x] Update Dockerfiles to use lock file approach (Evidence: Dockerfile, uv.lock)
 - [ ] Test: `docker build` should succeed and be reproducible
-- [ ] Pin Python version in Dockerfile base image
+- [x] Pin Python version in Dockerfile base image (Evidence: Dockerfile)
 
 ### Phase 2: QUALITY (Days 3-4)
 
 **2.1 License Compliance**
-- [ ] Create `LICENSES/` directory
-- [ ] Document all LGPL (psycopg) requirements
-- [ ] Add license summary to README.md
-- [ ] Include in Docker images
+- [x] Create `LICENSES/` directory (Evidence: LICENSES/THIRD_PARTY_NOTICES.md)
+- [x] Document all LGPL (psycopg) requirements (Evidence: LICENSES/THIRD_PARTY_NOTICES.md)
+- [x] Add license summary to README.md (Evidence: README.md, LICENSES/THIRD_PARTY_NOTICES.md)
+- [x] Include in Docker images (Evidence: Dockerfile, LICENSES/THIRD_PARTY_NOTICES.md)
 
 **2.2 Security Automation**
-- [ ] Add pip-audit to CI: `pip-audit --path /path/to/lock`
-- [ ] Run on every PR to detect new CVEs
-- [ ] Set up automated dependency updates (Dependabot)
+- [x] Add pip-audit to CI: `pip-audit --path /path/to/lock` (Evidence: .github/workflows/ci.yml)
+- [x] Run on every PR to detect new CVEs (Evidence: .github/workflows/ci.yml)
+- [x] Set up automated dependency updates (Dependabot) (Evidence: .github/dependabot.yml)
 
 **2.3 Optional Dependencies**
-- [ ] Add type checking tools to [project.optional-dependencies]
-- [ ] Consider: `ruff`, `mypy`, `black` as dev extras
-- [ ] Update installation docs
+- [x] Add type checking tools to [project.optional-dependencies]
+- [x] Consider: `ruff`, `mypy`, `black` as dev extras
+- [x] Update installation docs
 
 ### Phase 3: DOCUMENTATION (Days 5-6)
 
 **3.1 Update README.md**
-- [ ] Installation section: "Use `uv sync` for reproducible installs"
-- [ ] Development section: `pip install -e .[dev]`
-- [ ] License section: Link to `LICENSES/`
+- [x] Installation section: "Use `uv sync` for reproducible installs"
+- [x] Development section: `pip install -e .[dev]` (Evidence: README.md)
+- [x] License section: Link to `LICENSES/` (Evidence: README.md)
 
 **3.2 Create DEPENDENCIES.md**
-- [ ] Explain pyproject.toml organization
-- [ ] Explain lock file strategy
-- [ ] Explain how to add/update dependencies
-- [ ] Explain version constraint strategy
+- [x] Explain pyproject.toml organization (Evidence: DEPENDENCIES.md)
+- [x] Explain lock file strategy (Evidence: DEPENDENCIES.md)
+- [x] Explain how to add/update dependencies (Evidence: DEPENDENCIES.md)
+- [x] Explain version constraint strategy (Evidence: DEPENDENCIES.md)
 
 **3.3 CI/CD Documentation**
-- [ ] Update: `.github/workflows/ci.yml` uses uv
-- [ ] Document: Matrix testing for Python 3.11/3.13
-- [ ] Add: Security scanning step
+- [x] Update: `.github/workflows/ci.yml` uses uv (Evidence: .github/workflows/ci.yml)
+- [x] Document: Matrix testing for Python 3.11/3.13 (Evidence: .github/workflows/ci.yml, DEPENDENCIES.md)
+- [x] Add: Security scanning step (Evidence: .github/workflows/ci.yml)
 
 ---
 
