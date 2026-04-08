@@ -1,0 +1,48 @@
+from .models import VehiclePreset
+
+PRESETS = {
+    "gt": VehiclePreset(
+        id="gt",
+        name="GT Car",
+        cd=0.34,
+        area=1.95,
+        lift_bias=-0.08,
+        body_scale_x=1.12,
+        body_scale_y=0.82,
+        canopy=0.18,
+        tail=0.16,
+    ),
+    "prototype": VehiclePreset(
+        id="prototype",
+        name="Prototype",
+        cd=0.29,
+        area=1.78,
+        lift_bias=-0.18,
+        body_scale_x=1.20,
+        body_scale_y=0.72,
+        canopy=0.14,
+        tail=0.22,
+    ),
+    "road": VehiclePreset(
+        id="road",
+        name="Road Car",
+        cd=0.31,
+        area=2.20,
+        lift_bias=0.02,
+        body_scale_x=1.00,
+        body_scale_y=0.88,
+        canopy=0.24,
+        tail=0.12,
+    ),
+    "suv": VehiclePreset(
+        id="suv",
+        name="SUV",
+        cd=0.39,
+        area=2.65,
+        lift_bias=0.12,
+        body_scale_x=1.02,
+        body_scale_y=1.08,
+        canopy=0.26,
+        tail=0.08,
+    ),
+}
