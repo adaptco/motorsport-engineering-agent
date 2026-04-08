@@ -81,7 +81,12 @@ jobs:
   deploy-staging:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      secrets.STAGING_DEPLOY_KEY != '' &&
+      secrets.STAGING_HOST != '' &&
+      secrets.STAGING_USER != ''
     environment:
       name: staging
       url: https://staging.example.com
@@ -112,7 +117,11 @@ jobs:
   deploy-production:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: >
+      startsWith(github.ref, 'refs/tags/v') &&
+      secrets.PROD_DEPLOY_KEY != '' &&
+      secrets.PROD_HOST != '' &&
+      secrets.PROD_USER != ''
     environment:
       name: production
       url: https://example.com
