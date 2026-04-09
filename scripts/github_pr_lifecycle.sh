@@ -106,11 +106,12 @@ bulk_tag() {
   local gh_cmd="$1"
   local label="$2"
   local state="${3:-open}"
+  local limit="${PR_BULK_LIMIT:-200}"
   local repo
   repo="$(repo_slug "$gh_cmd")"
   ensure_label "$gh_cmd" "$repo" "$label"
 
-  "$gh_cmd" pr list --repo "$repo" --state "$state" --limit 200 --json number | jq -r '.[].number' | while read -r pr; do
+  "$gh_cmd" pr list --repo "$repo" --state "$state" --limit "$limit" --json number | jq -r '.[].number' | while read -r pr; do
     [[ -n "$pr" ]] || continue
     "$gh_cmd" pr edit "$pr" --repo "$repo" --add-label "$label" >/dev/null
     echo "tagged_pr=$pr label=$label"
