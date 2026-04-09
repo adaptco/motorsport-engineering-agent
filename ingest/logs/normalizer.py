@@ -12,7 +12,9 @@ from ingest.logs.canonical import CANONICAL_CHANNELS
 from ingest.logs.types import NormalizedArtifacts, ParsedLog
 
 
-def normalize_log(parsed: ParsedLog, output_dir: Path, session_id: str | None = None) -> NormalizedArtifacts:
+def normalize_log(
+    parsed: ParsedLog, output_dir: Path, session_id: str | None = None
+) -> NormalizedArtifacts:
     output_dir.mkdir(parents=True, exist_ok=True)
     source = parsed.frame.copy()
     source.columns = [str(column).strip() for column in source.columns]
@@ -24,7 +26,12 @@ def normalize_log(parsed: ParsedLog, output_dir: Path, session_id: str | None = 
         if source_column is None:
             continue
         series = source[source_column]
-        converted = _convert_series(series, canonical=spec.canonical, source_column=source_column, unit_in=parsed.units.get(source_column))
+        converted = _convert_series(
+            series,
+            canonical=spec.canonical,
+            source_column=source_column,
+            unit_in=parsed.units.get(source_column),
+        )
         normalized[spec.canonical] = converted
         manifest_rows.append(
             {
@@ -54,7 +61,9 @@ def normalize_log(parsed: ParsedLog, output_dir: Path, session_id: str | None = 
         parsed.notes.append("timestamp_ms generated from row index")
 
     normalized.insert(1, "source_vendor", parsed.vendor)
-    normalized.insert(2, "session_id", session_id or parsed.metadata.get("session_id") or parsed.source_path.stem)
+    normalized.insert(
+        2, "session_id", session_id or parsed.metadata.get("session_id") or parsed.source_path.stem
+    )
 
     normalized_csv = output_dir / "normalized_channels.csv"
     manifest_csv = output_dir / "channel_manifest.csv"
@@ -69,7 +78,9 @@ def normalize_log(parsed: ParsedLog, output_dir: Path, session_id: str | None = 
         "native_format": parsed.source_path.suffix.lower(),
         "rows": int(len(normalized)),
         "columns": list(normalized.columns),
-        "canonical_columns": [column for column in normalized.columns if column not in {"source_vendor", "session_id"}],
+        "canonical_columns": [
+            column for column in normalized.columns if column not in {"source_vendor", "session_id"}
+        ],
         "notes": parsed.notes,
         "metadata": parsed.metadata,
     }
@@ -98,7 +109,9 @@ def _find_source_column(frame: pd.DataFrame, aliases: tuple[str, ...]) -> str | 
     return None
 
 
-def _convert_series(series: pd.Series, canonical: str, source_column: str, unit_in: str | None) -> pd.Series:
+def _convert_series(
+    series: pd.Series, canonical: str, source_column: str, unit_in: str | None
+) -> pd.Series:
     working = pd.to_numeric(series, errors="coerce")
     unit = (unit_in or "").lower()
     name = source_column.lower()

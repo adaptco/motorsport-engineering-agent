@@ -1,6 +1,5 @@
 """ingest/iracing_stream module."""
 
-
 from __future__ import annotations
 
 import time
@@ -22,13 +21,21 @@ def load_pyirsdk():
     return irsdk
 
 
-def frame_from_iracing(ir, channel_map: dict[str, str], session_id: str, tick: int) -> TelemetryFrame:
+def frame_from_iracing(
+    ir, channel_map: dict[str, str], session_id: str, tick: int
+) -> TelemetryFrame:
     channels: dict[str, float | int] = {}
     for canonical, source in channel_map.items():
         value = ir[source]
         if isinstance(value, (list, tuple)):
             value = value[0]
-        channels[canonical] = float(value) if isinstance(value, float) else int(value) if isinstance(value, int) else float(value)
+        channels[canonical] = (
+            float(value)
+            if isinstance(value, float)
+            else int(value)
+            if isinstance(value, int)
+            else float(value)
+        )
     return TelemetryFrame(
         session_id=session_id,
         driver_id="iracing_driver",
@@ -41,7 +48,9 @@ def frame_from_iracing(ir, channel_map: dict[str, str], session_id: str, tick: i
     )
 
 
-def stream_iracing_frames(channel_map: dict[str, str], sampling_hz: int = 60) -> Iterator[TelemetryFrame]:
+def stream_iracing_frames(
+    channel_map: dict[str, str], sampling_hz: int = 60
+) -> Iterator[TelemetryFrame]:
     irsdk = load_pyirsdk()
     ir = irsdk.IRSDK()
     ir.startup()
@@ -61,7 +70,9 @@ def stream_iracing_frames(channel_map: dict[str, str], sampling_hz: int = 60) ->
         ir.shutdown()
 
 
-def dump_stream_to_jsonl(frames: Iterable[TelemetryFrame], output_path: Path, max_frames: int | None = None) -> ReplayMetrics:
+def dump_stream_to_jsonl(
+    frames: Iterable[TelemetryFrame], output_path: Path, max_frames: int | None = None
+) -> ReplayMetrics:
     metrics = ReplayMetrics()
     previous_ts: int | None = None
     previous_tick: int | None = None
@@ -81,5 +92,7 @@ def dump_stream_to_jsonl(frames: Iterable[TelemetryFrame], output_path: Path, ma
             previous_ts = frame.timestamp_ns
             previous_tick = frame.tick
     if metrics.frames_valid > 1 and metrics.duration_ns > 0:
-        metrics.average_hz = round((metrics.frames_valid - 1) * 1_000_000_000 / metrics.duration_ns, 2)
+        metrics.average_hz = round(
+            (metrics.frames_valid - 1) * 1_000_000_000 / metrics.duration_ns, 2
+        )
     return metrics

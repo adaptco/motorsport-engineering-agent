@@ -1,6 +1,5 @@
 """tests/test_jsonl_schema module."""
 
-
 import json
 from pathlib import Path
 

@@ -1,6 +1,5 @@
 """tests/test_iracing_stream_adapter module."""
 
-
 from pathlib import Path
 
 from ingest.iracing_stream import dump_stream_to_jsonl

@@ -1,6 +1,5 @@
 """tests/test_replay_service module."""
 
-
 import json
 from pathlib import Path
 
@@ -9,16 +8,23 @@ from shared.models import ReplayRequest
 
 
 def _write_frame(path: Path, tick: int, timestamp_ns: int, speed: float = 40.0):
-    path.write_text(path.read_text(encoding="utf-8") + json.dumps({
-        "session_id": "s1",
-        "driver_id": "d1",
-        "track_id": "t1",
-        "car_id": "c1",
-        "timestamp_ns": timestamp_ns,
-        "tick": tick,
-        "channels": {"Throttle": 0.5, "Brake": 0.0, "Speed": speed},
-        "quality_flags": {},
-    }) + "\n", encoding="utf-8")
+    path.write_text(
+        path.read_text(encoding="utf-8")
+        + json.dumps(
+            {
+                "session_id": "s1",
+                "driver_id": "d1",
+                "track_id": "t1",
+                "car_id": "c1",
+                "timestamp_ns": timestamp_ns,
+                "tick": tick,
+                "channels": {"Throttle": 0.5, "Brake": 0.0, "Speed": speed},
+                "quality_flags": {},
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
 
 def test_replay_artifact_produces_metrics_and_tasks(tmp_path: Path):

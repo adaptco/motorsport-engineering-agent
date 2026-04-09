@@ -35,8 +35,12 @@ from shared.runtime_paths import default_session_ledger_path
 router = APIRouter(prefix="/runtime-state", tags=["runtime-state"])
 
 RUNTIME_STATE_RECEIPT_TYPE = "runtime_state_event"
-SESSION_LEDGER_DB_PATH = Path(os.environ.get("SESSION_LEDGER_DB_PATH", str(default_session_ledger_path()))).expanduser()
-RUNTIME_STATE_SSE_HEARTBEAT_SECONDS = int(os.environ.get("RUNTIME_STATE_SSE_HEARTBEAT_SECONDS", "15"))
+SESSION_LEDGER_DB_PATH = Path(
+    os.environ.get("SESSION_LEDGER_DB_PATH", str(default_session_ledger_path()))
+).expanduser()
+RUNTIME_STATE_SSE_HEARTBEAT_SECONDS = int(
+    os.environ.get("RUNTIME_STATE_SSE_HEARTBEAT_SECONDS", "15")
+)
 RUNTIME_STATE_MAX_REPLAY_EVENTS = int(os.environ.get("RUNTIME_STATE_MAX_REPLAY_EVENTS", "5000"))
 
 COMMIT_RE = re.compile(r"^[0-9a-f]{7,40}$")
@@ -187,7 +191,9 @@ def _materialize_snapshot(session_id: str) -> RuntimeStateSnapshot:
             else:
                 task.assigned_agent = payload.get("agent_id")
                 task.updated_by = payload.get("updated_by", "operator")
-                task.updated_at = datetime.fromisoformat(parsed["accepted_at"].replace("Z", "+00:00"))
+                task.updated_at = datetime.fromisoformat(
+                    parsed["accepted_at"].replace("Z", "+00:00")
+                )
             continue
 
         if parsed["event_type"] == "heartbeat":
@@ -195,7 +201,9 @@ def _materialize_snapshot(session_id: str) -> RuntimeStateSnapshot:
             agent_id = payload["agent_id"]
             if agent_id in agents:
                 at = payload.get("at") or parsed["accepted_at"]
-                agents[agent_id].last_seen_at = datetime.fromisoformat(str(at).replace("Z", "+00:00"))
+                agents[agent_id].last_seen_at = datetime.fromisoformat(
+                    str(at).replace("Z", "+00:00")
+                )
             else:
                 agents[agent_id] = RuntimeAgentRecord(
                     agent_id=agent_id,
@@ -282,7 +290,9 @@ def _sse_heartbeat() -> str:
     return ": ping\n\n"
 
 
-def _receipt_rows_to_events(session_id: str, rows: list[dict[str, Any]]) -> RuntimeStateEventListResponse:
+def _receipt_rows_to_events(
+    session_id: str, rows: list[dict[str, Any]]
+) -> RuntimeStateEventListResponse:
     events = [
         RuntimeStateDeltaEvent(
             seq=parsed["seq"],
@@ -336,7 +346,11 @@ async def runtime_state_append_event(
         receipt_type=RUNTIME_STATE_RECEIPT_TYPE,
     )
     for row in rows:
-        cmd_vector = json.loads(row["cmd_vector"]) if isinstance(row["cmd_vector"], str) else row["cmd_vector"]
+        cmd_vector = (
+            json.loads(row["cmd_vector"])
+            if isinstance(row["cmd_vector"], str)
+            else row["cmd_vector"]
+        )
         if cmd_vector.get("idempotency_key") == request.idempotency_key:
             return RuntimeStateMutationResponse(
                 status="duplicate",
@@ -426,7 +440,9 @@ async def runtime_state_stream(
                 if await request.is_disconnected():
                     break
                 try:
-                    item = await asyncio.wait_for(queue.get(), timeout=RUNTIME_STATE_SSE_HEARTBEAT_SECONDS)
+                    item = await asyncio.wait_for(
+                        queue.get(), timeout=RUNTIME_STATE_SSE_HEARTBEAT_SECONDS
+                    )
                     yield _sse_frame(event="runtime_state", payload=item, event_id=int(item["seq"]))
                 except TimeoutError:
                     yield _sse_heartbeat()

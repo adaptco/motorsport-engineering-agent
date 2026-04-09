@@ -11,6 +11,7 @@ def test_fix_ci_request_validation_success():
     FixCIRequest(repo="acme/repo", branch="main", patch="diff...", run_id="123")
     FixCIRequest(repo="acme-repo_123", branch="feature/branch-1", patch="diff...", run_id="run_42")
 
+
 def test_fix_ci_request_validation_hyphen_prefix():
     with pytest.raises(ValidationError) as excinfo:
         FixCIRequest(repo="-oProxyCommand=touch/tmp/pwn", branch="main", patch="diff...")
@@ -24,6 +25,7 @@ def test_fix_ci_request_validation_hyphen_prefix():
         FixCIRequest(repo="acme/repo", branch="main", patch="diff...", run_id="-r")
     assert "String must not start with a hyphen" in str(excinfo.value)
 
+
 def test_fix_ci_request_validation_invalid_chars():
     with pytest.raises(ValidationError) as excinfo:
         FixCIRequest(repo="acme/repo; rm -rf /", branch="main", patch="diff...")
@@ -36,6 +38,7 @@ def test_fix_ci_request_validation_invalid_chars():
     with pytest.raises(ValidationError) as excinfo:
         FixCIRequest(repo="acme/repo", branch="main", patch="diff...", run_id="id$(whoami)")
     assert "String contains invalid characters" in str(excinfo.value)
+
 
 def test_fix_ci_request_validation_spaces():
     with pytest.raises(ValidationError) as excinfo:

@@ -12,4 +12,6 @@ def test_detect_source_by_extension():
 
 def test_parser_statuses_include_expected_vendors():
     vendors = {item["vendor"] for item in parser_statuses()}
-    assert {"motec", "iracing", "aim", "vbox", "pi", "haltech", "aem", "csv_export"}.issubset(vendors)
+    assert {"motec", "iracing", "aim", "vbox", "pi", "haltech", "aem", "csv_export"}.issubset(
+        vendors
+    )

@@ -12,6 +12,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass(frozen=True)
 class VersionInfo:
     kernel_version: str

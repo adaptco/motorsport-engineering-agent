@@ -209,7 +209,6 @@ class AgentDecisionResponse(BaseModel):
     supervisor_prompt_ref: str
 
 
-
 class MCPToolCall(BaseModel):
     name: str
     arguments: dict[str, Any] = Field(default_factory=dict)
@@ -316,7 +315,12 @@ class RuntimeStateHeartbeatEvent(BaseModel):
     payload: RuntimeHeartbeatPayload
 
 
-RuntimeStateEvent = RuntimeStateAgentUpsertEvent | RuntimeStateTaskUpsertEvent | RuntimeStateAssignmentUpsertEvent | RuntimeStateHeartbeatEvent
+RuntimeStateEvent = (
+    RuntimeStateAgentUpsertEvent
+    | RuntimeStateTaskUpsertEvent
+    | RuntimeStateAssignmentUpsertEvent
+    | RuntimeStateHeartbeatEvent
+)
 
 
 class RuntimeStateMutationRequest(BaseModel):
@@ -376,7 +380,9 @@ class IngestSourceStatus(BaseModel):
 class IngestNormalizeRequest(BaseModel):
     input_path: str
     output_dir: str
-    vendor_hint: Literal["motec", "iracing", "aim", "vbox", "pi", "haltech", "aem", "csv_export"] | None = None
+    vendor_hint: (
+        Literal["motec", "iracing", "aim", "vbox", "pi", "haltech", "aem", "csv_export"] | None
+    ) = None
     session_id: str | None = None
 
 
@@ -397,7 +403,9 @@ class IngestNormalizeResponse(BaseModel):
 class AeroSourceRef(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    kind: Literal["photo", "cad", "telemetry", "public_reference", "measurement", "wind_tunnel", "solver_case"]
+    kind: Literal[
+        "photo", "cad", "telemetry", "public_reference", "measurement", "wind_tunnel", "solver_case"
+    ]
     uri: str
     label: str | None = None
     sha256: str | None = None
@@ -423,7 +431,9 @@ class AeroSimulationRunRequest(BaseModel):
     vehicle_identity: AeroVehicleIdentity
     source_refs: list[AeroSourceRef] = Field(default_factory=list)
     simulation_objective: str
-    baseline_geometry_strategy: Literal["public_cad", "proxy_geometry", "imported_cad", "manual_sketch"] = "proxy_geometry"
+    baseline_geometry_strategy: Literal[
+        "public_cad", "proxy_geometry", "imported_cad", "manual_sketch"
+    ] = "proxy_geometry"
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -488,7 +498,9 @@ class AeroSimulationStateRecord(BaseModel):
     vehicle_program_id: str
     loop_family: Literal["aero"] = "aero"
     loop_layer: Literal["simulation"] = "simulation"
-    lifecycle_state: Literal["draft", "baseline_built", "calibrating", "stable", "branching", "archived"] = "draft"
+    lifecycle_state: Literal[
+        "draft", "baseline_built", "calibrating", "stable", "branching", "archived"
+    ] = "draft"
     created_at: datetime
     updated_at: datetime
     state_hash: str
@@ -510,7 +522,9 @@ class AeroSimulationStateSummary(BaseModel):
     simulation_run_id: str
     project_id: str
     vehicle_program_id: str
-    lifecycle_state: Literal["draft", "baseline_built", "calibrating", "stable", "branching", "archived"]
+    lifecycle_state: Literal[
+        "draft", "baseline_built", "calibrating", "stable", "branching", "archived"
+    ]
     state_hash: str
     updated_at: datetime
     state_path: str

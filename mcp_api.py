@@ -173,7 +173,9 @@ def mcp_invoke(
     agent = _agent_for(request.agent_id)
     if request.capability not in agent.capabilities:
         raise HTTPException(status_code=422, detail="capability_not_permitted")
-    if request.resource_uri and not _resource_uri_allowed(request.resource_uri, agent.resource_uris):
+    if request.resource_uri and not _resource_uri_allowed(
+        request.resource_uri, agent.resource_uris
+    ):
         raise HTTPException(status_code=422, detail="resource_uri_not_permitted")
 
     return MCPInvokeResponse(

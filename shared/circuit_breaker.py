@@ -31,7 +31,11 @@ class CircuitBreaker:
         prefix = name.upper()
         threshold = int(os.environ.get(f"{prefix}_CB_FAILURE_THRESHOLD", "3"))
         timeout = float(os.environ.get(f"{prefix}_CB_RECOVERY_TIMEOUT_SECONDS", "30"))
-        return cls(name=name, failure_threshold=max(threshold, 1), recovery_timeout_seconds=max(timeout, 1.0))
+        return cls(
+            name=name,
+            failure_threshold=max(threshold, 1),
+            recovery_timeout_seconds=max(timeout, 1.0),
+        )
 
     def call(self, fn: Callable[..., T], *args, **kwargs) -> T:
         self._check_open_state()

@@ -33,7 +33,7 @@ def test_runtime_state_event_post_and_snapshot(monkeypatch, tmp_path: Path):
             "host": "localhost",
             "branch": "feature/runtime",
             "commit_hash": "abcdef1",
-            "note": "boot"
+            "note": "boot",
         },
     }
     post = client.post("/runtime-state/events", headers=headers, json=event)

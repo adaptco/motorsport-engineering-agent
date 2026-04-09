@@ -28,7 +28,9 @@ def test_circuit_breaker_opens_after_threshold() -> None:
 
 
 def test_circuit_breaker_recovery_allows_calls() -> None:
-    breaker = CircuitBreaker(name="unit_test_recover", failure_threshold=1, recovery_timeout_seconds=1)
+    breaker = CircuitBreaker(
+        name="unit_test_recover", failure_threshold=1, recovery_timeout_seconds=1
+    )
 
     with pytest.raises(RuntimeError):
         breaker.call(lambda: (_ for _ in ()).throw(RuntimeError("fail")))
