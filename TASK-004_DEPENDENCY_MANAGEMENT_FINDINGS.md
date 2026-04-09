@@ -485,7 +485,7 @@ dev = [
 **1.2 Implement Lock File Strategy**
 - [x] Install UV: `pip install uv`
 - [x] Generate lock: `uv lock`
-- [ ] Commit `uv.lock` to git
+- [x] Commit `uv.lock` to git (Evidence: uv.lock, docs/checkpoints/PHASE_G.md, TASK_LEDGER.md)
 - [x] Update CI: Replace `pip install` with `uv sync` (Evidence: .github/workflows/ci.yml)
 - [x] Document in README: "Use `uv sync` to install all dependencies" (Evidence: README.md)
 

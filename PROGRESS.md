@@ -29,6 +29,7 @@ The release strategy is intentionally non-destructive. Legacy v3.5.2 operational
 - Compacted namespace by collapsing `configs/` into `config/` and updating all references.
 - Unified runtime contract pointers so `mcp.json` is authoritative and `mcp_v1_runtime_bundle/tool-registry.json` is single registry source for runtime docs/openapi/skills.
 - Added PR lifecycle automation script `scripts/github_pr_lifecycle.sh` and embedded workflow in `skills/agent-ralph-wiggum/SKILL.md` plus `skills/github-pr-lifecycle/SKILL.md`.
+- Closed the final Task-004 gate (`Commit uv.lock to git`) after commit-backed evidence and confirmed reconciliation reaches zero remaining actions.
 
 - Added persistent reconciliation loop primitives in `worker/background_workers.py` for task findings, `TASK_LEDGER.md`, and MCP PRD acceptance criteria.
 - Added/extended loop coverage in `tests/test_background_workers_state.py`.
