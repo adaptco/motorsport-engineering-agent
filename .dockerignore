@@ -91,7 +91,7 @@ yarn-error.log
 # ============================================================
 *.md
 LICENSE
-*.txt
+# *.txt
 .env
 .env.local
 .env.*.local
@@ -116,3 +116,4 @@ LICENSE
 .circleci/
 .gitlab-ci.yml
 Makefile
+!prompts/*.txt

@@ -61,6 +61,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
 
 COPY control_plane/ ./control_plane/
 COPY shared/ ./shared/
+COPY prompts/ ./prompts/
 COPY pyproject.toml ./
 
 RUN chown -R appuser:appuser /app
@@ -92,6 +93,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
 COPY control_plane/ ./control_plane/
 COPY worker/ ./worker/
 COPY shared/ ./shared/
+COPY prompts/ ./prompts/
 COPY pyproject.toml ./
 
 RUN chown -R appuser:appuser /app
@@ -115,6 +117,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
 COPY mcp_server/ ./mcp_server/
 COPY mcp_tools/ ./mcp_tools/
 COPY shared/ ./shared/
+COPY prompts/ ./prompts/
 COPY pyproject.toml ./
 
 RUN chown -R appuser:appuser /app

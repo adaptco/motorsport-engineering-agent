@@ -1,51 +1,19 @@
 FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PYTHONPATH=/app \
-    MEA_KERNEL_VERSION=3.6 \
-    MEA_PACKAGE_VERSION=0.3.6
+# MEA V3.6 container cut
+# This Dockerfile builds the runtime contract harness as a minimal image. It expects
+# the runtime package and contracts to be copied in at build time.
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends git curl ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+# Copy source and contracts
+COPY contracts/runtime/agent_runtime_contract_bundle.schema.json /app/contracts/runtime/agent_runtime_contract_bundle.schema.json
 
+# Install dependencies required for runtime contract validation and core services.
+RUN pip install --no-cache-dir fastapi pydantic uvicorn==0.23.*
+
+# Set the working directory and expose default port.
 WORKDIR /app
+EXPOSE 8080
 
-COPY pyproject.toml VERSION.json ./
-COPY control_plane/ ./control_plane/
-COPY worker/ ./worker/
-COPY mcp_server/ ./mcp_server/
-COPY mcp_tools/ ./mcp_tools/
-COPY shared/ ./shared/
-COPY ingest/ ./ingest/
-COPY contracts/ ./contracts/
-COPY frontend/ ./frontend/
-
-RUN python -m pip install --upgrade pip \
-    && pip install --no-cache-dir \
-       fastapi \
-       "uvicorn[standard]" \
-       pydantic \
-       jsonschema \
-       referencing \
-       "psycopg[binary]" \
-       redis \
-       requests \
-       PyJWT \
-       cryptography \
-       typer \
-       PyYAML \
-       pandas \
-       scipy \
-       gunicorn
-
-RUN useradd --system --create-home --uid 10001 mea \
-    && chown -R mea:mea /app
-
-USER mea
-
-EXPOSE 8000 7000
-
-CMD ["uvicorn", "control_plane.app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Default command starts the HTTP server. The underlying application should provide
+# endpoints for validating and serving contract events.
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
