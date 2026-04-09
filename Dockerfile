@@ -9,7 +9,7 @@
 # ============================================================
 # STAGE 1: Base - Common Python environment
 # ============================================================
-FROM python:3.12-slim as base
+FROM python:3.11-slim as base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -41,13 +41,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /build
 
 # Copy dependency specifications
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml .
 
-# Create virtual environment and install all dependencies from lockfile
+# Create virtual environment and install all dependencies
 RUN python -m venv /opt/venv && \
     . /opt/venv/bin/activate && \
-    pip install --upgrade pip setuptools wheel uv && \
-    uv sync --frozen --no-install-project --python /opt/venv/bin/python --active
+    pip install --upgrade pip setuptools wheel && \
+    pip install -e .
 
 # ============================================================
 # STAGE 3: Control Plane
@@ -60,13 +60,9 @@ ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONPATH=/app
 
 COPY control_plane/ ./control_plane/
-COPY ingest/ ./ingest/
 COPY shared/ ./shared/
+COPY prompts/ ./prompts/
 COPY pyproject.toml ./
-COPY VERSION.json ./
-COPY LICENSES/ ./LICENSES/
-COPY DEPENDENCIES.md ./DEPENDENCIES.md
-COPY frontend/ ./frontend/
 
 RUN chown -R appuser:appuser /app
 
@@ -95,19 +91,17 @@ ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONPATH=/app
 
 COPY control_plane/ ./control_plane/
-COPY ingest/ ./ingest/
 COPY worker/ ./worker/
 COPY shared/ ./shared/
+COPY prompts/ ./prompts/
 COPY pyproject.toml ./
-COPY VERSION.json ./
-COPY LICENSES/ ./LICENSES/
-COPY DEPENDENCIES.md ./DEPENDENCIES.md
 
 RUN chown -R appuser:appuser /app
 
 USER appuser
 
 # No EXPOSE or HEALTHCHECK: worker is background job processor
+
 CMD ["python", "-m", "worker.backend_worker"]
 
 # ============================================================
@@ -123,10 +117,8 @@ ENV PATH="/opt/venv/bin:$PATH" \
 COPY mcp_server/ ./mcp_server/
 COPY mcp_tools/ ./mcp_tools/
 COPY shared/ ./shared/
+COPY prompts/ ./prompts/
 COPY pyproject.toml ./
-COPY VERSION.json ./
-COPY LICENSES/ ./LICENSES/
-COPY DEPENDENCIES.md ./DEPENDENCIES.md
 
 RUN chown -R appuser:appuser /app
 
