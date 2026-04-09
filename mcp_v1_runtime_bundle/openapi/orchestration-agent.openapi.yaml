@@ -3,6 +3,8 @@ info:
   title: MCP V1 Orchestration Agent API
   version: 1.0.0
   summary: Control-plane API for the single-agent MCP V1 orchestration runtime
+x-runtime-contract-source: ../mcp.json
+x-tool-registry-source: ../mcp_v1_runtime_bundle/tool-registry.json
 servers:
   - url: https://orchestrator.example.internal
 tags:

@@ -1,3 +1,5 @@
+"""tests/test_runtime_contract_bundle module."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime

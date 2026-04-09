@@ -1,16 +1,21 @@
+"""control_plane/services/cad_resolver module."""
+
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from shared.forensic_ledger import sha256_prefixed
-from shared.models import AeroSourceRef, AeroSimulationRunRequest
+from shared.models import AeroSimulationRunRequest, AeroSourceRef
 
 
 def _safe_name(value: str) -> str:
-    normalized = "".join(ch if ch.isalnum() or ch in {"-", "_"} else "-" for ch in value.strip().lower())
+    normalized = "".join(
+        ch if ch.isalnum() or ch in {"-", "_"} else "-" for ch in value.strip().lower()
+    )
     return normalized.strip("-") or "vehicle"
 
 
@@ -52,8 +57,12 @@ class CadResolution:
         return {
             "requested_strategy": self.requested_strategy,
             "resolved_strategy": self.resolved_strategy,
-            "candidate_sources": [source.model_dump(mode="json") for source in self.candidate_sources],
-            "selected_source": self.selected_source.model_dump(mode="json") if self.selected_source else None,
+            "candidate_sources": [
+                source.model_dump(mode="json") for source in self.candidate_sources
+            ],
+            "selected_source": self.selected_source.model_dump(mode="json")
+            if self.selected_source
+            else None,
             "confidence": self.confidence,
             "selection_reason": self.selection_reason,
             "geometry_manifest_uri": self.geometry_manifest_uri,
@@ -74,7 +83,9 @@ def _write_json_manifest(path: Path, payload: dict[str, Any]) -> str:
     return sha256_prefixed(payload)
 
 
-def resolve_cad_candidate(req: AeroSimulationRunRequest, *, run_id: str, case_dir: Path) -> CadResolution:
+def resolve_cad_candidate(
+    req: AeroSimulationRunRequest, *, run_id: str, case_dir: Path
+) -> CadResolution:
     geometry_dir = case_dir / "geometry"
     geometry_dir.mkdir(parents=True, exist_ok=True)
 

@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -52,7 +52,7 @@ jobs:
           REDIS_URL: redis://localhost:6379/0
           TESTING: "true"
         run: |
-          pytest tests/integration/ -v || true
+          pytest tests/integration/ -v
 
   docker-compose-full-stack:
     runs-on: ubuntu-latest

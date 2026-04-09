@@ -1,3 +1,5 @@
+"""control_plane/services/mcp_client module."""
+
 from __future__ import annotations
 
 import os

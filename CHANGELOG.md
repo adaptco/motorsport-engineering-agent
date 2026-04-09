@@ -1,6 +1,6 @@
-## v3.6 / 0.3.6
+## v3.6.3 / 0.3.6.3
 
-- added declarative MCP contract stub and aligned release metadata for the V3.5.2 baseline
+- consolidated production-readiness hardening and release metadata alignment for v3.6.3
 - resolved merge conflicts and reconciled `PROGRESS.md` for the current baseline
 - migrated `control_plane/app.py` from deprecated `on_event` hooks to `lifespan` context manager
 - implemented production-hardening: circuit breakers for GitHub/MCP and persistent forensic ledger paths

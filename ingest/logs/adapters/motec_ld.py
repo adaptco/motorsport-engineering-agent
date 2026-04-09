@@ -1,3 +1,5 @@
+"""ingest/logs/adapters/motec_ld module."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -24,16 +26,22 @@ def _load_with_ldparser(path: Path) -> Any:
             return candidate(str(path))
     if hasattr(module, "LogFile"):
         return module.LogFile(str(path))
-    raise RuntimeError("Installed ldparser module does not expose a supported read_ld_file / LogFile interface")
+    raise RuntimeError(
+        "Installed ldparser module does not expose a supported read_ld_file / LogFile interface"
+    )
 
 
 def parse_motec_ld(path: Path) -> ParsedLog:
     if path.suffix.lower() == ".ldx":
-        raise RuntimeError("MoTeC .ldx is not supported by the selected off-the-shelf parser path; export from i2 as CSV or MAT instead.")
+        raise RuntimeError(
+            "MoTeC .ldx is not supported by the selected off-the-shelf parser path; export from i2 as CSV or MAT instead."
+        )
     log = _load_with_ldparser(path)
     frame = _to_dataframe(log)
     notes = ["MoTeC .ld parsed with ldparser-compatible interface"]
-    return ParsedLog(vendor="motec", source_path=path, frame=frame, metadata={"parser": "ldparser"}, notes=notes)
+    return ParsedLog(
+        vendor="motec", source_path=path, frame=frame, metadata={"parser": "ldparser"}, notes=notes
+    )
 
 
 def _to_dataframe(log: Any) -> pd.DataFrame:

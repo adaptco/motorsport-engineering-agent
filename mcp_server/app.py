@@ -1,3 +1,5 @@
+"""mcp_server/app module."""
+
 import os
 
 from fastapi import FastAPI, Header, HTTPException
@@ -9,7 +11,11 @@ from shared.models import A2AInvokeRequest, A2AInvokeResponse, MCPProviderStatus
 from shared.version import load_version_info
 
 app = FastAPI(title="MEA MCP Server")
-cors_origins = [origin.strip() for origin in os.environ.get("RUNTIME_STATE_CORS_ORIGINS", "*").split(",") if origin.strip()]
+cors_origins = [
+    origin.strip()
+    for origin in os.environ.get("RUNTIME_STATE_CORS_ORIGINS", "*").split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins or ["*"],

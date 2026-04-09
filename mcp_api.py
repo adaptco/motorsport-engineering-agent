@@ -1,3 +1,5 @@
+"""mcp_api module."""
+
 from __future__ import annotations
 
 import json
@@ -11,7 +13,6 @@ from typing import Any, Literal
 
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field, field_validator, model_validator
-
 
 AGENT_IDS = Literal["planner", "researcher", "coder", "reviewer", "tester"]
 
@@ -42,7 +43,7 @@ class MCPAgentContract(BaseModel):
         return cleaned
 
     @model_validator(mode="after")
-    def _validate_agent_alignment(self) -> "MCPAgentContract":
+    def _validate_agent_alignment(self) -> MCPAgentContract:
         if self.agent_id != self.role:
             raise ValueError("agent_id and role must match")
         if not self.capabilities:
@@ -57,7 +58,7 @@ class MCPRuntimeConfig(BaseModel):
     agents: list[MCPAgentContract]
 
     @model_validator(mode="after")
-    def _validate_unique_agents(self) -> "MCPRuntimeConfig":
+    def _validate_unique_agents(self) -> MCPRuntimeConfig:
         agent_ids = [agent.agent_id for agent in self.agents]
         if len(agent_ids) != len(set(agent_ids)):
             raise ValueError("agent_id values must be unique")
@@ -172,7 +173,9 @@ def mcp_invoke(
     agent = _agent_for(request.agent_id)
     if request.capability not in agent.capabilities:
         raise HTTPException(status_code=422, detail="capability_not_permitted")
-    if request.resource_uri and not _resource_uri_allowed(request.resource_uri, agent.resource_uris):
+    if request.resource_uri and not _resource_uri_allowed(
+        request.resource_uri, agent.resource_uris
+    ):
         raise HTTPException(status_code=422, detail="resource_uri_not_permitted")
 
     return MCPInvokeResponse(

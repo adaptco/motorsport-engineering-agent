@@ -1,9 +1,22 @@
+"""control_plane/routes/aero module."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
 
-from control_plane.services.aero_state_store import append_aero_branch, build_initial_state, list_aero_states, load_aero_state, save_aero_state
-from shared.models import AeroSimulationBranchRequest, AeroSimulationRunRequest, AeroSimulationStateRecord, AeroSimulationStateSummary
+from control_plane.services.aero_state_store import (
+    append_aero_branch,
+    build_initial_state,
+    list_aero_states,
+    load_aero_state,
+    save_aero_state,
+)
+from shared.models import (
+    AeroSimulationBranchRequest,
+    AeroSimulationRunRequest,
+    AeroSimulationStateRecord,
+    AeroSimulationStateSummary,
+)
 
 router = APIRouter(prefix="/aero", tags=["aero"])
 

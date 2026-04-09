@@ -1,3 +1,5 @@
+"""tests/test_ci_workflow module."""
+
 from pathlib import Path
 
 import yaml

@@ -66,7 +66,7 @@ Refines evidence storage:
 
 ## Configuration Files
 
-### configs/model_weights.yaml
+### config/model_weights.yaml
 Contains reward weighting configuration for the supervisor system:
 - **supervisor_reward_weights**: Weights for different success criteria
   - ttl_valid: 0.20

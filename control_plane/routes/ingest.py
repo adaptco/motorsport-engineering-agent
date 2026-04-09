@@ -1,3 +1,5 @@
+"""control_plane/routes/ingest module."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter

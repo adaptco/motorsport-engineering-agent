@@ -1,3 +1,5 @@
+"""worker/backend_worker module."""
+
 import hashlib
 import json as jsonlib
 import logging
@@ -103,6 +105,7 @@ def worker_loop():
         job = dequeue()
         if not job:
             consecutive_empty_polls += 1
+            # Linear backoff keeps idle polling cheap while preserving fast wakeups.
             sleep_seconds = min(
                 EMPTY_POLL_BACKOFF_SECONDS_MAX,
                 EMPTY_POLL_BACKOFF_SECONDS_MIN * consecutive_empty_polls,
@@ -151,6 +154,7 @@ def process_fix_ci_job(job: dict) -> None:
         tmpdir.mkdir(parents=True, exist_ok=False)
 
         try:
+            # Clone into an ephemeral workspace so patch application is isolated per job.
             # 4. Clone
             clone_url = f"https://x-access-token:{installation_token}@github.com/{repo_slug}.git"
             run(
