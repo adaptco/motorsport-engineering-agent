@@ -6,8 +6,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from shared.forensic_ledger import sha256_prefixed
-from shared.models import AeroSourceRef, AeroSimulationRunRequest, AeroVehicleIdentity
-
+from shared.models import AeroSimulationRunRequest, AeroSourceRef, AeroVehicleIdentity
 
 FIXTURES_DIR = Path(__file__).resolve().parent
 # Use repo-local absolute fixture paths so URIs are valid across CI runners and OSes.

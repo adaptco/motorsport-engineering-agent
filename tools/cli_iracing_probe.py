@@ -1,12 +1,13 @@
 """tools/cli_iracing_probe module."""
 
 
-from pathlib import Path
 import json
+from pathlib import Path
+
 import typer
 
-from ingest.iracing_stream import dump_stream_to_jsonl, stream_iracing_frames
 from control_plane.services.replay_service import build_validation_tasks
+from ingest.iracing_stream import dump_stream_to_jsonl, stream_iracing_frames
 
 app = typer.Typer(help="Capture direct iRacing stream to JSONL and print validation metrics")
 

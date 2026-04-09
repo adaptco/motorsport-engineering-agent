@@ -4,7 +4,6 @@ from pathlib import Path
 
 from ingest.logs.registry import normalize_log_file
 
-
 FIXTURES = Path(__file__).parent / "fixtures"
 
 

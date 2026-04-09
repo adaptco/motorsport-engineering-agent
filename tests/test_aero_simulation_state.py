@@ -11,7 +11,6 @@ from jsonschema import Draft202012Validator
 from control_plane.app import app
 from tests.fixtures import build_gt4_aero_run_payload
 
-
 client = TestClient(app)
 
 

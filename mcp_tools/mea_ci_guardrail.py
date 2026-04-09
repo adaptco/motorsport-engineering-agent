@@ -1,8 +1,9 @@
 """mcp_tools/mea_ci_guardrail module."""
 
-from typing import Any, Dict
+from typing import Any
 
-def run_mea_ci_guardrail(args: Dict[str, Any]) -> Dict[str, Any]:
+
+def run_mea_ci_guardrail(args: dict[str, Any]) -> dict[str, Any]:
     _ = args["ci_state"]
     proposed_patch = args.get("proposed_patch")
 

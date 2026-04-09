@@ -7,7 +7,6 @@ from fastapi.testclient import TestClient
 from control_plane.app import app
 from shared.forensic_ledger import get_session_head
 
-
 client = TestClient(app)
 
 

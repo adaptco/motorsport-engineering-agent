@@ -16,7 +16,6 @@ from ingest.logs.canonical import SUPPORTED_SOURCE_EXTENSIONS
 from ingest.logs.normalizer import normalize_log
 from ingest.logs.types import NormalizedArtifacts
 
-
 SUPPORTED_SOURCES = tuple(SUPPORTED_SOURCE_EXTENSIONS.keys())
 
 

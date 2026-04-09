@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, List
 
 from pydantic import ValidationError
 
@@ -70,8 +70,8 @@ def build_replay_metrics(path: Path, max_frames: int | None = None) -> ReplayMet
     return metrics
 
 
-def build_validation_tasks(metrics: ReplayMetrics, target_hz: int, validation: JSONLValidationResult | None = None) -> List[ReplayTask]:
-    tasks: List[ReplayTask] = []
+def build_validation_tasks(metrics: ReplayMetrics, target_hz: int, validation: JSONLValidationResult | None = None) -> list[ReplayTask]:
+    tasks: list[ReplayTask] = []
 
     def add(name: str, status: str, detail: str) -> None:
         tasks.append(ReplayTask(task_id=str(uuid.uuid4()), name=name, status=status, detail=detail))

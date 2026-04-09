@@ -6,7 +6,8 @@ import json
 import logging
 from dataclasses import dataclass
 from functools import lru_cache
-from importlib.metadata import PackageNotFoundError, version as package_version
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as package_version
 from pathlib import Path
 
 logger = logging.getLogger(__name__)

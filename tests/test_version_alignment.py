@@ -9,7 +9,6 @@ from control_plane.app import healthz as control_plane_healthz
 from mcp_server.app import healthz as mcp_server_healthz
 from shared import version as shared_version
 
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 

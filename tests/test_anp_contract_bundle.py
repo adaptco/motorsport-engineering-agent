@@ -9,7 +9,6 @@ import pytest
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ANP_SCHEMA_DIR = REPO_ROOT / "contracts" / "anp" / "schemas"
 ANP_EXAMPLE_DIR = REPO_ROOT / "contracts" / "anp" / "examples"

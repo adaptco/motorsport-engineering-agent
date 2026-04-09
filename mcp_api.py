@@ -14,7 +14,6 @@ from typing import Any, Literal
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-
 AGENT_IDS = Literal["planner", "researcher", "coder", "reviewer", "tester"]
 
 
@@ -44,7 +43,7 @@ class MCPAgentContract(BaseModel):
         return cleaned
 
     @model_validator(mode="after")
-    def _validate_agent_alignment(self) -> "MCPAgentContract":
+    def _validate_agent_alignment(self) -> MCPAgentContract:
         if self.agent_id != self.role:
             raise ValueError("agent_id and role must match")
         if not self.capabilities:
@@ -59,7 +58,7 @@ class MCPRuntimeConfig(BaseModel):
     agents: list[MCPAgentContract]
 
     @model_validator(mode="after")
-    def _validate_unique_agents(self) -> "MCPRuntimeConfig":
+    def _validate_unique_agents(self) -> MCPRuntimeConfig:
         agent_ids = [agent.agent_id for agent in self.agents]
         if len(agent_ids) != len(set(agent_ids)):
             raise ValueError("agent_id values must be unique")

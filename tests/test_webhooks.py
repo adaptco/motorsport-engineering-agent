@@ -7,7 +7,6 @@ from fastapi.testclient import TestClient
 
 from control_plane.app import app, validate_webhook_startup_config
 
-
 client = TestClient(app)
 
 

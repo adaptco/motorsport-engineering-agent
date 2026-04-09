@@ -5,11 +5,12 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 ISO_8601_UTC = "%Y-%m-%dT%H:%M:%S.%fZ"
 
@@ -94,7 +95,7 @@ def init_ledger(db_path: str | Path) -> None:
 
 
 def _utcnow() -> str:
-    return datetime.now(timezone.utc).strftime(ISO_8601_UTC)
+    return datetime.now(UTC).strftime(ISO_8601_UTC)
 
 
 def _build_decision_basis_hash(*, principal_id: str, authz_scope: str, policy_version: str, job_name: str, cmd_vector: dict[str, Any]) -> str:

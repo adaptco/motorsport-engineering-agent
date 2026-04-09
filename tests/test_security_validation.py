@@ -2,7 +2,9 @@
 
 import pytest
 from pydantic import ValidationError
+
 from shared.models import FixCIRequest
+
 
 def test_fix_ci_request_validation_success():
     # Should pass

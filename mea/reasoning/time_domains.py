@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class TimeDomain(str, Enum):
+class TimeDomain(StrEnum):
     DATA = "DATA"
     WALL = "WALL"
 

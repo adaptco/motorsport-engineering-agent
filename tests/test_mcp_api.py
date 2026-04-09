@@ -4,7 +4,6 @@ from fastapi.testclient import TestClient
 
 from mcp_api import app
 
-
 client = TestClient(app)
 
 

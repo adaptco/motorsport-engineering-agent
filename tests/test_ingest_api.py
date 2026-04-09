@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 
 from control_plane.app import app
 
-
 client = TestClient(app)
 FIXTURES = Path(__file__).parent / "fixtures"
 

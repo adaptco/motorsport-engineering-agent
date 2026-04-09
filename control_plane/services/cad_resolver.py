@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from shared.forensic_ledger import sha256_prefixed
-from shared.models import AeroSourceRef, AeroSimulationRunRequest
+from shared.models import AeroSimulationRunRequest, AeroSourceRef
 
 
 def _safe_name(value: str) -> str:

@@ -31,37 +31,62 @@ require_cmd() {
   }
 }
 
+detect_gh_cmd() {
+  if [[ -n "${GH_CMD:-}" ]]; then
+    echo "${GH_CMD}"
+    return
+  fi
+  if command -v gh >/dev/null 2>&1; then
+    echo "gh"
+    return
+  fi
+  if command -v gh.exe >/dev/null 2>&1; then
+    echo "gh.exe"
+    return
+  fi
+  if [[ -x "/c/Program Files/GitHub CLI/gh.exe" ]]; then
+    echo "/c/Program Files/GitHub CLI/gh.exe"
+    return
+  fi
+  echo "ERROR: required command not found: gh" >&2
+  exit 1
+}
+
 repo_slug() {
+  local gh_cmd="$1"
   if [[ -n "${REPO_SLUG:-}" ]]; then
     echo "${REPO_SLUG}"
     return
   fi
-  gh repo view --json nameWithOwner -q .nameWithOwner
+  "$gh_cmd" repo view --json nameWithOwner -q .nameWithOwner
 }
 
 ensure_auth() {
-  gh auth status >/dev/null 2>&1 || {
+  local gh_cmd="$1"
+  "$gh_cmd" auth status >/dev/null 2>&1 || {
     echo "ERROR: gh is not authenticated. Run: gh auth login" >&2
     exit 1
   }
 }
 
 ensure_label() {
-  local repo="$1"
-  local label="$2"
-  if ! gh label list --repo "$repo" --search "$label" --json name -q ".[].name" | grep -Fxq "$label"; then
-    gh label create "$label" --repo "$repo" --color "1D76DB" --description "Automated lifecycle version tag"
+  local gh_cmd="$1"
+  local repo="$2"
+  local label="$3"
+  if ! "$gh_cmd" label list --repo "$repo" --search "$label" --json name -q ".[].name" | grep -Fxq "$label"; then
+    "$gh_cmd" label create "$label" --repo "$repo" --color "1D76DB" --description "Automated lifecycle version tag"
   fi
 }
 
 normalize_pr() {
-  local pr_number="$1"
-  local version_tag="${2:-v3.6.3}"
+  local gh_cmd="$1"
+  local pr_number="$2"
+  local version_tag="${3:-v3.6.3}"
   local repo
-  repo="$(repo_slug)"
+  repo="$(repo_slug "$gh_cmd")"
 
-  ensure_label "$repo" "$version_tag"
-  gh pr edit "$pr_number" --repo "$repo" --add-label "$version_tag"
+  ensure_label "$gh_cmd" "$repo" "$version_tag"
+  "$gh_cmd" pr edit "$pr_number" --repo "$repo" --add-label "$version_tag"
 
   local body
   body="$(cat <<EOF
@@ -72,29 +97,31 @@ normalize_pr() {
 - Merge policy: squash merge after review threads are resolved
 EOF
 )"
-  gh pr comment "$pr_number" --repo "$repo" --body "$body"
+  "$gh_cmd" pr comment "$pr_number" --repo "$repo" --body "$body"
 
   echo "normalized_pr=$pr_number repo=$repo label=$version_tag"
 }
 
 bulk_tag() {
-  local label="$1"
-  local state="${2:-open}"
+  local gh_cmd="$1"
+  local label="$2"
+  local state="${3:-open}"
   local repo
-  repo="$(repo_slug)"
-  ensure_label "$repo" "$label"
+  repo="$(repo_slug "$gh_cmd")"
+  ensure_label "$gh_cmd" "$repo" "$label"
 
-  gh pr list --repo "$repo" --state "$state" --limit 200 --json number | jq -r '.[].number' | while read -r pr; do
+  "$gh_cmd" pr list --repo "$repo" --state "$state" --limit 200 --json number | jq -r '.[].number' | while read -r pr; do
     [[ -n "$pr" ]] || continue
-    gh pr edit "$pr" --repo "$repo" --add-label "$label" >/dev/null
+    "$gh_cmd" pr edit "$pr" --repo "$repo" --add-label "$label" >/dev/null
     echo "tagged_pr=$pr label=$label"
   done
 }
 
 main() {
-  require_cmd gh
   require_cmd jq
-  ensure_auth
+  local gh_cmd
+  gh_cmd="$(detect_gh_cmd)"
+  ensure_auth "$gh_cmd"
 
   local cmd="${1:-}"
   case "$cmd" in
@@ -102,13 +129,13 @@ main() {
       local pr_number="${2:-}"
       local version_tag="${3:-v3.6.3}"
       [[ -n "$pr_number" ]] || { usage; exit 1; }
-      normalize_pr "$pr_number" "$version_tag"
+      normalize_pr "$gh_cmd" "$pr_number" "$version_tag"
       ;;
     bulk-tag)
       local label="${2:-}"
       local state="${3:-open}"
       [[ -n "$label" ]] || { usage; exit 1; }
-      bulk_tag "$label" "$state"
+      bulk_tag "$gh_cmd" "$label" "$state"
       ;;
     *)
       usage

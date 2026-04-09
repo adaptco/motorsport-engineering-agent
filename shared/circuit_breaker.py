@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import os
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from threading import Lock
-from typing import Callable, TypeVar
+from typing import TypeVar
 
 T = TypeVar("T")
 
@@ -26,7 +27,7 @@ class CircuitBreaker:
     _lock: Lock = field(default_factory=Lock, init=False, repr=False)
 
     @classmethod
-    def from_env(cls, name: str) -> "CircuitBreaker":
+    def from_env(cls, name: str) -> CircuitBreaker:
         prefix = name.upper()
         threshold = int(os.environ.get(f"{prefix}_CB_FAILURE_THRESHOLD", "3"))
         timeout = float(os.environ.get(f"{prefix}_CB_RECOVERY_TIMEOUT_SECONDS", "30"))

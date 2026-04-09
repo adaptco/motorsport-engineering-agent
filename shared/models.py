@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -13,7 +13,7 @@ class FixCIRequest(BaseModel):
     repo: str
     branch: str
     patch: str
-    run_id: Optional[str] = None
+    run_id: str | None = None
 
     @field_validator("repo", "branch", "run_id")
     @classmethod
@@ -31,9 +31,9 @@ class JobStatusResponse(BaseModel):
     job_id: str
     status: str
     phase: str
-    summary: Optional[str] = None
-    trace_id: Optional[str] = None
-    pr_url: Optional[str] = None
+    summary: str | None = None
+    trace_id: str | None = None
+    pr_url: str | None = None
 
 
 class TraceSpan(BaseModel):
@@ -49,15 +49,15 @@ class TelemetryFrame(BaseModel):
     car_id: str
     timestamp_ns: int = Field(ge=0)
     tick: int = Field(ge=0)
-    channels: Dict[str, float | int]
-    quality_flags: Dict[str, Any] = Field(default_factory=dict)
+    channels: dict[str, float | int]
+    quality_flags: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("channels")
     @classmethod
-    def validate_channels(cls, value: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_channels(cls, value: dict[str, Any]) -> dict[str, Any]:
         if not value:
             raise ValueError("channels must not be empty")
-        normalized: Dict[str, float | int] = {}
+        normalized: dict[str, float | int] = {}
         for key, item in value.items():
             if not isinstance(item, (int, float)):
                 raise ValueError(f"channel {key} must be numeric")
@@ -66,20 +66,20 @@ class TelemetryFrame(BaseModel):
 
 
 class EvidenceFeatures(BaseModel):
-    brake_delta: Optional[float] = None
-    turn_in_delta: Optional[float] = None
-    apex_offset: Optional[float] = None
-    throttle_delta: Optional[float] = None
-    tire_temp_state: Optional[str] = None
-    fuel_delta: Optional[float] = None
-    confidence: Optional[float] = None
+    brake_delta: float | None = None
+    turn_in_delta: float | None = None
+    apex_offset: float | None = None
+    throttle_delta: float | None = None
+    tire_temp_state: str | None = None
+    fuel_delta: float | None = None
+    confidence: float | None = None
 
 
 class EvidencePacket(BaseModel):
     evidence_packet_id: str
     session_id: str
     timestamp_logical_ns: int = Field(ge=0)
-    timestamp_wall: Optional[datetime] = None
+    timestamp_wall: datetime | None = None
     severity: Literal["CRITICAL", "WARNING", "ADVISORY", "INFO", "NONE"]
     features: EvidenceFeatures
 
@@ -88,11 +88,11 @@ class Recommendation(BaseModel):
     recommendation_id: str
     evidence_packet_id: str
     priority: Literal["CRITICAL", "WARNING", "ADVISORY", "INFO", "NONE"]
-    trigger: Optional[str] = None
-    action: Optional[str] = None
-    expected_effect: Optional[str] = None
+    trigger: str | None = None
+    action: str | None = None
+    expected_effect: str | None = None
     created_at_ns: int = Field(default=0, ge=0)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class SessionEvidenceRequest(BaseModel):
@@ -100,24 +100,24 @@ class SessionEvidenceRequest(BaseModel):
     principal_id: str = "system"
     policy_version: str = "rbac.v1"
     authz_scope: str = "session:write"
-    run_id: Optional[str] = None
-    trace_id: Optional[str] = None
-    evidence_packets: List[EvidencePacket] = Field(default_factory=list)
-    recommendations: List[Recommendation] = Field(default_factory=list)
+    run_id: str | None = None
+    trace_id: str | None = None
+    evidence_packets: list[EvidencePacket] = Field(default_factory=list)
+    recommendations: list[Recommendation] = Field(default_factory=list)
 
 
 class SessionEvidenceResponse(BaseModel):
     status: Literal["ok"]
     stored: int
     receipts_created: int = 0
-    latest_state_hash: Optional[str] = None
+    latest_state_hash: str | None = None
 
 
 class SessionLedgerReplayResult(BaseModel):
     logical_clock: int
     valid: bool
     state_hash: str
-    prev_hash: Optional[str] = None
+    prev_hash: str | None = None
     receipt_type: str
     status: str
     job_name: str
@@ -126,14 +126,14 @@ class SessionLedgerReplayResult(BaseModel):
 class SessionLedgerReplayResponse(BaseModel):
     session_id: str
     chain_ok: bool
-    receipts: List[SessionLedgerReplayResult] = Field(default_factory=list)
+    receipts: list[SessionLedgerReplayResult] = Field(default_factory=list)
 
 
 class ReplayRequest(BaseModel):
     artifact_path: str
     sampling_hz: int = Field(default=60, ge=1, le=240)
     source: Literal["jsonl", "iracing_stream"] = "jsonl"
-    max_frames: Optional[int] = Field(default=None, ge=1)
+    max_frames: int | None = Field(default=None, ge=1)
     strict: bool = True
 
 
@@ -145,7 +145,7 @@ class ReplayMetrics(BaseModel):
     average_hz: float = 0.0
     max_tick_gap: int = 0
     duplicate_timestamps: int = 0
-    missing_required_channels: List[str] = Field(default_factory=list)
+    missing_required_channels: list[str] = Field(default_factory=list)
 
 
 class ReplayTask(BaseModel):
@@ -159,7 +159,7 @@ class ReplayResponse(BaseModel):
     replay_id: str
     status: Literal["accepted", "complete"]
     metrics: ReplayMetrics
-    tasks: List[ReplayTask] = Field(default_factory=list)
+    tasks: list[ReplayTask] = Field(default_factory=list)
 
 
 class DirectStreamProbeRequest(BaseModel):
@@ -170,8 +170,8 @@ class DirectStreamProbeRequest(BaseModel):
 class DirectStreamProbeResult(BaseModel):
     status: Literal["accepted", "complete"]
     metrics: ReplayMetrics
-    tasks: List[ReplayTask]
-    notes: List[str] = Field(default_factory=list)
+    tasks: list[ReplayTask]
+    notes: list[str] = Field(default_factory=list)
 
 
 class JSONLValidationResult(BaseModel):
@@ -181,8 +181,8 @@ class JSONLValidationResult(BaseModel):
     invalid_lines: int = 0
     monotonic_timestamp_ns: bool = True
     monotonic_tick: bool = True
-    missing_fields: List[str] = Field(default_factory=list)
-    violations: List[str] = Field(default_factory=list)
+    missing_fields: list[str] = Field(default_factory=list)
+    violations: list[str] = Field(default_factory=list)
 
 
 class AgentDecisionRequest(BaseModel):
@@ -192,11 +192,11 @@ class AgentDecisionRequest(BaseModel):
     principal_id: str = "supervisor"
     policy_version: str = "rbac.v1"
     authz_scope: str = "agent:decision"
-    evidence_packet_id: Optional[str] = None
+    evidence_packet_id: str | None = None
     prompt: str
     provider: Literal["openai", "anthropic", "google", "openrouter"] = "openai"
     model: str = "gpt-4.1"
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class AgentDecisionResponse(BaseModel):
@@ -258,7 +258,7 @@ class RuntimeTaskRecord(BaseModel):
     task_id: str
     title: str
     state: RuntimeTaskState
-    assigned_agent: Optional[str] = None
+    assigned_agent: str | None = None
     source: str = ""
     note: str = ""
     updated_by: str = "operator"
@@ -267,7 +267,7 @@ class RuntimeTaskRecord(BaseModel):
 
 class RuntimeAgentUpsertPayload(BaseModel):
     agent_id: str
-    display_name: Optional[str] = None
+    display_name: str | None = None
     runtime: RuntimeLocation
     host: str = "unknown"
     branch: str = "unknown"
@@ -278,7 +278,7 @@ class RuntimeAgentUpsertPayload(BaseModel):
 
 class RuntimeTaskUpsertPayload(BaseModel):
     task_id: str
-    title: Optional[str] = None
+    title: str | None = None
     state: RuntimeTaskState
     source: str = ""
     note: str = ""
@@ -287,13 +287,13 @@ class RuntimeTaskUpsertPayload(BaseModel):
 
 class RuntimeAssignmentUpsertPayload(BaseModel):
     task_id: str
-    agent_id: Optional[str] = None
+    agent_id: str | None = None
     updated_by: str = "operator"
 
 
 class RuntimeHeartbeatPayload(BaseModel):
     agent_id: str
-    at: Optional[datetime] = None
+    at: datetime | None = None
 
 
 class RuntimeStateAgentUpsertEvent(BaseModel):
@@ -323,8 +323,8 @@ class RuntimeStateMutationRequest(BaseModel):
     idempotency_key: str
     session_id: str
     event_type: RuntimeEventType
-    payload: Dict[str, Any] = Field(default_factory=dict)
-    client_ts: Optional[datetime] = None
+    payload: dict[str, Any] = Field(default_factory=dict)
+    client_ts: datetime | None = None
 
 
 class RuntimeStateMutationResponse(BaseModel):
@@ -337,8 +337,8 @@ class RuntimeStateMutationResponse(BaseModel):
 
 class RuntimeStateSummary(BaseModel):
     agent_count: int
-    runtime_counts: Dict[str, int]
-    task_counts: Dict[str, int]
+    runtime_counts: dict[str, int]
+    task_counts: dict[str, int]
 
 
 class RuntimeStateSnapshot(BaseModel):
@@ -347,8 +347,8 @@ class RuntimeStateSnapshot(BaseModel):
     last_seq: int
     last_state_hash: str
     summary: RuntimeStateSummary
-    agents: Dict[str, RuntimeAgentRecord] = Field(default_factory=dict)
-    tasks: Dict[str, RuntimeTaskRecord] = Field(default_factory=dict)
+    agents: dict[str, RuntimeAgentRecord] = Field(default_factory=dict)
+    tasks: dict[str, RuntimeTaskRecord] = Field(default_factory=dict)
 
 
 class RuntimeStateDeltaEvent(BaseModel):
@@ -356,28 +356,28 @@ class RuntimeStateDeltaEvent(BaseModel):
     state_hash: str
     idempotency_key: str
     event_type: RuntimeEventType
-    payload: Dict[str, Any] = Field(default_factory=dict)
+    payload: dict[str, Any] = Field(default_factory=dict)
     accepted_at: datetime
 
 
 class RuntimeStateEventListResponse(BaseModel):
     session_id: str
-    events: List[RuntimeStateDeltaEvent] = Field(default_factory=list)
+    events: list[RuntimeStateDeltaEvent] = Field(default_factory=list)
 
 
 class IngestSourceStatus(BaseModel):
     vendor: str
-    native_extensions: List[str] = Field(default_factory=list)
-    parser_module: Optional[str] = None
+    native_extensions: list[str] = Field(default_factory=list)
+    parser_module: str | None = None
     available: bool = False
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class IngestNormalizeRequest(BaseModel):
     input_path: str
     output_dir: str
-    vendor_hint: Optional[Literal["motec", "iracing", "aim", "vbox", "pi", "haltech", "aem", "csv_export"]] = None
-    session_id: Optional[str] = None
+    vendor_hint: Literal["motec", "iracing", "aim", "vbox", "pi", "haltech", "aem", "csv_export"] | None = None
+    session_id: str | None = None
 
 
 class IngestNormalizeResponse(BaseModel):
@@ -390,8 +390,8 @@ class IngestNormalizeResponse(BaseModel):
     session_manifest_json: str
     row_count: int = 0
     column_count: int = 0
-    canonical_columns: List[str] = Field(default_factory=list)
-    notes: List[str] = Field(default_factory=list)
+    canonical_columns: list[str] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
 
 
 class AeroSourceRef(BaseModel):
@@ -399,9 +399,9 @@ class AeroSourceRef(BaseModel):
 
     kind: Literal["photo", "cad", "telemetry", "public_reference", "measurement", "wind_tunnel", "solver_case"]
     uri: str
-    label: Optional[str] = None
-    sha256: Optional[str] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    label: str | None = None
+    sha256: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class AeroVehicleIdentity(BaseModel):
@@ -409,10 +409,10 @@ class AeroVehicleIdentity(BaseModel):
 
     make: str
     model: str
-    year: Optional[int] = None
-    trim: Optional[str] = None
-    chassis_code: Optional[str] = None
-    vehicle_class: Optional[str] = None
+    year: int | None = None
+    trim: str | None = None
+    chassis_code: str | None = None
+    vehicle_class: str | None = None
 
 
 class AeroSimulationRunRequest(BaseModel):
@@ -421,10 +421,10 @@ class AeroSimulationRunRequest(BaseModel):
     project_id: str
     vehicle_program_id: str
     vehicle_identity: AeroVehicleIdentity
-    source_refs: List[AeroSourceRef] = Field(default_factory=list)
+    source_refs: list[AeroSourceRef] = Field(default_factory=list)
     simulation_objective: str
     baseline_geometry_strategy: Literal["public_cad", "proxy_geometry", "imported_cad", "manual_sketch"] = "proxy_geometry"
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class AeroSimulationBranchRequest(BaseModel):
@@ -433,10 +433,10 @@ class AeroSimulationBranchRequest(BaseModel):
     branch_name: str
     change_mode: Literal["geometry", "setup", "solver", "boundary_condition"]
     change_summary: str
-    requested_adjustments: Dict[str, Any] = Field(default_factory=dict)
-    expected_delta_cl: Optional[float] = None
-    expected_delta_cd: Optional[float] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    requested_adjustments: dict[str, Any] = Field(default_factory=dict)
+    expected_delta_cl: float | None = None
+    expected_delta_cd: float | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class AeroSimulationExecutionState(BaseModel):
@@ -446,18 +446,18 @@ class AeroSimulationExecutionState(BaseModel):
     status: Literal["not_run", "queued", "running", "complete", "failed", "skipped"]
     environment: Literal["sandbox", "wsl2"]
     solver_status: Literal["scaffolded", "meshed", "solved", "failed", "archived"]
-    distro_name: Optional[str] = None
-    distro_version: Optional[str] = None
-    openfoam_version: Optional[str] = None
-    kernel_signature: Optional[str] = None
-    command: List[str] = Field(default_factory=list)
-    exit_code: Optional[int] = None
-    started_at: Optional[datetime] = None
-    finished_at: Optional[datetime] = None
-    stdout_uri: Optional[str] = None
-    stderr_uri: Optional[str] = None
-    result_uri: Optional[str] = None
-    notes: List[str] = Field(default_factory=list)
+    distro_name: str | None = None
+    distro_version: str | None = None
+    openfoam_version: str | None = None
+    kernel_signature: str | None = None
+    command: list[str] = Field(default_factory=list)
+    exit_code: int | None = None
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    stdout_uri: str | None = None
+    stderr_uri: str | None = None
+    result_uri: str | None = None
+    notes: list[str] = Field(default_factory=list)
 
 
 class AeroSimulationSolveResult(BaseModel):
@@ -465,17 +465,17 @@ class AeroSimulationSolveResult(BaseModel):
 
     solver_family: Literal["openfoam"] = "openfoam"
     execution_state: AeroSimulationExecutionState
-    cl: Optional[float] = None
-    cd: Optional[float] = None
-    cm_pitch: Optional[float] = None
-    aero_balance_pct: Optional[float] = None
-    drag_area_m2: Optional[float] = None
-    downforce_n: Optional[float] = None
+    cl: float | None = None
+    cd: float | None = None
+    cm_pitch: float | None = None
+    aero_balance_pct: float | None = None
+    drag_area_m2: float | None = None
+    downforce_n: float | None = None
     confidence: float = 0.0
-    correlation_score: Optional[float] = None
-    residual_score: Optional[float] = None
-    artifacts: List[AeroSourceRef] = Field(default_factory=list)
-    notes: List[str] = Field(default_factory=list)
+    correlation_score: float | None = None
+    residual_score: float | None = None
+    artifacts: list[AeroSourceRef] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
 
 
 class AeroSimulationStateRecord(BaseModel):
@@ -492,16 +492,16 @@ class AeroSimulationStateRecord(BaseModel):
     created_at: datetime
     updated_at: datetime
     state_hash: str
-    prev_state_hash: Optional[str] = None
-    vehicle_snapshot: Dict[str, Any]
-    geometry_state: Dict[str, Any]
-    solver_state: Dict[str, Any]
-    metric_snapshot: Dict[str, Any]
-    provenance: List[AeroSourceRef] = Field(default_factory=list)
-    branches: List[Dict[str, Any]] = Field(default_factory=list)
-    telemetry_links: List[AeroSourceRef] = Field(default_factory=list)
-    calibration_state: Dict[str, Any] = Field(default_factory=dict)
-    resume_state: Dict[str, Any] = Field(default_factory=dict)
+    prev_state_hash: str | None = None
+    vehicle_snapshot: dict[str, Any]
+    geometry_state: dict[str, Any]
+    solver_state: dict[str, Any]
+    metric_snapshot: dict[str, Any]
+    provenance: list[AeroSourceRef] = Field(default_factory=list)
+    branches: list[dict[str, Any]] = Field(default_factory=list)
+    telemetry_links: list[AeroSourceRef] = Field(default_factory=list)
+    calibration_state: dict[str, Any] = Field(default_factory=dict)
+    resume_state: dict[str, Any] = Field(default_factory=dict)
 
 
 class AeroSimulationStateSummary(BaseModel):

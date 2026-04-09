@@ -24,8 +24,8 @@ def sources() -> None:
 
 @app.command("run")
 def run(
-    input_path: Path = typer.Option(..., "--input", exists=True, readable=True, help="Native source log file or exported CSV/MAT file"),
-    output_dir: Path = typer.Option(..., "--out", file_okay=False, dir_okay=True, help="Directory for normalized CSV artifacts"),
+    input_path: Path = typer.Option(..., "--input", exists=True, readable=True, help="Native source log file or exported CSV/MAT file"),  # noqa: B008
+    output_dir: Path = typer.Option(..., "--out", file_okay=False, dir_okay=True, help="Directory for normalized CSV artifacts"),  # noqa: B008
     vendor: str | None = typer.Option(None, "--vendor", help="Optional vendor override: motec, iracing, aim, vbox, pi, haltech, aem, csv_export"),
     session_id: str | None = typer.Option(None, "--session-id", help="Optional session identifier override"),
 ) -> None:

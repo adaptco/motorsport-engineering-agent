@@ -1,7 +1,9 @@
 """worker/repository module."""
 
 import json
+
 from shared.db import get_conn
+
 
 def set_job_phase(job_id: str, status: str, phase: str, payload: dict | None = None, error_message: str | None = None):
     with get_conn() as conn, conn.cursor() as cur:

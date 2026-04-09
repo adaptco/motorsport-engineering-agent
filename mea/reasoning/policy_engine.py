@@ -77,8 +77,8 @@ class PolicyEngine:
         return self._logical_now_ns if self._logical_now_ns > 0 else time.monotonic_ns()
 
     def _extract_created_at_ns(self, rec: Recommendation) -> int:
-        if hasattr(rec, 'created_at_ns') and isinstance(getattr(rec, 'created_at_ns'), int):
-            return int(getattr(rec, 'created_at_ns'))
+        if hasattr(rec, 'created_at_ns') and isinstance(rec.created_at_ns, int):
+            return int(rec.created_at_ns)
         extra = getattr(rec, 'metadata', None)
         if isinstance(extra, dict) and isinstance(extra.get('created_at_ns'), int):
             return int(extra['created_at_ns'])

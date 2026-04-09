@@ -4,8 +4,8 @@
 import json
 from pathlib import Path
 
-from shared.models import TelemetryFrame
 from control_plane.services.replay_service import build_replay_metrics
+from shared.models import TelemetryFrame
 
 
 def test_telemetry_frame_accepts_valid_jsonl(tmp_path: Path):

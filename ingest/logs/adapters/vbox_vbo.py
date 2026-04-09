@@ -9,7 +9,6 @@ import pandas as pd
 from ingest.logs.types import ParsedLog
 from ingest.logs.util import coerce_numeric_columns
 
-
 VBOX_HEADER_MARKER = "[column names]"
 
 
