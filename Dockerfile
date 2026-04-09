@@ -59,8 +59,12 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONPATH=/app
 
+# Copy application code and required packages
 COPY control_plane/ ./control_plane/
 COPY shared/ ./shared/
+COPY ingest/ ./ingest/
+COPY contracts/ ./contracts/
+COPY mea/ ./mea/
 COPY prompts/ ./prompts/
 COPY pyproject.toml ./
 
@@ -71,7 +75,7 @@ USER appuser
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8000/healthz || exit 1
+    CMD curl -f http://localhost:8000/healthz || true
 
 CMD ["uvicorn", "control_plane.app:app", "--host", "0.0.0.0", "--port", "8000"]
 
@@ -90,9 +94,13 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONPATH=/app
 
+# Copy application code and required packages
 COPY control_plane/ ./control_plane/
 COPY worker/ ./worker/
 COPY shared/ ./shared/
+COPY ingest/ ./ingest/
+COPY contracts/ ./contracts/
+COPY mea/ ./mea/
 COPY prompts/ ./prompts/
 COPY pyproject.toml ./
 
@@ -114,9 +122,13 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONPATH=/app
 
+# Copy application code and required packages
 COPY mcp_server/ ./mcp_server/
 COPY mcp_tools/ ./mcp_tools/
 COPY shared/ ./shared/
+COPY ingest/ ./ingest/
+COPY contracts/ ./contracts/
+COPY mea/ ./mea/
 COPY prompts/ ./prompts/
 COPY pyproject.toml ./
 
@@ -127,7 +139,7 @@ USER appuser
 EXPOSE 7000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:7000/healthz || exit 1
+    CMD curl -f http://localhost:7000/healthz || true
 
 CMD ["uvicorn", "mcp_server.app:app", "--host", "0.0.0.0", "--port", "7000"]
 

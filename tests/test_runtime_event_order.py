@@ -4,7 +4,10 @@ from pathlib import Path
 
 def test_event_order_exists():
     """Ensure that the event ordering for the runtime harness is defined."""
-    schema_path = Path(__file__).resolve().parents[1] / "contracts/runtime/agent_runtime_contract_bundle.schema.json"
+    schema_path = (
+        Path(__file__).resolve().parents[1]
+        / "contracts/runtime/agent_runtime_contract_bundle.schema.json"
+    )
     with schema_path.open() as f:
         schema = json.load(f)
 

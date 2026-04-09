@@ -1,4 +1,4 @@
-## v3.6 / 0.3.6
+## v3.6.2 / 0.3.6.2
 
 - added declarative MCP contract stub and aligned release metadata for the V3.5.2 baseline
 - resolved merge conflicts and reconciled `PROGRESS.md` for the current baseline
