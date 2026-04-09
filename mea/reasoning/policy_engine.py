@@ -1,3 +1,5 @@
+"""mea/reasoning/policy_engine module."""
+
 from __future__ import annotations
 
 import heapq

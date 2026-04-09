@@ -1,3 +1,5 @@
+"""tests/test_mcp_api module."""
+
 from fastapi.testclient import TestClient
 
 from mcp_api import app

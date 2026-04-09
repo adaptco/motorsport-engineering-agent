@@ -1,3 +1,5 @@
+"""tests/test_forensic_ledger module."""
+
 from pathlib import Path
 
 from shared.forensic_ledger import append_receipt, get_session_head, init_ledger, verify_chain

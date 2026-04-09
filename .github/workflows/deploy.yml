@@ -26,7 +26,7 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  MIN_KERNEL_VERSION: "3.6"
+  MIN_KERNEL_VERSION: "3.6.3"
 
 jobs:
   validate-version:
@@ -35,15 +35,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate v3.6 kernel version
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate v3.6.3 kernel version
         run: |
-          kernel_version=$(python -c "import json; print(json.load(open('VERSION.json'))['kernel_version'])")
-          echo "Kernel version: $kernel_version"
-          if [[ "$kernel_version" != "3.6" && "$kernel_version" != "3.7" && "$kernel_version" != "3.8" ]]; then
-            echo "ERROR: Kernel version must be 3.6+ for deployment. Current: $kernel_version"
-            exit 1
-          fi
-          echo "✓ Kernel version validated: $kernel_version"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          def parse_version(value: str) -> tuple[int, ...]:
+              return tuple(int(part) for part in value.split("."))
+
+          current_raw = json.loads(Path("VERSION.json").read_text())["kernel_version"]
+          minimum_raw = os.environ["MIN_KERNEL_VERSION"]
+          current = parse_version(current_raw)
+          minimum = parse_version(minimum_raw)
+          print(f"Kernel version: {current}")
+          if current < minimum:
+              raise SystemExit(
+                  f"ERROR: Kernel version must be >= {minimum_raw}. Current: {current_raw}"
+              )
+          print(f"✓ Kernel version validated: {current_raw}")
+          PY
 
       - name: Validate runtime contracts present
         run: |
@@ -54,7 +71,7 @@ jobs:
           echo "✓ Runtime contract bundle found"
           
           if [ ! -f "contracts/aero/aero_simulation_state.schema.json" ]; then
-            echo "WARN: Aero simulation contract not found (optional for v3.6)"
+            echo "WARN: Aero simulation contract not found (optional for v3.6.3)"
           fi
 
   build-and-push:
@@ -65,7 +82,13 @@ jobs:
       packages: write
     strategy:
       matrix:
-        service: [control-plane, worker, mcp-server]
+        include:
+          - service: control-plane
+            target: control_plane
+          - service: worker
+            target: worker
+          - service: mcp-server
+            target: mcp_server
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -86,26 +109,18 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=branch,prefix=${{ matrix.service }}-
+            type=semver,pattern={{version}},prefix=${{ matrix.service }}-
+            type=semver,pattern={{major}}.{{minor}},prefix=${{ matrix.service }}-
             type=sha,prefix=${{ matrix.service }}-
             type=raw,value=${{ matrix.service }}-latest,enable={{is_default_branch}}
-
-      - name: Map service to dockerfile
-        id: dockerfile
-        run: |
-          case "${{ matrix.service }}" in
-            control-plane) echo "path=control_plane/Dockerfile" >> $GITHUB_OUTPUT ;;
-            worker) echo "path=worker/Dockerfile" >> $GITHUB_OUTPUT ;;
-            mcp-server) echo "path=mcp_server/Dockerfile" >> $GITHUB_OUTPUT ;;
-          esac
 
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ${{ steps.dockerfile.outputs.path }}
+          file: Dockerfile
+          target: ${{ matrix.target }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -122,17 +137,23 @@ jobs:
       - name: Validate docker-compose.yml
         run: docker compose -f docker-compose.yml config > /dev/null
 
-      - name: Validate v3.6 compose (if exists)
+      - name: Validate v3.6.3 compose (if exists)
         run: |
           if [ -f "deploy/compose/docker-compose.v3.6.yml" ]; then
             docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.6.yml config > /dev/null
-            echo "✓ v3.6 compose topology validated"
+            echo "✓ v3.6.3 compose topology validated"
           fi
 
   deploy-staging:
     needs: [build-and-push, test-compose]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    env:
+      DEPLOY_KEY: ${{ secrets.STAGING_DEPLOY_KEY }}
+      DEPLOY_HOST: ${{ secrets.STAGING_HOST }}
+      DEPLOY_USER: ${{ secrets.STAGING_USER }}
     environment:
       name: staging
       url: https://staging.example.com
@@ -146,10 +167,6 @@ jobs:
 
       - name: Deploy to staging
         if: env.DEPLOY_KEY != '' && env.DEPLOY_HOST != '' && env.DEPLOY_USER != ''
-        env:
-          DEPLOY_KEY: ${{ secrets.STAGING_DEPLOY_KEY }}
-          DEPLOY_HOST: ${{ secrets.STAGING_HOST }}
-          DEPLOY_USER: ${{ secrets.STAGING_USER }}
         run: |
           mkdir -p ~/.ssh
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
@@ -167,10 +184,6 @@ jobs:
 
       - name: Verify staging health
         if: env.DEPLOY_KEY != '' && env.DEPLOY_HOST != '' && env.DEPLOY_USER != ''
-        env:
-          DEPLOY_KEY: ${{ secrets.STAGING_DEPLOY_KEY }}
-          DEPLOY_HOST: ${{ secrets.STAGING_HOST }}
-          DEPLOY_USER: ${{ secrets.STAGING_USER }}
         run: |
           ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
           set -e
@@ -192,7 +205,13 @@ jobs:
   deploy-production:
     needs: [build-and-push, test-compose]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: |
+      startsWith(github.ref, 'refs/tags/v') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    env:
+      DEPLOY_KEY: ${{ secrets.PROD_DEPLOY_KEY }}
+      DEPLOY_HOST: ${{ secrets.PROD_HOST }}
+      DEPLOY_USER: ${{ secrets.PROD_USER }}
     environment:
       name: production
       url: https://example.com
@@ -213,10 +232,6 @@ jobs:
 
       - name: Deploy to production
         if: env.DEPLOY_KEY != '' && env.DEPLOY_HOST != '' && env.DEPLOY_USER != ''
-        env:
-          DEPLOY_KEY: ${{ secrets.PROD_DEPLOY_KEY }}
-          DEPLOY_HOST: ${{ secrets.PROD_HOST }}
-          DEPLOY_USER: ${{ secrets.PROD_USER }}
         run: |
           mkdir -p ~/.ssh
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
@@ -235,10 +250,6 @@ jobs:
 
       - name: Verify production health
         if: env.DEPLOY_KEY != '' && env.DEPLOY_HOST != '' && env.DEPLOY_USER != ''
-        env:
-          DEPLOY_KEY: ${{ secrets.PROD_DEPLOY_KEY }}
-          DEPLOY_HOST: ${{ secrets.PROD_HOST }}
-          DEPLOY_USER: ${{ secrets.PROD_USER }}
         run: |
           ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
           set -e

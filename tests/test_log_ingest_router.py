@@ -1,3 +1,5 @@
+"""tests/test_log_ingest_router module."""
+
 from ingest.logs.registry import detect_source, parser_statuses
 
 

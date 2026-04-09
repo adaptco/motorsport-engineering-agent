@@ -1,3 +1,5 @@
+"""mcp_tools/mea_ci_guardrail module."""
+
 from typing import Any, Dict
 
 def run_mea_ci_guardrail(args: Dict[str, Any]) -> Dict[str, Any]:

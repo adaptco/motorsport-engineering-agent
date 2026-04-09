@@ -1,3 +1,5 @@
+"""tests/test_security_validation module."""
+
 import pytest
 from pydantic import ValidationError
 from shared.models import FixCIRequest

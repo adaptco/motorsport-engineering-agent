@@ -1,3 +1,5 @@
+"""ingest/iracing_stream module."""
+
 
 from __future__ import annotations
 

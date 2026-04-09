@@ -1,4 +1,4 @@
-# Task Ledger (V3.5.1 Patched Baseline)
+# Task Ledger (V3.6.3 Production Readiness)
 
 | Task | Status | Owner | Evidence | Notes |
 | --- | --- | --- | --- | --- |
@@ -21,6 +21,11 @@
 | Minimal GUI for runtime review | 🟢 Done | main | `frontend/hitl_runtime_logs.html` | Local operator scaffold present. |
 | A2A handoff skill & persistence | 🟢 Done | codex | `skills/a2a_handoff/SKILL.md`, `contracts/a2a/` | Workflow state and handoff event schemas established. |
 | Agent Ralph Wiggum loop skill | 🟢 Done | codex | `skills/agent-ralph-wiggum/SKILL.md`, `worker/background_workers.py`, `tests/test_background_workers_state.py` | Reconciliation loop now persists pending task/PRD gates across iterations. |
+| Task-004 closure loop (dependency evidence refresh) | 🟡 In Progress | codex | `docs/checkpoints/PHASE_D_TASK004.md`, `uv.lock`, `TASK-004_DEPENDENCY_MANAGEMENT_FINDINGS.md` | All Task-004 checklist items closed except explicit `Commit uv.lock to git` gate. |
+| Task-005 closure loop (documentation residuals) | 🟢 Done | codex | `docs/checkpoints/PHASE_D_TASK005.md`, `docs/checkpoints/ONBOARDING_SMOKE_TEST.md`, `TASK-005_DOCUMENTATION_AUDIT_FINDINGS.md` | Residual checklist fully closed with evidence-backed updates. |
+| Phase E monorepo compaction | 🟢 Done | codex | `docs/checkpoints/PHASE_E.md`, `config/model_weights.yaml`, `tests/test_model_weights.py` | Collapsed `configs/` into `config/` and updated runtime/doc references. |
+| Phase F runtime contract authority unification | 🟢 Done | codex | `docs/checkpoints/PHASE_F.md`, `SKILL.md`, `mcp_v1_runtime_bundle/Agents.md`, `mcp.json` | Runtime contract and tool discovery now pointer-aligned to single authority paths. |
+| PR lifecycle automation normalization | 🟢 Done | codex | `scripts/github_pr_lifecycle.sh`, `skills/github-pr-lifecycle/SKILL.md`, `skills/agent-ralph-wiggum/SKILL.md` | Standardized label/comment process and embedded it into skill workflow. |
 
 ## V3.6 Preparation Roadmap
 

@@ -1,3 +1,5 @@
+"""tests/test_ingest_api module."""
+
 from pathlib import Path
 
 from fastapi.testclient import TestClient

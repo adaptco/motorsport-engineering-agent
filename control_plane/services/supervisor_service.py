@@ -1,3 +1,5 @@
+"""control_plane/services/supervisor_service module."""
+
 from __future__ import annotations
 
 from pathlib import Path

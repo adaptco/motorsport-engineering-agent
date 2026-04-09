@@ -1,3 +1,5 @@
+"""tests/test_log_normalizer module."""
+
 from pathlib import Path
 
 from ingest.logs.registry import normalize_log_file

@@ -1,3 +1,5 @@
+"""ingest/logs/adapters/vbox_vbo module."""
+
 from __future__ import annotations
 
 from pathlib import Path

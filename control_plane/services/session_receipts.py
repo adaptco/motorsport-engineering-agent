@@ -1,3 +1,5 @@
+"""control_plane/services/session_receipts module."""
+
 from __future__ import annotations
 
 from typing import Iterable

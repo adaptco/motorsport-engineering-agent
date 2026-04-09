@@ -1,3 +1,5 @@
+"""mcp_server/app module."""
+
 import os
 
 from fastapi import FastAPI, Header, HTTPException

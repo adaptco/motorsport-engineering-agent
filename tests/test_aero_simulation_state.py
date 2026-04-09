@@ -1,3 +1,5 @@
+"""tests/test_aero_simulation_state module."""
+
 from __future__ import annotations
 
 import json

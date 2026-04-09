@@ -1,3 +1,5 @@
+"""shared/db module."""
+
 import os
 from contextlib import contextmanager
 from threading import Lock

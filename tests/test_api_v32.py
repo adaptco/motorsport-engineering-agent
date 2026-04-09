@@ -1,3 +1,5 @@
+"""tests/test_api_v32 module."""
+
 from pathlib import Path
 
 from fastapi.testclient import TestClient

@@ -1,3 +1,5 @@
+"""tests/unit/test_policy_concurrency module."""
+
 from concurrent.futures import ThreadPoolExecutor
 
 from mea.reasoning.policy_engine import PolicyEngine

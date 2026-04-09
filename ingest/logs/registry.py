@@ -1,3 +1,5 @@
+"""ingest/logs/registry module."""
+
 from __future__ import annotations
 
 from pathlib import Path

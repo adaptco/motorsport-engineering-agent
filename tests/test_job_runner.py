@@ -1,3 +1,5 @@
+"""tests/test_job_runner module."""
+
 from pathlib import Path
 
 import pytest

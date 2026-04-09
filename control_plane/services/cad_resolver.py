@@ -1,3 +1,5 @@
+"""control_plane/services/cad_resolver module."""
+
 from __future__ import annotations
 
 import json

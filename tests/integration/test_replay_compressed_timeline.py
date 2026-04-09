@@ -1,3 +1,5 @@
+"""tests/integration/test_replay_compressed_timeline module."""
+
 import json
 from pathlib import Path
 

@@ -1,3 +1,5 @@
+"""mea/reasoning/__init__ module."""
+
 from .policy_engine import PolicyEngine as PolicyEngine
 from .time_domains import (
     infer_time_domain as infer_time_domain,

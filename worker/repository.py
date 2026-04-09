@@ -1,3 +1,5 @@
+"""worker/repository module."""
+
 import json
 from shared.db import get_conn
 

@@ -1,3 +1,5 @@
+"""ingest/logs/adapters/csv_export module."""
+
 from __future__ import annotations
 
 from pathlib import Path

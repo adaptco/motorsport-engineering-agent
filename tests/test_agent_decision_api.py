@@ -1,3 +1,5 @@
+"""tests/test_agent_decision_api module."""
+
 from fastapi.testclient import TestClient
 
 from control_plane.app import app

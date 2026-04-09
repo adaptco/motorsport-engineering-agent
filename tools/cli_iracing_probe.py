@@ -1,3 +1,5 @@
+"""tools/cli_iracing_probe module."""
+
 
 from pathlib import Path
 import json

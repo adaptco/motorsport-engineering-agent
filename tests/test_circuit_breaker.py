@@ -1,3 +1,5 @@
+"""tests/test_circuit_breaker module."""
+
 from __future__ import annotations
 
 import time

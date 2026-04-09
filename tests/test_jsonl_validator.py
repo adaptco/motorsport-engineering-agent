@@ -1,3 +1,5 @@
+"""tests/test_jsonl_validator module."""
+
 import json
 from pathlib import Path
 

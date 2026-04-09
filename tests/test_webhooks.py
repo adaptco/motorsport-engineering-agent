@@ -1,3 +1,5 @@
+"""tests/test_webhooks module."""
+
 import hashlib
 import hmac
 

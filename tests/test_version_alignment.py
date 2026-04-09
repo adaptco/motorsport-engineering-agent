@@ -1,3 +1,5 @@
+"""tests/test_version_alignment module."""
+
 import json
 import re
 import tomllib

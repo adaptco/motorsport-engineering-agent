@@ -1,3 +1,5 @@
+"""tests/test_backend_worker module."""
+
 from worker import backend_worker
 from worker import repository as repo
 

@@ -1,3 +1,5 @@
+"""control_plane/services/openfoam_adapter module."""
+
 from __future__ import annotations
 
 import json

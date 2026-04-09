@@ -1,3 +1,5 @@
+"""tests/test_rate_limit_middleware module."""
+
 from __future__ import annotations
 
 import time

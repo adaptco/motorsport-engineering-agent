@@ -2,6 +2,10 @@
 
 ## A2A Registry
 This file is the human-readable registry for agent-to-agent discovery.
+Runtime contract authority:
+- `../mcp.json` (agent/runtime source of truth)
+- `tool-registry.json` (single MCP v1 tool registry)
+- `openapi/orchestration-agent.openapi.yaml` (transport contract)
 
 ### Agent: MCP V1 Orchestration Agent
 - **agent_id**: `mcp-v1-orchestrator-single`
@@ -15,6 +19,7 @@ This file is the human-readable registry for agent-to-agent discovery.
 - **skill_document**: `SKILL.md`
 - **agent_document**: `Agent.md`
 - **tool_registry**: `tool-registry.json`
+- **runtime_contract_source**: `../mcp.json`
 
 ### Responsibilities
 - own release phase state
@@ -38,3 +43,4 @@ Outputs emitted:
 
 ### Interop notes
 This registry is designed for future A2A expansion. In V1, only the orchestrator agent is active.
+Consumers should resolve agent/runtime metadata from `../mcp.json` and only use this file as a human-readable index.

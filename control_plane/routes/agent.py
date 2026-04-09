@@ -1,3 +1,5 @@
+"""control_plane/routes/agent module."""
+
 from __future__ import annotations
 
 import os

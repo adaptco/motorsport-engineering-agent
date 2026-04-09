@@ -1,3 +1,5 @@
+"""ingest/logs/adapters/iracing_ibt module."""
+
 from __future__ import annotations
 
 from pathlib import Path

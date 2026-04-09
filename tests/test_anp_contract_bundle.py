@@ -1,3 +1,5 @@
+"""tests/test_anp_contract_bundle module."""
+
 from __future__ import annotations
 
 import json

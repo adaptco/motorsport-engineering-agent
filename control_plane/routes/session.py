@@ -1,3 +1,5 @@
+"""control_plane/routes/session module."""
+
 from fastapi import APIRouter
 
 from control_plane.repository import replay_session_ledger, store_evidence_batch

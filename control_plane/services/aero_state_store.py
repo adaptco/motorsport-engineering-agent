@@ -1,3 +1,5 @@
+"""control_plane/services/aero_state_store module."""
+
 from __future__ import annotations
 
 import json

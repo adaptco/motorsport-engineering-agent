@@ -1,3 +1,5 @@
+"""control_plane/services/job_runner module."""
+
 from __future__ import annotations
 
 import subprocess

@@ -1,3 +1,5 @@
+"""mea/reasoning/time_domains module."""
+
 from __future__ import annotations
 
 from enum import Enum

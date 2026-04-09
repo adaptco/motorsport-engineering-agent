@@ -1,3 +1,5 @@
+"""worker/github_app_client module."""
+
 import os
 from control_plane.github_app import create_installation_token
 

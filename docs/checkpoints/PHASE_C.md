@@ -1,0 +1,22 @@
+# Phase C Checkpoint - v3.6.3 Baseline Locked
+
+- Phase: C
+- Timestamp (UTC): 2026-04-09T00:25:00Z
+- Scope: Strict v3.6.3 version/dependency/workflow baseline normalization.
+- Files Changed:
+  - VERSION.json
+  - pyproject.toml
+  - uv.lock
+  - README.md
+  - CHANGELOG.md
+  - .git-commit-sha
+  - .github/workflows/deploy.yml
+- Tests/Validation Run:
+  - workflow YAML parse (all files)
+  - `pytest tests/test_version_alignment.py tests/test_ci_workflow.py -q` (10 passed)
+- Task IDs Closed:
+  - Phase C baseline lock gate
+- Residual Risks:
+  - Docs/ledger still contain stale baseline references requiring reconciliation in Phase D/G.
+- Next Gate:
+  - Phase D task finding loops closed with evidence.
