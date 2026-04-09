@@ -55,8 +55,7 @@ The release strategy is intentionally non-destructive. Legacy v3.5.2 operational
 | --- | --- | --- | --- | --- | --- |
 | v3.5.2 | Lock baseline and eliminate known pre-v3.6 blockers | In Progress | Baseline lock checklist complete | codex | [docs/releases/v3.5.2_STABILIZATION.md](./docs/releases/v3.5.2_STABILIZATION.md) |
 | v3.6 | Runtime contract harness + containerization + compatibility gates | Planned | Contract/event-order tests green | codex | [docs/releases/v3.6_RUNTIME_CONTRACT_PLAN.md](./docs/releases/v3.6_RUNTIME_CONTRACT_PLAN.md) |
-| v3.7 | Multi-agent runtime slices via six PRs (contracts -> deploy) | Planned | Orchestrator + MCP v1 + HITL exit criteria met | codex | [docs/releases/v3.7_IMPLEMENTATION_PLAN.md](./docs/releases/v3.7_IMPLEMENTATION_PLAN.md) |
-| v3.8 | Consolidate platform, add capability via skills, harden to production SLOs | Planned | Reliability and rollback readiness gates pass | codex | [docs/releases/v3.8_PLATFORM_CONSOLIDATION_AND_HARDENING.md](./docs/releases/v3.8_PLATFORM_CONSOLIDATION_AND_HARDENING.md) |
+| v3.7 | Multi-agent runtime slices via six PRs (contracts -> deploy) | Planned | Orchestrator + MCP v1 + HITL exit criteria met | codex | [docs/releases/v3.7_IMPLEMENTATION_PLAN.md](./docs via skills, harden to production SLOs | Pla| [docs/releases/v3.8_PLATFORM_CONSOLIDATION_AND_HARDENING.md](./docs/releases/v3.8_PLATFORM_CONSOLIDATION_AND_HARDENING.md) |
 
 ---
 
