@@ -1,3 +1,5 @@
+"""tests/test_aero_simulation_state module."""
+
 from __future__ import annotations
 
 import json
@@ -9,12 +11,16 @@ from jsonschema import Draft202012Validator
 from control_plane.app import app
 from tests.fixtures import build_gt4_aero_run_payload
 
-
 client = TestClient(app)
 
 
 def _schema_path() -> Path:
-    return Path(__file__).resolve().parents[1] / "contracts" / "aero" / "aero_simulation_state.schema.json"
+    return (
+        Path(__file__).resolve().parents[1]
+        / "contracts"
+        / "aero"
+        / "aero_simulation_state.schema.json"
+    )
 
 
 def _load_schema() -> dict:
@@ -28,7 +34,9 @@ def test_create_aero_run_persists_schema_compliant_state(tmp_path: Path, monkeyp
     assert response.status_code == 201
 
     payload = response.json()
-    Draft202012Validator(_load_schema(), format_checker=Draft202012Validator.FORMAT_CHECKER).validate(payload)
+    Draft202012Validator(
+        _load_schema(), format_checker=Draft202012Validator.FORMAT_CHECKER
+    ).validate(payload)
 
     run_id = payload["simulation_run_id"]
     state_path = tmp_path / "aero_state" / "runs" / f"{run_id}.json"
@@ -53,17 +61,23 @@ def test_create_aero_run_persists_schema_compliant_state(tmp_path: Path, monkeyp
     assert all(item["kind"] != "telemetry" for item in payload["geometry_state"]["source_assets"])
 
 
-def test_create_aero_run_with_public_cad_candidate_selects_cad_path(tmp_path: Path, monkeypatch) -> None:
+def test_create_aero_run_with_public_cad_candidate_selects_cad_path(
+    tmp_path: Path, monkeypatch
+) -> None:
     monkeypatch.setenv("AERO_STATE_ROOT", str(tmp_path / "aero_state"))
 
     response = client.post(
         "/aero/runs",
-        json=build_gt4_aero_run_payload(include_public_cad_candidate=True, baseline_geometry_strategy="public_cad"),
+        json=build_gt4_aero_run_payload(
+            include_public_cad_candidate=True, baseline_geometry_strategy="public_cad"
+        ),
     )
     assert response.status_code == 201
 
     payload = response.json()
-    Draft202012Validator(_load_schema(), format_checker=Draft202012Validator.FORMAT_CHECKER).validate(payload)
+    Draft202012Validator(
+        _load_schema(), format_checker=Draft202012Validator.FORMAT_CHECKER
+    ).validate(payload)
 
     run_id = payload["simulation_run_id"]
     case_dir = tmp_path / "aero_state" / "cases" / run_id
@@ -74,10 +88,14 @@ def test_create_aero_run_with_public_cad_candidate_selects_cad_path(tmp_path: Pa
     assert (case_dir / "system" / "snappyHexMeshDict").exists()
 
 
-def test_branch_update_changes_state_without_touching_telemetry_storage(tmp_path: Path, monkeypatch) -> None:
+def test_branch_update_changes_state_without_touching_telemetry_storage(
+    tmp_path: Path, monkeypatch
+) -> None:
     monkeypatch.setenv("AERO_STATE_ROOT", str(tmp_path / "aero_state"))
 
-    create_response = client.post("/aero/runs", json=build_gt4_aero_run_payload(include_telemetry_source=True))
+    create_response = client.post(
+        "/aero/runs", json=build_gt4_aero_run_payload(include_telemetry_source=True)
+    )
     assert create_response.status_code == 201
     created = create_response.json()
 
@@ -96,7 +114,9 @@ def test_branch_update_changes_state_without_touching_telemetry_storage(tmp_path
     assert branch_response.status_code == 200
 
     branched = branch_response.json()
-    Draft202012Validator(_load_schema(), format_checker=Draft202012Validator.FORMAT_CHECKER).validate(branched)
+    Draft202012Validator(
+        _load_schema(), format_checker=Draft202012Validator.FORMAT_CHECKER
+    ).validate(branched)
     assert branched["lifecycle_state"] == "branching"
     assert branched["prev_state_hash"] == created["state_hash"]
     assert len(branched["branches"]) == 1

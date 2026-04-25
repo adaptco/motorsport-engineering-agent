@@ -1,3 +1,5 @@
+"""ingest/logs/adapters/csv_export module."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -18,5 +20,7 @@ def parse_csv_export(path: Path, vendor: str = "csv_export") -> ParsedLog:
         source_path=path,
         frame=frame,
         metadata={"parser": "pandas.read_csv", "delimiter": delimiter or "auto"},
-        notes=["CSV/TXT export adapter; use for Haltech/AEM vendor exports when native Python decoders are unavailable."],
+        notes=[
+            "CSV/TXT export adapter; use for Haltech/AEM vendor exports when native Python decoders are unavailable."
+        ],
     )

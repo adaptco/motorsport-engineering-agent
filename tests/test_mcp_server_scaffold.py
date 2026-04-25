@@ -1,7 +1,8 @@
+"""tests/test_mcp_server_scaffold module."""
+
 from fastapi.testclient import TestClient
 
 from mcp_server.app import app
-
 
 client = TestClient(app)
 

@@ -1,10 +1,12 @@
+"""mea/reasoning/time_domains module."""
+
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class TimeDomain(str, Enum):
+class TimeDomain(StrEnum):
     DATA = "DATA"
     WALL = "WALL"
 
@@ -34,9 +36,11 @@ def validate_time_domain_transition(previous: TimeDomain | None, current: TimeDo
     return False
 
 
-def classify_timestamp_payload(payload: dict[str, Any], *, logical_now_ns: int = 0) -> dict[str, str]:
+def classify_timestamp_payload(
+    payload: dict[str, Any], *, logical_now_ns: int = 0
+) -> dict[str, str]:
     result: dict[str, str] = {}
     for key, value in payload.items():
-        if isinstance(value, int) and key.endswith('_ns'):
+        if isinstance(value, int) and key.endswith("_ns"):
             result[key] = infer_time_domain(value, logical_now_ns=logical_now_ns).value
     return result

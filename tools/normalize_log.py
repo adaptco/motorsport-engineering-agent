@@ -1,8 +1,11 @@
+"""tools/normalize_log module."""
+
 from __future__ import annotations
 
 import json
 import sys
 from pathlib import Path
+from typing import Annotated
 
 import typer
 
@@ -12,7 +15,9 @@ if str(REPO_ROOT) not in sys.path:
 
 from ingest.logs import normalize_log_file, parser_statuses  # noqa: E402
 
-app = typer.Typer(help="Normalize native motorsport telemetry log files into canonical CSV artifacts.")
+app = typer.Typer(
+    help="Normalize native motorsport telemetry log files into canonical CSV artifacts."
+)
 
 
 @app.command("sources")
@@ -22,12 +27,38 @@ def sources() -> None:
 
 @app.command("run")
 def run(
-    input_path: Path = typer.Option(..., "--input", exists=True, readable=True, help="Native source log file or exported CSV/MAT file"),
-    output_dir: Path = typer.Option(..., "--out", file_okay=False, dir_okay=True, help="Directory for normalized CSV artifacts"),
-    vendor: str | None = typer.Option(None, "--vendor", help="Optional vendor override: motec, iracing, aim, vbox, pi, haltech, aem, csv_export"),
-    session_id: str | None = typer.Option(None, "--session-id", help="Optional session identifier override"),
+    input_path: Annotated[
+        Path,
+        typer.Option(
+            ...,
+            "--input",
+            exists=True,
+            readable=True,
+            help="Native source log file or exported CSV/MAT file",
+        ),
+    ],
+    output_dir: Annotated[
+        Path,
+        typer.Option(
+            ...,
+            "--out",
+            file_okay=False,
+            dir_okay=True,
+            help="Directory for normalized CSV artifacts",
+        ),
+    ],
+    vendor: str | None = typer.Option(
+        None,
+        "--vendor",
+        help="Optional vendor override: motec, iracing, aim, vbox, pi, haltech, aem, csv_export",
+    ),
+    session_id: str | None = typer.Option(
+        None, "--session-id", help="Optional session identifier override"
+    ),
 ) -> None:
-    artifacts = normalize_log_file(input_path=input_path, output_dir=output_dir, vendor_hint=vendor, session_id=session_id)
+    artifacts = normalize_log_file(
+        input_path=input_path, output_dir=output_dir, vendor_hint=vendor, session_id=session_id
+    )
     typer.echo(
         json.dumps(
             {

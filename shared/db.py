@@ -1,7 +1,10 @@
+"""shared/db module."""
+
 import os
+from collections.abc import Iterator
 from contextlib import contextmanager
 from threading import Lock
-from typing import Any, Iterator
+from typing import Any
 
 try:
     import psycopg  # type: ignore

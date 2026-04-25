@@ -1,3 +1,5 @@
+"""control_plane/app module."""
+
 import ipaddress
 import os
 import time

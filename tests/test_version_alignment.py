@@ -1,3 +1,5 @@
+"""tests/test_version_alignment module."""
+
 import json
 import re
 import tomllib
@@ -6,7 +8,6 @@ from pathlib import Path
 from control_plane.app import healthz as control_plane_healthz
 from mcp_server.app import healthz as mcp_server_healthz
 from shared import version as shared_version
-
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -59,7 +60,9 @@ def test_load_version_info_falls_back_when_manifest_missing(tmp_path: Path, monk
     shared_version.load_version_info.cache_clear()
 
 
-def test_load_version_info_falls_back_when_manifest_invalid_json(tmp_path: Path, monkeypatch) -> None:
+def test_load_version_info_falls_back_when_manifest_invalid_json(
+    tmp_path: Path, monkeypatch
+) -> None:
     shared_version.load_version_info.cache_clear()
     broken_manifest = tmp_path / "VERSION.json"
     broken_manifest.write_text("{not-json", encoding="utf-8")
@@ -75,7 +78,9 @@ def test_load_version_info_falls_back_when_manifest_invalid_json(tmp_path: Path,
     shared_version.load_version_info.cache_clear()
 
 
-def test_load_version_info_falls_back_when_manifest_missing_fields(tmp_path: Path, monkeypatch) -> None:
+def test_load_version_info_falls_back_when_manifest_missing_fields(
+    tmp_path: Path, monkeypatch
+) -> None:
     shared_version.load_version_info.cache_clear()
     partial_manifest = tmp_path / "VERSION.json"
     partial_manifest.write_text('{"kernel_version": "3.4"}', encoding="utf-8")

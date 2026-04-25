@@ -1,3 +1,5 @@
+"""mea/reasoning/policy_engine module."""
+
 from __future__ import annotations
 
 import heapq
@@ -44,7 +46,10 @@ class PolicyEngine:
                 current = self._queue[0]
                 if queued.priority_rank < current.priority_rank:
                     heapq.heapreplace(self._queue, queued)
-                elif queued.priority_rank == current.priority_rank and queued.created_at_ns < current.created_at_ns:
+                elif (
+                    queued.priority_rank == current.priority_rank
+                    and queued.created_at_ns < current.created_at_ns
+                ):
                     heapq.heapreplace(self._queue, queued)
                 return
             heapq.heappush(self._queue, queued)
@@ -60,7 +65,11 @@ class PolicyEngine:
                 return None
             now = self._now()
             candidate = self._queue[0]
-            if candidate.priority_rank > 0 and self._last_delivery_ns and now - self._last_delivery_ns < self.cooldown_ns:
+            if (
+                candidate.priority_rank > 0
+                and self._last_delivery_ns
+                and now - self._last_delivery_ns < self.cooldown_ns
+            ):
                 return None
             heapq.heappop(self._queue)
             self._last_delivery_ns = now
@@ -75,11 +84,11 @@ class PolicyEngine:
         return self._logical_now_ns if self._logical_now_ns > 0 else time.monotonic_ns()
 
     def _extract_created_at_ns(self, rec: Recommendation) -> int:
-        if hasattr(rec, 'created_at_ns') and isinstance(getattr(rec, 'created_at_ns'), int):
-            return int(getattr(rec, 'created_at_ns'))
-        extra = getattr(rec, 'metadata', None)
-        if isinstance(extra, dict) and isinstance(extra.get('created_at_ns'), int):
-            return int(extra['created_at_ns'])
+        if hasattr(rec, "created_at_ns") and isinstance(rec.created_at_ns, int):
+            return int(rec.created_at_ns)
+        extra = getattr(rec, "metadata", None)
+        if isinstance(extra, dict) and isinstance(extra.get("created_at_ns"), int):
+            return int(extra["created_at_ns"])
         return self._now()
 
     def _drop_stale_locked(self) -> None:

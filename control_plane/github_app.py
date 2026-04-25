@@ -1,3 +1,5 @@
+"""control_plane/github_app module."""
+
 import os
 import time
 

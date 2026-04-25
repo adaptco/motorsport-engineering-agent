@@ -1,3 +1,5 @@
+"""control_plane/services/openfoam_adapter module."""
+
 from __future__ import annotations
 
 import json
@@ -5,18 +7,21 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from shared.forensic_ledger import sha256_prefixed
-from shared.models import AeroSourceRef, AeroSimulationRunRequest
-
 from control_plane.services.cad_resolver import CadResolution
+from shared.forensic_ledger import sha256_prefixed
+from shared.models import AeroSimulationRunRequest, AeroSourceRef
 
 
 def _safe_name(value: str) -> str:
-    normalized = "".join(ch if ch.isalnum() or ch in {"-", "_"} else "-" for ch in value.strip().lower())
+    normalized = "".join(
+        ch if ch.isalnum() or ch in {"-", "_"} else "-" for ch in value.strip().lower()
+    )
     return normalized.strip("-") or "vehicle"
 
 
-def _write_text_artifact(path: Path, content: str, *, label: str, kind: str = "solver_case") -> AeroSourceRef:
+def _write_text_artifact(
+    path: Path, content: str, *, label: str, kind: str = "solver_case"
+) -> AeroSourceRef:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
     return AeroSourceRef(
@@ -28,7 +33,9 @@ def _write_text_artifact(path: Path, content: str, *, label: str, kind: str = "s
     )
 
 
-def _write_json_artifact(path: Path, payload: dict[str, Any], *, label: str, kind: str = "solver_case") -> AeroSourceRef:
+def _write_json_artifact(
+    path: Path, payload: dict[str, Any], *, label: str, kind: str = "solver_case"
+) -> AeroSourceRef:
     serialized = json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(serialized, encoding="utf-8")
@@ -62,39 +69,42 @@ def _build_control_dict(req: AeroSimulationRunRequest, runtime_target: str) -> s
     velocity = req.metadata.get("reference_velocity_m_s", 55.0)
     reference_area = _reference_area_m2(req)
     reference_length = _reference_length_m(req)
-    return "\n".join(
-        [
-            "application     simpleFoam;",
-            "startFrom       latestTime;",
-            "startTime       0;",
-            "stopAt          endTime;",
-            "endTime         100;",
-            "deltaT          1;",
-            "writeControl    timeStep;",
-            "writeInterval   10;",
-            "purgeWrite      0;",
-            "functions",
-            "{",
-            "    forceCoeffs",
-            "    {",
-            "        type            forceCoeffs;",
-            '        libs            ("libforces.so");',
-            '        patches         ("vehicle");',
-            f"        rhoInf          {rho_inf};",
-            f"        magUInf         {velocity};",
-            "        liftDir         (0 0 1);",
-            "        dragDir         (1 0 0);",
-            "        pitchAxis       (0 1 0);",
-            "        CofR            (0 0 0);",
-            f"        Aref            {reference_area};",
-            f"        lRef            {reference_length};",
-            "        writeControl    timeStep;",
-            "        writeInterval   1;",
-            "    }",
-            "}",
-            f"// runtime_target: {runtime_target}",
-        ]
-    ) + "\n"
+    return (
+        "\n".join(
+            [
+                "application     simpleFoam;",
+                "startFrom       latestTime;",
+                "startTime       0;",
+                "stopAt          endTime;",
+                "endTime         100;",
+                "deltaT          1;",
+                "writeControl    timeStep;",
+                "writeInterval   10;",
+                "purgeWrite      0;",
+                "functions",
+                "{",
+                "    forceCoeffs",
+                "    {",
+                "        type            forceCoeffs;",
+                '        libs            ("libforces.so");',
+                '        patches         ("vehicle");',
+                f"        rhoInf          {rho_inf};",
+                f"        magUInf         {velocity};",
+                "        liftDir         (0 0 1);",
+                "        dragDir         (1 0 0);",
+                "        pitchAxis       (0 1 0);",
+                "        CofR            (0 0 0);",
+                f"        Aref            {reference_area};",
+                f"        lRef            {reference_length};",
+                "        writeControl    timeStep;",
+                "        writeInterval   1;",
+                "    }",
+                "}",
+                f"// runtime_target: {runtime_target}",
+            ]
+        )
+        + "\n"
+    )
 
 
 @dataclass(frozen=True)
@@ -151,8 +161,10 @@ def scaffold_openfoam_case(
     case_name = f"{_safe_name(req.vehicle_identity.make)}-{_safe_name(req.vehicle_identity.model)}-{run_id[:8]}"
     runtime_target = str(req.metadata.get("runtime_target", "wsl2"))
     mesh_strategy = "snappyHexMesh" if cad_resolution.selected_source is not None else "blockMesh"
-    selected_geometry_uri = cad_resolution.selected_source.uri if cad_resolution.selected_source else (
-        cad_resolution.proxy_geometry_uri or cad_resolution.geometry_manifest_uri
+    selected_geometry_uri = (
+        cad_resolution.selected_source.uri
+        if cad_resolution.selected_source
+        else (cad_resolution.proxy_geometry_uri or cad_resolution.geometry_manifest_uri)
     )
     solver_entrypoint = "Allrun"
     case_scaffold_notes = [

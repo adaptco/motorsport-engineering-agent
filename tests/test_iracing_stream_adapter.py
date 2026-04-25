@@ -1,3 +1,4 @@
+"""tests/test_iracing_stream_adapter module."""
 
 from pathlib import Path
 

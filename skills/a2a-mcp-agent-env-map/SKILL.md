@@ -33,6 +33,9 @@ Create an auditable map of MEA environment contracts and integration boundaries,
    - Runtime / Service Authority Live
    - Orchestration Live
    - Traceability Complete
+4. Runtime authority alignment checks:
+   - `mcp.json` remains the source of truth for runtime contract metadata
+   - `mcp_v1_runtime_bundle/tool-registry.json` remains the single orchestration tool registry
 
 ## Workflow
 1. Enumerate env usage from source with ripgrep (`os.environ`, `getenv`, settings objects).
