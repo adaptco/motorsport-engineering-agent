@@ -16,7 +16,7 @@ dependencies = [
   "cryptography>=47.0.0",
   "typer>=0.12.0",
   "PyYAML>=6.0.3",
-  "pandas>=2.2.0",
+  "pandas>=3.0.2",
   "scipy>=1.17.1",
 ]
 
