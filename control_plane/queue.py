@@ -9,7 +9,7 @@ from collections import deque
 try:
     import redis  # type: ignore
 except Exception:  # pragma: no cover
-    redis = None
+    redis = None  # type: ignore[assignment]
 
 from shared.circuit_breaker import CircuitBreaker
 

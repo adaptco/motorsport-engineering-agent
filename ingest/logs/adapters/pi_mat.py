@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from scipy.io import loadmat
+from scipy.io import loadmat  # type: ignore[import]
 
 from ingest.logs.types import ParsedLog
 from ingest.logs.util import flatten_mat_dict
