@@ -1,6 +1,4 @@
-const API_BASE =
-  (import.meta as ImportMeta & { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL ??
-  "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 export type SimulateRequest = {
   preset_id: "gt" | "prototype" | "road" | "suv";
