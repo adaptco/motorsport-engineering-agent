@@ -66,22 +66,24 @@ def _normalize_commit_hash(value: str | None) -> tuple[str, bool]:
 
 
 def _coerce_event(event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
+    # Construct strongly-typed Pydantic models using literal event_type values so
+    # type checkers can validate the constructors (avoid passing a plain `str`).
     if event_type == "agent_upsert":
-        event = RuntimeStateAgentUpsertEvent(event_type=event_type, payload=payload)
+        event = RuntimeStateAgentUpsertEvent(event_type="agent_upsert", payload=payload)
         data = event.model_dump(mode="json")
         normalized, invalid = _normalize_commit_hash(data["payload"].get("commit_hash"))
         data["payload"]["commit_hash"] = normalized
         data["payload"]["dirty"] = bool(data["payload"].get("dirty")) or invalid
         return data
     if event_type == "task_upsert":
-        event = RuntimeStateTaskUpsertEvent(event_type=event_type, payload=payload)
+        event = RuntimeStateTaskUpsertEvent(event_type="task_upsert", payload=payload)
         return event.model_dump(mode="json")
     if event_type == "assignment_upsert":
-        event = RuntimeStateAssignmentUpsertEvent(event_type=event_type, payload=payload)
+        event = RuntimeStateAssignmentUpsertEvent(event_type="assignment_upsert", payload=payload)
         return event.model_dump(mode="json")
     if event_type == "heartbeat":
         event = RuntimeHeartbeatPayload(**payload)
-        return {"event_type": event_type, "payload": event.model_dump(mode="json")}
+        return {"event_type": "heartbeat", "payload": event.model_dump(mode="json")}
     raise HTTPException(status_code=422, detail="unsupported_event_type")
 
 
@@ -440,10 +442,25 @@ async def runtime_state_stream(
                 if await request.is_disconnected():
                     break
                 try:
-                    item = await asyncio.wait_for(
+                    # queue.get() yields dicts (published as model_dump(mode="json")).
+                    # Convert/validate into a RuntimeStateDeltaEvent where possible so
+                    # SSE frames have a consistent typed payload and an integer seq.
+                    item_dict = await asyncio.wait_for(
                         queue.get(), timeout=RUNTIME_STATE_SSE_HEARTBEAT_SECONDS
                     )
-                    yield _sse_frame(event="runtime_state", payload=item, event_id=int(item["seq"]))
+                    try:
+                        item_evt = RuntimeStateDeltaEvent(**item_dict)
+                        payload = item_evt.model_dump(mode="json")
+                        event_id = item_evt.seq
+                    except Exception:
+                        # If validation fails, fall back to the raw dict but try to
+                        # coerce a sequence id if present.
+                        payload = item_dict
+                        try:
+                            event_id = int(item_dict.get("seq"))
+                        except Exception:
+                            event_id = None
+                    yield _sse_frame(event="runtime_state", payload=payload, event_id=event_id)
                 except TimeoutError:
                     yield _sse_heartbeat()
         finally:
