@@ -1,10 +1,13 @@
+"""shared/circuit_breaker module."""
+
 from __future__ import annotations
 
 import os
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from threading import Lock
-from typing import Callable, TypeVar
+from typing import TypeVar
 
 T = TypeVar("T")
 
@@ -24,11 +27,15 @@ class CircuitBreaker:
     _lock: Lock = field(default_factory=Lock, init=False, repr=False)
 
     @classmethod
-    def from_env(cls, name: str) -> "CircuitBreaker":
+    def from_env(cls, name: str) -> CircuitBreaker:
         prefix = name.upper()
         threshold = int(os.environ.get(f"{prefix}_CB_FAILURE_THRESHOLD", "3"))
         timeout = float(os.environ.get(f"{prefix}_CB_RECOVERY_TIMEOUT_SECONDS", "30"))
-        return cls(name=name, failure_threshold=max(threshold, 1), recovery_timeout_seconds=max(timeout, 1.0))
+        return cls(
+            name=name,
+            failure_threshold=max(threshold, 1),
+            recovery_timeout_seconds=max(timeout, 1.0),
+        )
 
     def call(self, fn: Callable[..., T], *args, **kwargs) -> T:
         self._check_open_state()

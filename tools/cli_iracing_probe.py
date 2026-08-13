@@ -1,10 +1,12 @@
+"""tools/cli_iracing_probe module."""
 
-from pathlib import Path
 import json
+from pathlib import Path
+
 import typer
 
-from ingest.iracing_stream import dump_stream_to_jsonl, stream_iracing_frames
 from control_plane.services.replay_service import build_validation_tasks
+from ingest.iracing_stream import dump_stream_to_jsonl, stream_iracing_frames
 
 app = typer.Typer(help="Capture direct iRacing stream to JSONL and print validation metrics")
 
@@ -22,10 +24,15 @@ def probe(
         max_frames=max_frames,
     )
     tasks = build_validation_tasks(metrics, sampling_hz)
-    typer.echo(json.dumps({
-        "metrics": metrics.model_dump(),
-        "tasks": [task.model_dump() for task in tasks],
-    }, indent=2))
+    typer.echo(
+        json.dumps(
+            {
+                "metrics": metrics.model_dump(),
+                "tasks": [task.model_dump() for task in tasks],
+            },
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

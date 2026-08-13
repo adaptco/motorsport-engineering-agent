@@ -1,3 +1,5 @@
+"""tests/integration/test_ingest_e2e_lifecycle module."""
+
 from __future__ import annotations
 
 from pathlib import Path

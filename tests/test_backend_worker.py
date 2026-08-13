@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from __future__ import annotations
 
 import subprocess
@@ -6,12 +7,16 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
+=======
+"""tests/test_backend_worker module."""
+>>>>>>> 21d3d3909e3ebb2b5e6ecf1043e605a2a940fad2
 
 from worker import backend_worker
 from worker import github_app_client as gh
 from worker import repository as repo
 
 
+<<<<<<< HEAD
 def test_validate_patch_constraints() -> None:
     # 1. Empty patch
     with pytest.raises(ValueError, match="Patch is empty"):
@@ -52,6 +57,20 @@ def test_run_command_success_and_failure(tmp_path: Path) -> None:
 def test_process_fix_ci_job_missing_identity(monkeypatch) -> None:
     monkeypatch.setattr(repo, "get_job_identity", lambda jid: None)
     job = {"job_id": "job-missing", "repo": "org/repo", "branch": "main", "patch": "diff"}
+=======
+def test_process_fix_ci_job_flow(monkeypatch):
+    # Mock the 'repo' object directly so the worker finds it
+    monkeypatch.setattr(
+        repo,
+        "get_job_identity",
+        lambda id: {"trace_id": "t1", "repo_slug": "ok/repo", "base_branch": "main"},
+    )
+    monkeypatch.setattr(repo, "set_job_phase", lambda *a, **k: None)
+    monkeypatch.setattr(repo, "add_span", lambda *a, **k: None)
+    monkeypatch.setattr(repo, "complete_job", lambda *a, **k: None)
+
+    job = {"job_id": "j1", "repo": "ok/repo", "branch": "main", "patch": "diff"}
+>>>>>>> 21d3d3909e3ebb2b5e6ecf1043e605a2a940fad2
     backend_worker.process_fix_ci_job(job)
 
 

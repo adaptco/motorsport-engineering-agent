@@ -1,9 +1,11 @@
+"""control_plane/services/replay_service module."""
+
 from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, List
 
 from pydantic import ValidationError
 
@@ -62,26 +64,39 @@ def build_replay_metrics(path: Path, max_frames: int | None = None) -> ReplayMet
                 if channel not in metrics.missing_required_channels:
                     metrics.missing_required_channels.append(channel)
 
-    if metrics.frames_valid > 1 and first_ts is not None and previous_ts is not None and previous_ts > first_ts:
+    if (
+        metrics.frames_valid > 1
+        and first_ts is not None
+        and previous_ts is not None
+        and previous_ts > first_ts
+    ):
         metrics.duration_ns = previous_ts - first_ts
-        metrics.average_hz = round((metrics.frames_valid - 1) * 1_000_000_000 / metrics.duration_ns, 2)
+        metrics.average_hz = round(
+            (metrics.frames_valid - 1) * 1_000_000_000 / metrics.duration_ns, 2
+        )
     return metrics
 
 
-def build_validation_tasks(metrics: ReplayMetrics, target_hz: int, validation: JSONLValidationResult | None = None) -> List[ReplayTask]:
-    tasks: List[ReplayTask] = []
+def build_validation_tasks(
+    metrics: ReplayMetrics, target_hz: int, validation: JSONLValidationResult | None = None
+) -> list[ReplayTask]:
+    tasks: list[ReplayTask] = []
 
     def add(name: str, status: str, detail: str) -> None:
         tasks.append(ReplayTask(task_id=str(uuid.uuid4()), name=name, status=status, detail=detail))
 
     add(
         "jsonl_schema_valid",
-        "pass" if metrics.frames_invalid == 0 and (validation is None or validation.invalid_lines == 0) else "fail",
+        "pass"
+        if metrics.frames_invalid == 0 and (validation is None or validation.invalid_lines == 0)
+        else "fail",
         f"{metrics.frames_valid} valid frames, {metrics.frames_invalid} invalid frames",
     )
     add(
         "tick_ordering",
-        "pass" if metrics.max_tick_gap <= 1 and (validation is None or validation.monotonic_tick) else "warn",
+        "pass"
+        if metrics.max_tick_gap <= 1 and (validation is None or validation.monotonic_tick)
+        else "warn",
         f"Maximum tick gap was {metrics.max_tick_gap}",
     )
     if metrics.average_hz == 0:
@@ -103,13 +118,17 @@ def build_validation_tasks(metrics: ReplayMetrics, target_hz: int, validation: J
     add(
         "required_channels",
         "pass" if not metrics.missing_required_channels else "fail",
-        "Missing channels: " + ", ".join(metrics.missing_required_channels) if metrics.missing_required_channels else "All required channels present",
+        "Missing channels: " + ", ".join(metrics.missing_required_channels)
+        if metrics.missing_required_channels
+        else "All required channels present",
     )
     if validation is not None:
         add(
             "timestamp_monotonicity",
             "pass" if validation.monotonic_timestamp_ns else "fail",
-            "timestamps monotonic" if validation.monotonic_timestamp_ns else "; ".join(v for v in validation.violations if 'timestamp' in v),
+            "timestamps monotonic"
+            if validation.monotonic_timestamp_ns
+            else "; ".join(v for v in validation.violations if "timestamp" in v),
         )
     return tasks
 
@@ -117,7 +136,7 @@ def build_validation_tasks(metrics: ReplayMetrics, target_hz: int, validation: J
 def replay_artifact(request: ReplayRequest) -> ReplayResponse:
     path = Path(request.artifact_path)
     metrics = build_replay_metrics(path, max_frames=request.max_frames)
-    validation = validate_jsonl_artifact(path) if request.source == 'jsonl' else None
+    validation = validate_jsonl_artifact(path) if request.source == "jsonl" else None
     tasks = build_validation_tasks(metrics, request.sampling_hz, validation=validation)
     return ReplayResponse(
         replay_id=str(uuid.uuid4()),
@@ -127,6 +146,10 @@ def replay_artifact(request: ReplayRequest) -> ReplayResponse:
     )
 
 
-def direct_stream_probe(metrics: ReplayMetrics, target_hz: int, notes: list[str] | None = None) -> DirectStreamProbeResult:
+def direct_stream_probe(
+    metrics: ReplayMetrics, target_hz: int, notes: list[str] | None = None
+) -> DirectStreamProbeResult:
     tasks = build_validation_tasks(metrics, target_hz)
-    return DirectStreamProbeResult(status="complete", metrics=metrics, tasks=tasks, notes=notes or [])
+    return DirectStreamProbeResult(
+        status="complete", metrics=metrics, tasks=tasks, notes=notes or []
+    )

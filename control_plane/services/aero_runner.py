@@ -1,3 +1,5 @@
+"""control_plane/services/aero_runner module."""
+
 from __future__ import annotations
 
 import hashlib
@@ -64,6 +66,17 @@ def _reference_length_m(req: AeroSimulationRunRequest) -> float:
 def _write_text(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
+
+
+def _ensure_str(value: bytes | str | None) -> str:
+    """Normalize a bytes|str|None value into a str for writing to text files.
+
+    Some subprocess exceptions may include stdout/stderr as bytes or strings,
+    so normalize here to avoid mypy/typing errors and ensure proper decoding.
+    """
+    if isinstance(value, bytes):
+        return value.decode("utf-8")
+    return value or ""
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
@@ -629,9 +642,9 @@ class WslOpenFoamRunner:
             stderr_path = logs_dir / "wsl.stderr.log"
             stdout_path.parent.mkdir(parents=True, exist_ok=True)
             stderr_path.parent.mkdir(parents=True, exist_ok=True)
-            stdout_path.write_text(exc.stdout or "", encoding="utf-8")
+            stdout_path.write_text(_ensure_str(exc.stdout), encoding="utf-8")
             stderr_path.write_text(
-                (exc.stderr or "") + f"\nSolver timed out after {SOLVER_RUN_TIMEOUT_SECONDS}s\n",
+                _ensure_str(exc.stderr) + f"\nSolver timed out after {SOLVER_RUN_TIMEOUT_SECONDS}s\n",
                 encoding="utf-8",
             )
 

@@ -23,6 +23,7 @@ Each phase:
 - emits a compact summary for downstream context
 
 ## Required files
+- `../mcp.json`
 - `generation-manifest.json`
 - `schemas/generation-state.schema.json`
 - `src/runtime/mcp-v1-runtime.ts`
@@ -70,6 +71,7 @@ Checkpoint after every successful phase. A checkpoint record must include:
 
 ## Tool usage policy
 Only use tools declared in `tool-registry.json`.
+Treat `../mcp.json` as the authoritative runtime contract for agent identity and wiring.
 In production mode:
 - side-effectful tools require permits
 - non-deterministic operations must be wrapped in tasks

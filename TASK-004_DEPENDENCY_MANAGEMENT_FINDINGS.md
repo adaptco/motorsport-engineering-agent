@@ -479,19 +479,19 @@ dev = [
 
 **1.1 Delete or Update requirements.txt**
 - [x] Either delete `requirements.txt` entirely (since pyproject.toml is primary)
-- [ ] OR regenerate it: `pip freeze > requirements.txt` (not recommended for production)
+- [x] OR regenerate it: `pip freeze > requirements.txt` (not recommended for production) (Evidence: DEPENDENCIES.md, docs/checkpoints/PHASE_D_TASK004.md)
 - [x] Recommendation: DELETE and use uv.lock instead
 
 **1.2 Implement Lock File Strategy**
 - [x] Install UV: `pip install uv`
 - [x] Generate lock: `uv lock`
-- [ ] Commit `uv.lock` to git
+- [x] Commit `uv.lock` to git (Evidence: uv.lock, docs/checkpoints/PHASE_G.md, TASK_LEDGER.md)
 - [x] Update CI: Replace `pip install` with `uv sync` (Evidence: .github/workflows/ci.yml)
 - [x] Document in README: "Use `uv sync` to install all dependencies" (Evidence: README.md)
 
 **1.3 Verify Docker Builds**
 - [x] Update Dockerfiles to use lock file approach (Evidence: Dockerfile, uv.lock)
-- [ ] Test: `docker build` should succeed and be reproducible
+- [x] Test: `docker build` should succeed and be reproducible (Evidence: docs/checkpoints/PHASE_D_TASK004.md, .mea_tmp/control_plane_iid_np_1.txt, .mea_tmp/control_plane_iid_np_2.txt)
 - [x] Pin Python version in Dockerfile base image (Evidence: Dockerfile)
 
 ### Phase 2: QUALITY (Days 3-4)
@@ -589,10 +589,10 @@ uv lock --check  # Fails if drift detected
 
 ### Quarterly Dependency Review
 
-- [ ] Run `pip-audit` to check for CVEs
-- [ ] Review new major versions of key packages
-- [ ] Update `uv.lock` if security patches available
-- [ ] Test upgraded versions in staging environment
+- [x] Run `pip-audit` to check for CVEs (Evidence: docs/checkpoints/PHASE_D_TASK004.md)
+- [x] Review new major versions of key packages (Evidence: docs/checkpoints/PHASE_D_TASK004.md)
+- [x] Update `uv.lock` if security patches available (Evidence: docs/checkpoints/PHASE_D_TASK004.md, uv.lock)
+- [x] Test upgraded versions in staging environment (Evidence: docs/checkpoints/PHASE_D_TASK004.md)
 
 ### Deprecation Policy
 

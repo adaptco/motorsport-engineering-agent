@@ -1,3 +1,5 @@
+"""tests/test_aero_simulation_runner module."""
+
 from __future__ import annotations
 
 import os

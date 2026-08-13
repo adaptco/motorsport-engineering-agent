@@ -1,18 +1,21 @@
+"""tests/fixtures/aero_gt4 module."""
+
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Literal
 
 from shared.forensic_ledger import sha256_prefixed
-from shared.models import AeroSourceRef, AeroSimulationRunRequest, AeroVehicleIdentity
-
+from shared.models import AeroSimulationRunRequest, AeroSourceRef, AeroVehicleIdentity
 
 FIXTURES_DIR = Path(__file__).resolve().parent
 # Use repo-local absolute fixture paths so URIs are valid across CI runners and OSes.
 PROFILE_IMAGE_PATH = (FIXTURES_DIR / "GT4_Profile.png").resolve()
 FRONT_IMAGE_PATH = (FIXTURES_DIR / "GT4.png").resolve()
 TELEMETRY_CSV_PATH = (FIXTURES_DIR / "sample_export.csv").resolve()
-SPEC_SHEET_URI = "https://manuals.plus/m/e7feaf23c1831eb323faa279d01e5fddf4f184636f782ae88d1f52e8fe07f29d"
+SPEC_SHEET_URI = (
+    "https://manuals.plus/m/e7feaf23c1831eb323faa279d01e5fddf4f184636f782ae88d1f52e8fe07f29d"
+)
 
 
 def _fixture_uri(path: Path) -> str:
@@ -21,7 +24,9 @@ def _fixture_uri(path: Path) -> str:
 
 def _source_ref(
     *,
-    kind: Literal["photo", "cad", "telemetry", "public_reference", "measurement", "wind_tunnel", "solver_case"],
+    kind: Literal[
+        "photo", "cad", "telemetry", "public_reference", "measurement", "wind_tunnel", "solver_case"
+    ],
     uri: str,
     label: str,
     metadata: dict[str, Any] | None = None,
@@ -77,7 +82,10 @@ def build_gt4_aero_run_request(
     *,
     include_public_cad_candidate: bool = False,
     include_telemetry_source: bool = False,
-    baseline_geometry_strategy: Literal["public_cad", "proxy_geometry", "imported_cad", "manual_sketch"] | None = None,
+    baseline_geometry_strategy: Literal[
+        "public_cad", "proxy_geometry", "imported_cad", "manual_sketch"
+    ]
+    | None = None,
     runtime_target: Literal["sandbox", "wsl2"] = "sandbox",
     runner_kind: Literal["sandbox", "wsl"] = "sandbox",
 ) -> AeroSimulationRunRequest:
@@ -138,7 +146,9 @@ def build_gt4_aero_run_request(
         "and compare CL/CD quickly."
     )
     if baseline_geometry_strategy is None:
-        baseline_geometry_strategy = "public_cad" if include_public_cad_candidate else "proxy_geometry"
+        baseline_geometry_strategy = (
+            "public_cad" if include_public_cad_candidate else "proxy_geometry"
+        )
 
     metadata: dict[str, Any] = {
         "dimensions": _base_dimensions(),

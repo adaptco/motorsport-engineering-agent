@@ -1,3 +1,5 @@
+"""control_plane/queue module."""
+
 from __future__ import annotations
 
 import json

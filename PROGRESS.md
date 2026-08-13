@@ -1,9 +1,9 @@
 # Progress Tracking - Motorsport Engineering Agent
 
 **Document Version:** 2.0 (Release Roadmap Baseline)
-**Last Updated:** 2026-04-08
-**Status:** ACTIVE ROADMAP (v3.5.2 -> v3.8)
-**Current Baseline:** `v3.5.2 / 0.3.5.2`
+**Last Updated:** 2026-04-09
+**Status:** ACTIVE EXECUTION (v3.6.3 production-readiness in progress)
+**Current Baseline:** `v3.6.3 / 0.3.6.3`
 **Reference:** [PRD.md](./PRD.md), [docs/releases](./docs/releases)
 
 ---
@@ -12,14 +12,24 @@
 
 This tracker is the canonical execution board for the additive migration path:
 
-1. `v3.5.2` stabilization and baseline lock
+1. `v3.6.3` production-readiness lock and closure of Task-004/005/006/007
 2. `v3.6` runtime contract harness and container cut
 3. `v3.7` multi-agent orchestration and MCP gateway v1
 4. `v3.8` platform consolidation + skill tooling + production hardening
 
 The release strategy is intentionally non-destructive. Legacy v3.5.2 operational surfaces remain compatibility-backed while newer slices are layered in behind versioned routes and additive migrations.
 
-## Latest Execution Update (2026-04-08)
+## Latest Execution Update (2026-04-09)
+
+- Created branch `codex/v3.6.3-production-readiness` and added orchestration manager control-plane artifact (`skills/dmn-manager-orchestrator/SKILL.md`).
+- Added phase checkpoint artifacts: `docs/checkpoints/PHASE_A.md`, `PHASE_B.md`, `PHASE_C.md`, `PHASE_D_TASK004.md`, `PHASE_D_TASK005.md`, `PHASE_E.md`, `PHASE_F.md`.
+- Locked version surfaces to v3.6.3: `VERSION.json`, `pyproject.toml`, `README.md`, `CHANGELOG.md`, `.git-commit-sha`, and regenerated `uv.lock`.
+- Closed Task-005 residual checklist items with evidence and onboarding timing artifact (`docs/checkpoints/ONBOARDING_SMOKE_TEST.md`).
+- Closed Task-004 residual evidence items except the explicit commit gate (`Commit uv.lock to git` remains open until commit).
+- Compacted namespace by collapsing `configs/` into `config/` and updating all references.
+- Unified runtime contract pointers so `mcp.json` is authoritative and `mcp_v1_runtime_bundle/tool-registry.json` is single registry source for runtime docs/openapi/skills.
+- Added PR lifecycle automation script `scripts/github_pr_lifecycle.sh` and embedded workflow in `skills/agent-ralph-wiggum/SKILL.md` plus `skills/github-pr-lifecycle/SKILL.md`.
+- Closed the final Task-004 gate (`Commit uv.lock to git`) after commit-backed evidence and confirmed reconciliation reaches zero remaining actions.
 
 - Added persistent reconciliation loop primitives in `worker/background_workers.py` for task findings, `TASK_LEDGER.md`, and MCP PRD acceptance criteria.
 - Added/extended loop coverage in `tests/test_background_workers_state.py`.
@@ -55,8 +65,7 @@ The release strategy is intentionally non-destructive. Legacy v3.5.2 operational
 | --- | --- | --- | --- | --- | --- |
 | v3.5.2 | Lock baseline and eliminate known pre-v3.6 blockers | In Progress | Baseline lock checklist complete | codex | [docs/releases/v3.5.2_STABILIZATION.md](./docs/releases/v3.5.2_STABILIZATION.md) |
 | v3.6 | Runtime contract harness + containerization + compatibility gates | Planned | Contract/event-order tests green | codex | [docs/releases/v3.6_RUNTIME_CONTRACT_PLAN.md](./docs/releases/v3.6_RUNTIME_CONTRACT_PLAN.md) |
-| v3.7 | Multi-agent runtime slices via six PRs (contracts -> deploy) | Planned | Orchestrator + MCP v1 + HITL exit criteria met | codex | [docs/releases/v3.7_IMPLEMENTATION_PLAN.md](./docs/releases/v3.7_IMPLEMENTATION_PLAN.md) |
-| v3.8 | Consolidate platform, add capability via skills, harden to production SLOs | Planned | Reliability and rollback readiness gates pass | codex | [docs/releases/v3.8_PLATFORM_CONSOLIDATION_AND_HARDENING.md](./docs/releases/v3.8_PLATFORM_CONSOLIDATION_AND_HARDENING.md) |
+| v3.7 | Multi-agent runtime slices via six PRs (contracts -> deploy) | Planned | Orchestrator + MCP v1 + HITL exit criteria met | codex | [docs/releases/v3.7_IMPLEMENTATION_PLAN.md](./docs via skills, harden to production SLOs | Pla| [docs/releases/v3.8_PLATFORM_CONSOLIDATION_AND_HARDENING.md](./docs/releases/v3.8_PLATFORM_CONSOLIDATION_AND_HARDENING.md) |
 
 ---
 

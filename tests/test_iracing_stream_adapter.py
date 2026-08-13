@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 from __future__ import annotations
+=======
+"""tests/test_iracing_stream_adapter module."""
+>>>>>>> 21d3d3909e3ebb2b5e6ecf1043e605a2a940fad2
 
 from pathlib import Path
 from unittest.mock import MagicMock

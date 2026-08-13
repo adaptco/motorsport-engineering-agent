@@ -1,3 +1,5 @@
+"""ingest/logs/adapters/__init__ module."""
+
 from .aim_xrk import parse_aim_xrk
 from .csv_export import parse_csv_export
 from .iracing_ibt import parse_iracing_ibt

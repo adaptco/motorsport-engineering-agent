@@ -1,3 +1,5 @@
+"""control_plane/repository module."""
+
 from __future__ import annotations
 
 import json
@@ -10,10 +12,16 @@ from fastapi import HTTPException
 from control_plane.services.session_receipts import build_state_surface
 from shared.db import get_conn
 from shared.forensic_ledger import append_receipt, get_session_head, verify_chain
-from shared.models import SessionEvidenceRequest, SessionLedgerReplayResponse, SessionLedgerReplayResult
+from shared.models import (
+    SessionEvidenceRequest,
+    SessionLedgerReplayResponse,
+    SessionLedgerReplayResult,
+)
 from shared.runtime_paths import default_session_ledger_path
 
-SESSION_LEDGER_DB_PATH = os.environ.get("SESSION_LEDGER_DB_PATH", str(default_session_ledger_path()))
+SESSION_LEDGER_DB_PATH = os.environ.get(
+    "SESSION_LEDGER_DB_PATH", str(default_session_ledger_path())
+)
 
 
 def create_job(job_type: str, repo_slug: str, base_branch: str, payload: dict) -> str:
@@ -21,10 +29,10 @@ def create_job(job_type: str, repo_slug: str, base_branch: str, payload: dict) -
         job_id = str(uuid.uuid4())
         trace_id = str(uuid.uuid4())
         cur.execute(
-            '''
+            """
             INSERT INTO jobs (job_id, job_type, repo_slug, base_branch, status, phase, request_payload, trace_id)
             VALUES (%s, %s, %s, %s, 'queued', 'accepted', %s::jsonb, %s)
-            ''',
+            """,
             (job_id, job_type, repo_slug, base_branch, json.dumps(payload), trace_id),
         )
         cur.execute(
@@ -38,15 +46,27 @@ def create_job(job_type: str, repo_slug: str, base_branch: str, payload: dict) -
         return job_id
 
 
-def update_job_phase(job_id: str, status: str, phase: str, result_payload: dict | None = None, error_message: str | None = None):
+def update_job_phase(
+    job_id: str,
+    status: str,
+    phase: str,
+    result_payload: dict | None = None,
+    error_message: str | None = None,
+):
     with get_conn() as conn, conn.cursor() as cur:
         cur.execute(
-            '''
+            """
             UPDATE jobs
             SET status=%s, phase=%s, result_payload=COALESCE(%s::jsonb, result_payload), error_message=%s, updated_at=NOW()
             WHERE job_id=%s
-            ''',
-            (status, phase, json.dumps(result_payload) if result_payload is not None else None, error_message, job_id),
+            """,
+            (
+                status,
+                phase,
+                json.dumps(result_payload) if result_payload is not None else None,
+                error_message,
+                job_id,
+            ),
         )
         cur.execute(
             "INSERT INTO job_events (job_id, level, event_type, payload) VALUES (%s, %s, %s, %s::jsonb)",
@@ -61,7 +81,10 @@ def update_job_phase(job_id: str, status: str, phase: str, result_payload: dict 
 
 def get_job(job_id: str):
     with get_conn() as conn, conn.cursor() as cur:
-        cur.execute("SELECT job_id, status, phase, github_pr_url, trace_id, result_payload FROM jobs WHERE job_id=%s", (job_id,))
+        cur.execute(
+            "SELECT job_id, status, phase, github_pr_url, trace_id, result_payload FROM jobs WHERE job_id=%s",
+            (job_id,),
+        )
         row = cur.fetchone()
         if not row:
             return None
@@ -82,7 +105,10 @@ def list_trace(job_id: str):
         if not row:
             return None
         trace_id = row[0]
-        cur.execute("SELECT span_name, status, attributes FROM spans WHERE trace_id=%s ORDER BY started_at ASC", (trace_id,))
+        cur.execute(
+            "SELECT span_name, status, attributes FROM spans WHERE trace_id=%s ORDER BY started_at ASC",
+            (trace_id,),
+        )
         spans = [{"span_name": r[0], "status": r[1], "attributes": r[2]} for r in cur.fetchall()]
         return {"job_id": job_id, "trace_id": str(trace_id), "spans": spans}
 
@@ -90,11 +116,11 @@ def list_trace(job_id: str):
 def store_webhook(delivery_id: str, event_name: str, repo_slug: str | None, payload: dict):
     with get_conn() as conn, conn.cursor() as cur:
         cur.execute(
-            '''
+            """
             INSERT INTO webhook_events (delivery_id, event_name, repo_slug, payload)
             VALUES (%s, %s, %s, %s::jsonb)
             ON CONFLICT (delivery_id) DO NOTHING
-            ''',
+            """,
             (delivery_id, event_name, repo_slug, json.dumps(payload)),
         )
 
@@ -102,12 +128,17 @@ def store_webhook(delivery_id: str, event_name: str, repo_slug: str | None, payl
 def correlate_workflow_run(repo_slug: str, run_id: str, payload: dict):
     with get_conn() as conn, conn.cursor() as cur:
         cur.execute(
-            '''
+            """
             UPDATE jobs
             SET github_run_id=%s, result_payload=COALESCE(result_payload, '{}'::jsonb) || %s::jsonb, updated_at=NOW()
             WHERE repo_slug=%s AND (github_run_id IS NULL OR github_run_id=%s)
-            ''',
-            (run_id, json.dumps({"workflow_run": payload.get("workflow_run", {})}), repo_slug, run_id),
+            """,
+            (
+                run_id,
+                json.dumps({"workflow_run": payload.get("workflow_run", {})}),
+                repo_slug,
+                run_id,
+            ),
         )
 
 
@@ -116,7 +147,9 @@ def _group_recommendations(req: SessionEvidenceRequest) -> dict[str, list]:
     packet_ids = {packet.evidence_packet_id for packet in req.evidence_packets}
     for rec in req.recommendations:
         if rec.evidence_packet_id not in packet_ids:
-            raise HTTPException(status_code=400, detail=f"INVALID_EVIDENCE_LINK:{rec.evidence_packet_id}")
+            raise HTTPException(
+                status_code=400, detail=f"INVALID_EVIDENCE_LINK:{rec.evidence_packet_id}"
+            )
         grouped.setdefault(rec.evidence_packet_id, []).append(rec)
     return grouped
 
@@ -126,11 +159,11 @@ def _maybe_store_runtime_rows(req: SessionEvidenceRequest, grouped: dict[str, li
         with get_conn() as conn, conn.cursor() as cur:
             for packet in req.evidence_packets:
                 cur.execute(
-                    '''
+                    """
                     INSERT INTO session_evidence (evidence_packet_id, session_id, timestamp_logical_ns, timestamp_wall, severity, features)
                     VALUES (%s, %s, %s, %s, %s, %s::jsonb)
                     ON CONFLICT (evidence_packet_id) DO NOTHING
-                    ''',
+                    """,
                     (
                         packet.evidence_packet_id,
                         packet.session_id,
@@ -142,11 +175,11 @@ def _maybe_store_runtime_rows(req: SessionEvidenceRequest, grouped: dict[str, li
                 )
                 for rec in grouped.get(packet.evidence_packet_id, []):
                     cur.execute(
-                        '''
+                        """
                         INSERT INTO recommendations_runtime (recommendation_id, evidence_packet_id, priority, trigger, action, expected_effect)
                         VALUES (%s, %s, %s, %s, %s, %s)
                         ON CONFLICT (recommendation_id) DO NOTHING
-                        ''',
+                        """,
                         (
                             rec.recommendation_id,
                             rec.evidence_packet_id,
@@ -221,4 +254,6 @@ def replay_session_ledger(session_id: str) -> SessionLedgerReplayResponse:
         )
         for item in verdict.get("details", [])
     ]
-    return SessionLedgerReplayResponse(session_id=session_id, chain_ok=bool(verdict["ok"]), receipts=receipts)
+    return SessionLedgerReplayResponse(
+        session_id=session_id, chain_ok=bool(verdict["ok"]), receipts=receipts
+    )

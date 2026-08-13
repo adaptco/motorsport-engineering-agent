@@ -1,3 +1,5 @@
+"""ingest/logs/registry module."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -13,7 +15,6 @@ from ingest.logs.adapters import (
 from ingest.logs.canonical import SUPPORTED_SOURCE_EXTENSIONS
 from ingest.logs.normalizer import normalize_log
 from ingest.logs.types import NormalizedArtifacts
-
 
 SUPPORTED_SOURCES = tuple(SUPPORTED_SOURCE_EXTENSIONS.keys())
 
@@ -78,7 +79,12 @@ def parser_statuses() -> list[dict[str, object]]:
     return statuses
 
 
-def normalize_log_file(input_path: str | Path, output_dir: str | Path, vendor_hint: str | None = None, session_id: str | None = None) -> NormalizedArtifacts:
+def normalize_log_file(
+    input_path: str | Path,
+    output_dir: str | Path,
+    vendor_hint: str | None = None,
+    session_id: str | None = None,
+) -> NormalizedArtifacts:
     path = Path(input_path)
     source = detect_source(path, vendor_hint=vendor_hint)
     if source == "motec":
