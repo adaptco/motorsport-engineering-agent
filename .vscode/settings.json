@@ -4,5 +4,9 @@
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
-    "git.autofetch": "all"
+    "git.autofetch": "all",
+    "chat.tools.terminal.autoApprove": {
+        "Running": true,
+        "if": true
+    }
 }

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 from __future__ import annotations
-=======
-"""tests/test_jsonl_validator module."""
->>>>>>> 21d3d3909e3ebb2b5e6ecf1043e605a2a940fad2
 
 import json
 from pathlib import Path
@@ -10,14 +6,7 @@ from pathlib import Path
 from shared.jsonl_validator import validate_jsonl_artifact
 
 
-<<<<<<< HEAD
 def test_jsonl_validator_flags_missing_fields_and_regressions(tmp_path: Path) -> None:
-    path = tmp_path / "bad.jsonl"
-    rows = [
-        {"session_id": "s1", "driver_id": "d1", "track_id": "t1", "car_id": "c1", "timestamp_ns": 200, "tick": 2, "channels": {"Throttle": 0.1, "Brake": 0.0, "Speed": 1.0}},
-        {"session_id": "s1", "driver_id": "d1", "track_id": "t1", "timestamp_ns": 100, "tick": 1, "channels": {"Throttle": 0.1, "Brake": 0.0, "Speed": 1.0}},
-=======
-def test_jsonl_validator_flags_missing_fields_and_regressions(tmp_path: Path):
     path = tmp_path / "bad.jsonl"
     rows = [
         {
@@ -37,13 +26,11 @@ def test_jsonl_validator_flags_missing_fields_and_regressions(tmp_path: Path):
             "tick": 1,
             "channels": {"Throttle": 0.1, "Brake": 0.0, "Speed": 1.0},
         },
->>>>>>> 21d3d3909e3ebb2b5e6ecf1043e605a2a940fad2
     ]
     path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
     result = validate_jsonl_artifact(path)
     assert result.invalid_lines == 1
     assert any("car_id" in item for item in result.missing_fields)
-<<<<<<< HEAD
 
 
 def test_jsonl_validator_empty_lines_and_malformed_json(tmp_path: Path) -> None:
@@ -88,5 +75,3 @@ def test_jsonl_validator_all_valid(tmp_path: Path) -> None:
     assert result.invalid_lines == 0
     assert result.monotonic_timestamp_ns is True
     assert result.monotonic_tick is True
-=======
->>>>>>> 21d3d3909e3ebb2b5e6ecf1043e605a2a940fad2
