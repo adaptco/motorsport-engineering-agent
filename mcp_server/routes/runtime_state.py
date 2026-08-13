@@ -19,6 +19,9 @@ from shared.forensic_ledger import append_receipt, list_receipts
 from shared.models import (
     RuntimeAgentRecord,
     RuntimeHeartbeatPayload,
+    RuntimeAgentUpsertPayload,
+    RuntimeTaskUpsertPayload,
+    RuntimeAssignmentUpsertPayload,
     RuntimeStateAgentUpsertEvent,
     RuntimeStateAssignmentUpsertEvent,
     RuntimeStateDeltaEvent,
@@ -66,22 +69,32 @@ def _normalize_commit_hash(value: str | None) -> tuple[str, bool]:
 
 
 def _coerce_event(event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Coerce a loose (event_type, payload) pair into a normalized JSON-friendly dict.
+
+    Use explicit Literal values when constructing Pydantic models so mypy can
+    verify the event_type field and the payload is validated by the correct
+    payload model.
+    """
     if event_type == "agent_upsert":
-        event = RuntimeStateAgentUpsertEvent(event_type=event_type, payload=payload)
+        # Validate payload explicitly with the expected payload model
+        typed_payload = RuntimeAgentUpsertPayload(**(payload or {}))
+        event = RuntimeStateAgentUpsertEvent(event_type="agent_upsert", payload=typed_payload)
         data = event.model_dump(mode="json")
         normalized, invalid = _normalize_commit_hash(data["payload"].get("commit_hash"))
         data["payload"]["commit_hash"] = normalized
         data["payload"]["dirty"] = bool(data["payload"].get("dirty")) or invalid
         return data
     if event_type == "task_upsert":
-        event = RuntimeStateTaskUpsertEvent(event_type=event_type, payload=payload)
+        typed_payload = RuntimeTaskUpsertPayload(**(payload or {}))
+        event = RuntimeStateTaskUpsertEvent(event_type="task_upsert", payload=typed_payload)
         return event.model_dump(mode="json")
     if event_type == "assignment_upsert":
-        event = RuntimeStateAssignmentUpsertEvent(event_type=event_type, payload=payload)
+        typed_payload = RuntimeAssignmentUpsertPayload(**(payload or {}))
+        event = RuntimeStateAssignmentUpsertEvent(event_type="assignment_upsert", payload=typed_payload)
         return event.model_dump(mode="json")
     if event_type == "heartbeat":
         event = RuntimeHeartbeatPayload(**payload)
-        return {"event_type": event_type, "payload": event.model_dump(mode="json")}
+        return {"event_type": "heartbeat", "payload": event.model_dump(mode="json")}
     raise HTTPException(status_code=422, detail="unsupported_event_type")
 
 
@@ -440,10 +453,19 @@ async def runtime_state_stream(
                 if await request.is_disconnected():
                     break
                 try:
-                    item = await asyncio.wait_for(
+                    item_dict = await asyncio.wait_for(
                         queue.get(), timeout=RUNTIME_STATE_SSE_HEARTBEAT_SECONDS
                     )
-                    yield _sse_frame(event="runtime_state", payload=item, event_id=int(item["seq"]))
+                    # Validate/parse into the typed RuntimeStateDeltaEvent when possible
+                    try:
+                        typed = RuntimeStateDeltaEvent(**item_dict)
+                        payload = typed.model_dump(mode="json")
+                        event_id = int(typed.seq)
+                    except Exception:
+                        # Fallback to best-effort values if validation fails
+                        event_id = int(item_dict.get("seq", 0))
+                        payload = item_dict
+                    yield _sse_frame(event="runtime_state", payload=payload, event_id=event_id)
                 except TimeoutError:
                     yield _sse_heartbeat()
         finally:
