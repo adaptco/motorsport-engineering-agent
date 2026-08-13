@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 from __future__ import annotations
-=======
-"""tests/test_iracing_stream_adapter module."""
->>>>>>> 21d3d3909e3ebb2b5e6ecf1043e605a2a940fad2
 
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -21,8 +17,8 @@ from shared.models import TelemetryFrame
 
 def fake_frames():
     for i in range(4):
-        # include a duplicate timestamp
-        ts = 16_666_667 if i == 1 else i * 16_666_667
+        # include a duplicate timestamp (first two frames share the same timestamp)
+        ts = 16_666_667 if i in (0, 1) else i * 16_666_667
         yield TelemetryFrame(
             session_id="s1",
             driver_id="d1",
