@@ -18,6 +18,8 @@ from fastapi.responses import StreamingResponse
 from shared.forensic_ledger import append_receipt, list_receipts
 from shared.models import (
     RuntimeAgentRecord,
+    RuntimeAgentUpsertPayload,
+    RuntimeAssignmentUpsertPayload,
     RuntimeHeartbeatPayload,
     RuntimeStateAgentUpsertEvent,
     RuntimeStateAssignmentUpsertEvent,
@@ -29,6 +31,7 @@ from shared.models import (
     RuntimeStateSummary,
     RuntimeStateTaskUpsertEvent,
     RuntimeTaskRecord,
+    RuntimeTaskUpsertPayload,
 )
 from shared.runtime_paths import default_session_ledger_path
 
@@ -66,20 +69,30 @@ def _normalize_commit_hash(value: str | None) -> tuple[str, bool]:
 
 
 def _coerce_event(event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
-    # Construct strongly-typed Pydantic models using literal event_type values so
-    # type checkers can validate the constructors (avoid passing a plain `str`).
+    """Coerce a loose (event_type, payload) pair into a normalized JSON-friendly dict.
+
+    Use explicit Literal values when constructing Pydantic models so mypy can
+    verify the event_type field and the payload is validated by the correct
+    payload model.
+    """
     if event_type == "agent_upsert":
-        event = RuntimeStateAgentUpsertEvent(event_type="agent_upsert", payload=payload)
+        # Validate payload explicitly with the expected payload model
+        typed_payload = RuntimeAgentUpsertPayload(**(payload or {}))
+        event = RuntimeStateAgentUpsertEvent(event_type="agent_upsert", payload=typed_payload)
         data = event.model_dump(mode="json")
         normalized, invalid = _normalize_commit_hash(data["payload"].get("commit_hash"))
         data["payload"]["commit_hash"] = normalized
         data["payload"]["dirty"] = bool(data["payload"].get("dirty")) or invalid
         return data
     if event_type == "task_upsert":
-        event = RuntimeStateTaskUpsertEvent(event_type="task_upsert", payload=payload)
+        typed_payload = RuntimeTaskUpsertPayload(**(payload or {}))
+        event = RuntimeStateTaskUpsertEvent(event_type="task_upsert", payload=typed_payload)
         return event.model_dump(mode="json")
     if event_type == "assignment_upsert":
-        event = RuntimeStateAssignmentUpsertEvent(event_type="assignment_upsert", payload=payload)
+        typed_payload = RuntimeAssignmentUpsertPayload(**(payload or {}))
+        event = RuntimeStateAssignmentUpsertEvent(
+            event_type="assignment_upsert", payload=typed_payload
+        )
         return event.model_dump(mode="json")
     if event_type == "heartbeat":
         event = RuntimeHeartbeatPayload(**payload)
@@ -442,24 +455,18 @@ async def runtime_state_stream(
                 if await request.is_disconnected():
                     break
                 try:
-                    # queue.get() yields dicts (published as model_dump(mode="json")).
-                    # Convert/validate into a RuntimeStateDeltaEvent where possible so
-                    # SSE frames have a consistent typed payload and an integer seq.
                     item_dict = await asyncio.wait_for(
                         queue.get(), timeout=RUNTIME_STATE_SSE_HEARTBEAT_SECONDS
                     )
+                    # Validate/parse into the typed RuntimeStateDeltaEvent when possible
                     try:
-                        item_evt = RuntimeStateDeltaEvent(**item_dict)
-                        payload = item_evt.model_dump(mode="json")
-                        event_id = item_evt.seq
+                        typed = RuntimeStateDeltaEvent(**item_dict)
+                        payload = typed.model_dump(mode="json")
+                        event_id = int(typed.seq)
                     except Exception:
-                        # If validation fails, fall back to the raw dict but try to
-                        # coerce a sequence id if present.
+                        # Fallback to best-effort values if validation fails
+                        event_id = int(item_dict.get("seq", 0))
                         payload = item_dict
-                        try:
-                            event_id = int(item_dict.get("seq"))
-                        except Exception:
-                            event_id = None
                     yield _sse_frame(event="runtime_state", payload=payload, event_id=event_id)
                 except TimeoutError:
                     yield _sse_heartbeat()

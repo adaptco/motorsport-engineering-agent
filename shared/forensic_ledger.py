@@ -219,7 +219,8 @@ def append_receipt(
                 created_at,
             ),
         )
-        receipt_id = int(cursor.lastrowid)
+        # cursor.lastrowid may be None in some sqlite implementations; coerce to 0 if unset
+        receipt_id = int(cursor.lastrowid or 0)
         last_operational_state_hash = (
             state_hash
             if status == "ACCEPTED"
