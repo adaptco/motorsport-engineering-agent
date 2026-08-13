@@ -9,7 +9,7 @@ from typing import Any
 try:
     import psycopg  # type: ignore
 except Exception:  # pragma: no cover
-    psycopg = None
+    psycopg = None  # type: ignore[assignment]
 
 try:
     from psycopg_pool import ConnectionPool  # type: ignore
