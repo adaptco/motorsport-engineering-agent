@@ -1,6 +1,5 @@
-from fastapi.testclient import TestClient
-
 from cfd_api.main import app
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
@@ -20,7 +19,7 @@ def test_simulate():
             "yaw_deg": 0,
             "ride_height_mm": 55,
             "rear_wing": 8,
-            "design_notes": "baseline concept"
+            "design_notes": "baseline concept",
         },
     )
     assert response.status_code == 200

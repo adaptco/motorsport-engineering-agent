@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from mea.reasoning.time_domains import (
     TimeDomain,
     classify_timestamp_payload,

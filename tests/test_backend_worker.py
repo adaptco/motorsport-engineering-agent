@@ -34,7 +34,9 @@ def test_validate_patch_constraints() -> None:
 
     # 4. Workflow edits when disabled
     with pytest.raises(ValueError, match="Workflow edits disabled"):
-        backend_worker.validate_patch("diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml")
+        backend_worker.validate_patch(
+            "diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml"
+        )
 
     # 5. Valid patch
     backend_worker.validate_patch("diff --git a/src/app.py b/src/app.py\n+print('hello')\n")
@@ -65,20 +67,30 @@ def test_process_fix_ci_job_flow(monkeypatch):
 
 
 def test_process_fix_ci_job_unallowed_repo(monkeypatch) -> None:
-    monkeypatch.setattr(repo, "get_job_identity", lambda jid: {"trace_id": "t1", "repo_slug": "unauthorized/repo", "base_branch": "main"})
+    monkeypatch.setattr(
+        repo,
+        "get_job_identity",
+        lambda jid: {"trace_id": "t1", "repo_slug": "unauthorized/repo", "base_branch": "main"},
+    )
     phase_mock = MagicMock()
     monkeypatch.setattr(repo, "set_job_phase", phase_mock)
     monkeypatch.setattr(repo, "add_span", MagicMock())
 
     job = {"job_id": "j1", "repo": "unauthorized/repo", "branch": "main", "patch": "diff"}
     backend_worker.process_fix_ci_job(job)
-    phase_mock.assert_called_with("j1", "failed", "error", {"exception": "<class 'ValueError'>"}, "Repo not allowlisted")
+    phase_mock.assert_called_with(
+        "j1", "failed", "error", {"exception": "<class 'ValueError'>"}, "Repo not allowlisted"
+    )
 
 
 def test_process_fix_ci_job_success_path(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(backend_worker, "ALLOWED_REPOS", {"org/repo"})
     monkeypatch.setattr(backend_worker, "WORKER_TEMP_ROOT", tmp_path / "worker_tmp")
-    monkeypatch.setattr(repo, "get_job_identity", lambda jid: {"trace_id": "t1", "repo_slug": "org/repo", "base_branch": "main"})
+    monkeypatch.setattr(
+        repo,
+        "get_job_identity",
+        lambda jid: {"trace_id": "t1", "repo_slug": "org/repo", "base_branch": "main"},
+    )
     monkeypatch.setattr(gh, "get_installation_token", lambda inst_id: "token-123")
 
     phase_calls = []
@@ -125,7 +137,11 @@ def test_process_fix_ci_job_success_path(tmp_path: Path, monkeypatch) -> None:
 def test_process_fix_ci_job_pytest_failure(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(backend_worker, "ALLOWED_REPOS", {"org/repo"})
     monkeypatch.setattr(backend_worker, "WORKER_TEMP_ROOT", tmp_path / "worker_tmp")
-    monkeypatch.setattr(repo, "get_job_identity", lambda jid: {"trace_id": "t1", "repo_slug": "org/repo", "base_branch": "main"})
+    monkeypatch.setattr(
+        repo,
+        "get_job_identity",
+        lambda jid: {"trace_id": "t1", "repo_slug": "org/repo", "base_branch": "main"},
+    )
     monkeypatch.setattr(gh, "get_installation_token", lambda inst_id: "token-123")
 
     phase_calls = []
@@ -200,7 +216,9 @@ def test_repository_functions(monkeypatch) -> None:
 
 
 def test_github_app_client_get_installation_token(monkeypatch) -> None:
-    monkeypatch.setattr("worker.github_app_client.create_installation_token", lambda inst_id: f"token-{inst_id}")
+    monkeypatch.setattr(
+        "worker.github_app_client.create_installation_token", lambda inst_id: f"token-{inst_id}"
+    )
     monkeypatch.setenv("GITHUB_APP_INSTALLATION_ID", "12345")
 
     token1 = gh.get_installation_token(555)

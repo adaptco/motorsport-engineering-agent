@@ -112,7 +112,9 @@ Current `/healthz` only checks application startup, not service dependencies. Ku
 **File:** `control_plane/github_app.py` (Lines 20-30)
 
 ```python
-def get_github_app_installation_token(owner: str, repo: str, app_id: int, private_key_pem: str) -> str:
+def get_github_app_installation_token(
+    owner: str, repo: str, app_id: int, private_key_pem: str
+) -> str:
     resp = requests.post(
         "https://api.github.com/app/installations/...",
         json={"repositories": [repo]},
@@ -135,10 +137,13 @@ def get_github_app_installation_token(owner: str, repo: str, app_id: int, privat
 
 ```python
 try:
-    r = redis.from_url(os.environ.get("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True)
+    r = redis.from_url(
+        os.environ.get("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True
+    )
     r.ping()
 except Exception:  # Broad catch - could hide real errors
     r = None
+
 
 def dequeue(timeout: int = 5):
     if r is not None:
@@ -327,10 +332,12 @@ app = FastAPI()
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_error_handler)
 
+
 @app.post("/repos/fix-ci")
 @limiter.limit("10/minute")  # 10 webhooks per minute per IP
 def fix_ci_webhook(request: Request, payload: WebhookPayload):
     return process_webhook(payload)
+
 
 @app.post("/tools/call")
 @limiter.limit("30/minute")  # 30 tool calls per minute per IP
@@ -344,23 +351,17 @@ class RateLimitMiddleware:
     def __init__(self, requests_per_minute=10):
         self.requests_per_minute = requests_per_minute
         self.request_times = {}  # IP → [timestamps]
-    
+
     async def __call__(self, request: Request, call_next):
         ip = request.client.host
         now = time.time()
-        
+
         # Clean old timestamps
-        self.request_times[ip] = [
-            ts for ts in self.request_times.get(ip, [])
-            if now - ts < 60
-        ]
-        
+        self.request_times[ip] = [ts for ts in self.request_times.get(ip, []) if now - ts < 60]
+
         if len(self.request_times[ip]) >= self.requests_per_minute:
-            return JSONResponse(
-                status_code=429,
-                content={"detail": "Rate limit exceeded"}
-            )
-        
+            return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"})
+
         self.request_times[ip].append(now)
         return await call_next(request)
 ```
@@ -392,6 +393,7 @@ def startup_event():
     if not os.environ.get("MEA_KERNEL_IMAGE"):
         raise RuntimeError("MEA_KERNEL_IMAGE not configured")
     logger.info("Control_plane service started.")
+
 
 # NO shutdown handler present ❌
 ```
@@ -455,14 +457,14 @@ $ docker stop <container>  (sends SIGTERM)
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info("Shutting down control_plane...")
-    
+
     # Close database connections
-    if hasattr(db, 'connection_pool'):
+    if hasattr(db, "connection_pool"):
         await db.connection_pool.close()
-    
+
     # Drain queue gracefully
     queue.drain(timeout=30)
-    
+
     logger.info("Control_plane shutdown complete.")
 ```
 
@@ -473,12 +475,15 @@ import asyncio
 
 shutdown_event = asyncio.Event()
 
+
 def sigterm_handler(signum, frame):
     logger.info("Received SIGTERM, initiating graceful shutdown...")
     shutdown_event.set()
 
+
 signal.signal(signal.SIGTERM, sigterm_handler)
 signal.signal(signal.SIGINT, sigterm_handler)
+
 
 async def worker_loop():
     while not shutdown_event.is_set():
@@ -491,7 +496,7 @@ async def worker_loop():
                 raise
         else:
             await asyncio.sleep(1)
-    
+
     logger.info("Worker loop exiting, draining queue...")
     # 30-second grace period to finish in-flight jobs
     await drain_queue(timeout=30)
@@ -583,7 +588,7 @@ finally:
 @contextmanager
 def get_conn_with_retry(max_retries=3):
     backoff = [0.1, 0.5, 1.0]  # Shorter backoff for DB
-    
+
     for attempt in range(max_retries):
         try:
             conn = psycopg.connect(DATABASE_URL, timeout=5)
@@ -593,13 +598,15 @@ def get_conn_with_retry(max_retries=3):
         except psycopg.OperationalError as e:
             if attempt < max_retries - 1:
                 wait = backoff[attempt]
-                logger.warning(f"DB connection failed (attempt {attempt+1}), retrying in {wait}s: {e}")
+                logger.warning(
+                    f"DB connection failed (attempt {attempt + 1}), retrying in {wait}s: {e}"
+                )
                 time.sleep(wait)
             else:
                 logger.error(f"DB connection failed after {max_retries} attempts: {e}")
                 raise
         finally:
-            if 'conn' in locals():
+            if "conn" in locals():
                 conn.close()
 ```
 
@@ -663,15 +670,15 @@ REDIS_TIMEOUT_SECONDS = 5
 DATABASE_TIMEOUT_SECONDS = 10
 JOB_EXECUTION_TIMEOUT_SECONDS = 60
 
+
 # Apply consistently
 def get_conn():
     conn = psycopg.connect(DATABASE_URL, timeout=DATABASE_TIMEOUT_SECONDS)
-    
+
+
 def execute_job(job):
     process = subprocess.run(
-        job["command"],
-        timeout=JOB_EXECUTION_TIMEOUT_SECONDS,
-        capture_output=True
+        job["command"], timeout=JOB_EXECUTION_TIMEOUT_SECONDS, capture_output=True
     )
 ```
 
@@ -946,10 +953,12 @@ limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
 app.state.limiter = limiter
 
+
 @app.post("/repos/fix-ci")
 @limiter.limit("10/minute")  # 10 webhooks/min per IP
 def fix_ci_webhook(request: Request, payload: WebhookPayload):
     pass
+
 
 @app.post("/tools/call")
 @limiter.limit("30/minute")  # 30 tool calls/min per IP
@@ -966,12 +975,15 @@ import threading
 
 shutdown_event = threading.Event()
 
+
 def sigterm_handler(signum, frame):
     logger.info("SIGTERM received, initiating graceful shutdown...")
     shutdown_event.set()
 
+
 signal.signal(signal.SIGTERM, sigterm_handler)
 signal.signal(signal.SIGINT, sigterm_handler)
+
 
 def worker_loop():
     while not shutdown_event.is_set():
@@ -984,7 +996,7 @@ def worker_loop():
                 set_job_phase(job["job_id"], "interrupted")
         else:
             shutdown_event.wait(timeout=1)  # Allow interrupt during sleep
-    
+
     logger.info("Worker exiting, draining queue...")
     drain_queue(timeout=30)  # Grace period
 ```
@@ -996,7 +1008,7 @@ def worker_loop():
 async def health_ready():
     """Readiness probe - checks all dependencies."""
     checks = {}
-    
+
     # PostgreSQL
     try:
         with get_conn() as conn:
@@ -1004,7 +1016,7 @@ async def health_ready():
         checks["database"] = "ok"
     except Exception as e:
         checks["database"] = f"error: {str(e)}"
-    
+
     # Redis
     try:
         r = redis.from_url(os.environ.get("REDIS_URL"))
@@ -1012,23 +1024,22 @@ async def health_ready():
         checks["redis"] = "ok"
     except Exception as e:
         checks["redis"] = f"error: {str(e)}"
-    
+
     # GitHub API
     try:
         resp = requests.get(
             "https://api.github.com/rate_limit",
             headers={"Authorization": f"Bearer {GITHUB_TOKEN}"},
-            timeout=5
+            timeout=5,
         )
         checks["github_api"] = "ok" if resp.status_code == 200 else f"error: {resp.status_code}"
     except Exception as e:
         checks["github_api"] = f"error: {str(e)}"
-    
+
     all_ok = all(v == "ok" for v in checks.values())
-    return {
-        "status": "ready" if all_ok else "not_ready",
-        "checks": checks
-    }, (200 if all_ok else 503)
+    return {"status": "ready" if all_ok else "not_ready", "checks": checks}, (
+        200 if all_ok else 503
+    )
 ```
 
 ---

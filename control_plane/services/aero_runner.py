@@ -455,7 +455,8 @@ class WslOpenFoamRunner:
                     "distro_version": None,
                     "valid": False,
                     "kernel": None,
-                    "error": completed.stderr.strip() or f"Distro check failed with exit code {completed.returncode}",
+                    "error": completed.stderr.strip()
+                    or f"Distro check failed with exit code {completed.returncode}",
                 }
             stdout = completed.stdout
             version_match = re.search(r'VERSION_ID="?([^"\n]+)"?', stdout)
@@ -527,7 +528,8 @@ class WslOpenFoamRunner:
                     "simpleFoam": False,
                     "openfoam_version": self.profile.openfoam_version,
                     "bashrc_found": False,
-                    "error": completed.stderr.strip() or f"Toolchain check failed with exit code {completed.returncode}",
+                    "error": completed.stderr.strip()
+                    or f"Toolchain check failed with exit code {completed.returncode}",
                 }
             stdout = completed.stdout
             bashrc_found = "BASHRC:1" in stdout
@@ -617,7 +619,9 @@ class WslOpenFoamRunner:
             body,
         ]
 
-    def run_smoke(self, req: AeroSimulationRunRequest, *, case_dir: Path) -> AeroSimulationSolveResult:
+    def run_smoke(
+        self, req: AeroSimulationRunRequest, *, case_dir: Path
+    ) -> AeroSimulationSolveResult:
         return self.run(req, case_dir=case_dir, include_simple_foam=False)
 
     def run(
@@ -644,7 +648,8 @@ class WslOpenFoamRunner:
             stderr_path.parent.mkdir(parents=True, exist_ok=True)
             stdout_path.write_text(_ensure_str(exc.stdout), encoding="utf-8")
             stderr_path.write_text(
-                _ensure_str(exc.stderr) + f"\nSolver timed out after {SOLVER_RUN_TIMEOUT_SECONDS}s\n",
+                _ensure_str(exc.stderr)
+                + f"\nSolver timed out after {SOLVER_RUN_TIMEOUT_SECONDS}s\n",
                 encoding="utf-8",
             )
 

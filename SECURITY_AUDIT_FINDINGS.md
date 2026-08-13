@@ -188,12 +188,13 @@ def validate_patch(patch: str) -> None:
 APP_ID = os.environ.get("GITHUB_APP_ID")
 PRIVATE_KEY = os.environ.get("GITHUB_APP_PRIVATE_KEY", "").replace("\\n", "\n")
 
+
 def build_app_jwt() -> str:
     now = int(time.time())
     payload = {
-        "iat": now - 60,        # Issued at (60 seconds ago, clock skew tolerance)
-        "exp": now + 540,       # Expires in 9 minutes
-        "iss": APP_ID,          # Issuer (GitHub App ID)
+        "iat": now - 60,  # Issued at (60 seconds ago, clock skew tolerance)
+        "exp": now + 540,  # Expires in 9 minutes
+        "iss": APP_ID,  # Issuer (GitHub App ID)
     }
     return jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
 ```
@@ -281,10 +282,10 @@ class FixCIRequest(BaseModel):
 **Example 1: INSERT** (`control_plane/repository.py` Lines 22-27)
 ```python
 cur.execute(
-    '''
+    """
     INSERT INTO jobs (job_id, job_type, repo_slug, base_branch, status, phase, request_payload, trace_id)
     VALUES (%s, %s, %s, %s, 'queued', 'accepted', %s::jsonb, %s)
-    ''',
+    """,
     (job_id, job_type, repo_slug, base_branch, json.dumps(payload), trace_id),
 )
 ```
