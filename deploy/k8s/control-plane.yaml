@@ -24,7 +24,7 @@ spec:
       serviceAccountName: mea-sa
       containers:
       - name: control-plane
-        image: ghcr.io/your-org/your-repo/control-plane:latest
+        image: ${REGISTRY}/${IMAGE_NAME}:control-plane-${VERSION:-latest}
         imagePullPolicy: Always
         ports:
         - name: http
@@ -48,7 +48,7 @@ spec:
           value: "4"
         livenessProbe:
           httpGet:
-            path: /health
+            path: /healthz
             port: 8000
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -56,7 +56,7 @@ spec:
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /health
+            path: /healthz
             port: 8000
           initialDelaySeconds: 10
           periodSeconds: 5

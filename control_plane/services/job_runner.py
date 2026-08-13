@@ -1,8 +1,11 @@
+"""control_plane/services/job_runner module."""
+
 from __future__ import annotations
 
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -38,7 +41,11 @@ def _validate_jsonl_file(params: dict[str, Any]) -> list[str]:
     path = Path(str(params["path"]))
     if not path.exists() or not path.is_file():
         raise FileNotFoundError(f"file_not_found:{path}")
-    return ["python", "-c", f"from pathlib import Path; p=Path(r'{path}'); print(p.resolve()); print(p.stat().st_size)"]
+    return [
+        "python",
+        "-c",
+        f"from pathlib import Path; p=Path(r'{path}'); print(p.resolve()); print(p.stat().st_size)",
+    ]
 
 
 ALLOWED_JOBS: dict[str, Callable[[dict[str, Any]], list[str]]] = {

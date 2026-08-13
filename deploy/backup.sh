@@ -30,7 +30,7 @@ fi
 
 # Backup Redis
 log_info "Backing up Redis database..."
-if docker compose exec -T redis redis-cli BGSAVE; then
+if docker compose exec -T redis sh -lc 'redis-cli ${REDIS_PASSWORD:+-a "$REDIS_PASSWORD"} BGSAVE'; then
     docker cp mea-redis:/data/dump.rdb "$BACKUP_DIR/redis_dump.rdb" 2>/dev/null || log_warn "Redis RDB copy failed"
     log_info "✓ Redis backup initiated: $BACKUP_DIR/redis_dump.rdb"
 else
@@ -40,8 +40,8 @@ fi
 # Backup compose state
 log_info "Backing up container state..."
 docker compose ps > "$BACKUP_DIR/containers.log"
-docker compose exec -T control_plane curl -s http://localhost:8000/health > "$BACKUP_DIR/control_plane_health.json" || true
-docker compose exec -T mcp_server curl -s http://localhost:7000/health > "$BACKUP_DIR/mcp_server_health.json" || true
+docker compose exec -T control_plane curl -s http://localhost:8000/healthz > "$BACKUP_DIR/control_plane_health.json" || true
+docker compose exec -T mcp_server curl -s http://localhost:7000/healthz > "$BACKUP_DIR/mcp_server_health.json" || true
 
 log_info "Backup completed: $BACKUP_DIR"
 du -sh "$BACKUP_DIR"

@@ -1,6 +1,8 @@
+"""control_plane/services/session_receipts module."""
+
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from shared.models import EvidencePacket, Recommendation
 

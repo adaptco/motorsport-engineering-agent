@@ -1,12 +1,15 @@
+"""shared/db module."""
+
 import os
+from collections.abc import Iterator
 from contextlib import contextmanager
 from threading import Lock
-from typing import Any, Iterator
+from typing import Any
 
 try:
     import psycopg  # type: ignore
 except Exception:  # pragma: no cover
-    psycopg = None
+    psycopg = None  # type: ignore[assignment]
 
 try:
     from psycopg_pool import ConnectionPool  # type: ignore
@@ -22,7 +25,7 @@ DB_POOL_TIMEOUT_SECONDS = int(os.environ.get("DB_POOL_TIMEOUT_SECONDS", "30"))
 DB_POOL_MAX_WAITING = int(os.environ.get("DB_POOL_MAX_WAITING", "20"))
 
 _pool_lock = Lock()
-_pool: Any = None
+_pool: Any | None = None
 
 
 def get_pool():

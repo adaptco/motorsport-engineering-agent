@@ -1,3 +1,5 @@
+"""tests/test_forensic_ledger_persistence module."""
+
 from __future__ import annotations
 
 from pathlib import Path

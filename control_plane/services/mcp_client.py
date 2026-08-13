@@ -1,3 +1,5 @@
+"""control_plane/services/mcp_client module."""
+
 from __future__ import annotations
 
 import os
@@ -27,7 +29,7 @@ def call_mcp_tool(name: str, arguments: dict[str, Any] | None = None) -> dict[st
             timeout=30,
         )
         response.raise_for_status()
-        return response.json()
+        return response.json()  # type: ignore[no-any-return]
 
     attempts = max(1, MCP_API_MAX_RETRIES)
     last_exc: Exception | None = None

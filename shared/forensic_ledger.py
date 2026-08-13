@@ -1,13 +1,16 @@
+"""shared/forensic_ledger module."""
+
 from __future__ import annotations
 
 import hashlib
 import json
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 ISO_8601_UTC = "%Y-%m-%dT%H:%M:%S.%fZ"
 
@@ -92,10 +95,17 @@ def init_ledger(db_path: str | Path) -> None:
 
 
 def _utcnow() -> str:
-    return datetime.now(timezone.utc).strftime(ISO_8601_UTC)
+    return datetime.now(UTC).strftime(ISO_8601_UTC)
 
 
-def _build_decision_basis_hash(*, principal_id: str, authz_scope: str, policy_version: str, job_name: str, cmd_vector: dict[str, Any]) -> str:
+def _build_decision_basis_hash(
+    *,
+    principal_id: str,
+    authz_scope: str,
+    policy_version: str,
+    job_name: str,
+    cmd_vector: dict[str, Any],
+) -> str:
     return sha256_prefixed(
         {
             "principal_id": principal_id,
@@ -107,7 +117,20 @@ def _build_decision_basis_hash(*, principal_id: str, authz_scope: str, policy_ve
     )
 
 
-def _next_state_hash(*, session_id: str, logical_clock: int, prev_hash: str | None, receipt_type: str, status: str, job_name: str, principal_id: str, authz_scope: str, policy_version: str, cmd_vector: dict[str, Any], payload: dict[str, Any] | None) -> str:
+def _next_state_hash(
+    *,
+    session_id: str,
+    logical_clock: int,
+    prev_hash: str | None,
+    receipt_type: str,
+    status: str,
+    job_name: str,
+    principal_id: str,
+    authz_scope: str,
+    policy_version: str,
+    cmd_vector: dict[str, Any],
+    payload: dict[str, Any] | None,
+) -> str:
     return sha256_prefixed(
         {
             "session_id": session_id,
@@ -196,8 +219,13 @@ def append_receipt(
                 created_at,
             ),
         )
-        receipt_id = int(cursor.lastrowid)
-        last_operational_state_hash = state_hash if status == "ACCEPTED" else (None if head is None else head["last_operational_state_hash"])
+        # cursor.lastrowid may be None in some sqlite implementations; coerce to 0 if unset
+        receipt_id = int(cursor.lastrowid or 0)
+        last_operational_state_hash = (
+            state_hash
+            if status == "ACCEPTED"
+            else (None if head is None else head["last_operational_state_hash"])
+        )
         conn.execute(
             """
             INSERT INTO session_heads (
@@ -235,7 +263,9 @@ def append_receipt(
 def get_session_head(db_path: str | Path, session_id: str) -> dict[str, Any] | None:
     init_ledger(db_path)
     with ledger_connection(db_path) as conn:
-        row = conn.execute("SELECT * FROM session_heads WHERE session_id = ?", (session_id,)).fetchone()
+        row = conn.execute(
+            "SELECT * FROM session_heads WHERE session_id = ?", (session_id,)
+        ).fetchone()
         return dict(row) if row else None
 
 
@@ -277,17 +307,48 @@ def verify_chain(db_path: str | Path, session_id: str) -> dict[str, Any]:
                 if recomputed != row["state_hash"]:
                     valid = False
                     reason = "state_hash_mismatch"
-            details.append({
-                "logical_clock": int(row["logical_clock"]),
-                "valid": valid,
-                "state_hash": row["state_hash"],
-                "prev_hash": row["prev_hash"],
-                "receipt_type": row["receipt_type"],
-                "status": row["status"],
-                "job_name": row["job_name"],
-            })
+            details.append(
+                {
+                    "logical_clock": int(row["logical_clock"]),
+                    "valid": valid,
+                    "state_hash": row["state_hash"],
+                    "prev_hash": row["prev_hash"],
+                    "receipt_type": row["receipt_type"],
+                    "status": row["status"],
+                    "job_name": row["job_name"],
+                }
+            )
             if not valid:
-                return {"ok": False, "reason": reason, "at": int(row["logical_clock"]), "details": details}
+                return {
+                    "ok": False,
+                    "reason": reason,
+                    "at": int(row["logical_clock"]),
+                    "details": details,
+                }
             prev_hash = row["state_hash"]
             expected_clock += 1
         return {"ok": True, "receipts": len(rows), "head": prev_hash, "details": details}
+
+
+def list_receipts(
+    db_path: str | Path,
+    session_id: str,
+    *,
+    after_logical_clock: int = 0,
+    receipt_type: str | None = None,
+    limit: int | None = None,
+) -> list[dict[str, Any]]:
+    init_ledger(db_path)
+    query = "SELECT * FROM receipts WHERE session_id = ? AND logical_clock > ?"
+    params: list[Any] = [session_id, after_logical_clock]
+    if receipt_type:
+        query += " AND receipt_type = ?"
+        params.append(receipt_type)
+    query += " ORDER BY logical_clock ASC, id ASC"
+    if limit is not None:
+        query += " LIMIT ?"
+        params.append(limit)
+
+    with ledger_connection(db_path) as conn:
+        rows = conn.execute(query, tuple(params)).fetchall()
+        return [dict(row) for row in rows]

@@ -1,12 +1,29 @@
+"""mcp_server/app module."""
+
 import os
 
 from fastapi import FastAPI, Header, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
+from mcp_server.routes import runtime_state_router
 from mcp_tools.mea_ci_guardrail import run_mea_ci_guardrail
 from shared.models import A2AInvokeRequest, A2AInvokeResponse, MCPProviderStatus, MCPToolCall
 from shared.version import load_version_info
 
 app = FastAPI(title="MEA MCP Server")
+cors_origins = [
+    origin.strip()
+    for origin in os.environ.get("RUNTIME_STATE_CORS_ORIGINS", "*").split(",")
+    if origin.strip()
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins or ["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.include_router(runtime_state_router)
 
 PROVIDER_ENV = {
     "openai": "OPENAI_API_KEY",

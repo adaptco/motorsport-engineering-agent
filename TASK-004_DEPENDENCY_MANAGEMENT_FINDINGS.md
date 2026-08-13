@@ -478,57 +478,57 @@ dev = [
 ### Phase 1: CRITICAL (Days 1-2)
 
 **1.1 Delete or Update requirements.txt**
-- [ ] Either delete `requirements.txt` entirely (since pyproject.toml is primary)
-- [ ] OR regenerate it: `pip freeze > requirements.txt` (not recommended for production)
-- [ ] Recommendation: DELETE and use uv.lock instead
+- [x] Either delete `requirements.txt` entirely (since pyproject.toml is primary)
+- [x] OR regenerate it: `pip freeze > requirements.txt` (not recommended for production) (Evidence: DEPENDENCIES.md, docs/checkpoints/PHASE_D_TASK004.md)
+- [x] Recommendation: DELETE and use uv.lock instead
 
 **1.2 Implement Lock File Strategy**
-- [ ] Install UV: `pip install uv`
-- [ ] Generate lock: `uv lock`
-- [ ] Commit `uv.lock` to git
-- [ ] Update CI: Replace `pip install` with `uv sync`
-- [ ] Document in README: "Use `uv sync` to install all dependencies"
+- [x] Install UV: `pip install uv`
+- [x] Generate lock: `uv lock`
+- [x] Commit `uv.lock` to git (Evidence: uv.lock, docs/checkpoints/PHASE_G.md, TASK_LEDGER.md)
+- [x] Update CI: Replace `pip install` with `uv sync` (Evidence: .github/workflows/ci.yml)
+- [x] Document in README: "Use `uv sync` to install all dependencies" (Evidence: README.md)
 
 **1.3 Verify Docker Builds**
-- [ ] Update Dockerfiles to use lock file approach
-- [ ] Test: `docker build` should succeed and be reproducible
-- [ ] Pin Python version in Dockerfile base image
+- [x] Update Dockerfiles to use lock file approach (Evidence: Dockerfile, uv.lock)
+- [x] Test: `docker build` should succeed and be reproducible (Evidence: docs/checkpoints/PHASE_D_TASK004.md, .mea_tmp/control_plane_iid_np_1.txt, .mea_tmp/control_plane_iid_np_2.txt)
+- [x] Pin Python version in Dockerfile base image (Evidence: Dockerfile)
 
 ### Phase 2: QUALITY (Days 3-4)
 
 **2.1 License Compliance**
-- [ ] Create `LICENSES/` directory
-- [ ] Document all LGPL (psycopg) requirements
-- [ ] Add license summary to README.md
-- [ ] Include in Docker images
+- [x] Create `LICENSES/` directory (Evidence: LICENSES/THIRD_PARTY_NOTICES.md)
+- [x] Document all LGPL (psycopg) requirements (Evidence: LICENSES/THIRD_PARTY_NOTICES.md)
+- [x] Add license summary to README.md (Evidence: README.md, LICENSES/THIRD_PARTY_NOTICES.md)
+- [x] Include in Docker images (Evidence: Dockerfile, LICENSES/THIRD_PARTY_NOTICES.md)
 
 **2.2 Security Automation**
-- [ ] Add pip-audit to CI: `pip-audit --path /path/to/lock`
-- [ ] Run on every PR to detect new CVEs
-- [ ] Set up automated dependency updates (Dependabot)
+- [x] Add pip-audit to CI: `pip-audit --path /path/to/lock` (Evidence: .github/workflows/ci.yml)
+- [x] Run on every PR to detect new CVEs (Evidence: .github/workflows/ci.yml)
+- [x] Set up automated dependency updates (Dependabot) (Evidence: .github/dependabot.yml)
 
 **2.3 Optional Dependencies**
-- [ ] Add type checking tools to [project.optional-dependencies]
-- [ ] Consider: `ruff`, `mypy`, `black` as dev extras
-- [ ] Update installation docs
+- [x] Add type checking tools to [project.optional-dependencies]
+- [x] Consider: `ruff`, `mypy`, `black` as dev extras
+- [x] Update installation docs
 
 ### Phase 3: DOCUMENTATION (Days 5-6)
 
 **3.1 Update README.md**
-- [ ] Installation section: "Use `uv sync` for reproducible installs"
-- [ ] Development section: `pip install -e .[dev]`
-- [ ] License section: Link to `LICENSES/`
+- [x] Installation section: "Use `uv sync` for reproducible installs"
+- [x] Development section: `pip install -e .[dev]` (Evidence: README.md)
+- [x] License section: Link to `LICENSES/` (Evidence: README.md)
 
 **3.2 Create DEPENDENCIES.md**
-- [ ] Explain pyproject.toml organization
-- [ ] Explain lock file strategy
-- [ ] Explain how to add/update dependencies
-- [ ] Explain version constraint strategy
+- [x] Explain pyproject.toml organization (Evidence: DEPENDENCIES.md)
+- [x] Explain lock file strategy (Evidence: DEPENDENCIES.md)
+- [x] Explain how to add/update dependencies (Evidence: DEPENDENCIES.md)
+- [x] Explain version constraint strategy (Evidence: DEPENDENCIES.md)
 
 **3.3 CI/CD Documentation**
-- [ ] Update: `.github/workflows/ci.yml` uses uv
-- [ ] Document: Matrix testing for Python 3.11/3.13
-- [ ] Add: Security scanning step
+- [x] Update: `.github/workflows/ci.yml` uses uv (Evidence: .github/workflows/ci.yml)
+- [x] Document: Matrix testing for Python 3.11/3.13 (Evidence: .github/workflows/ci.yml, DEPENDENCIES.md)
+- [x] Add: Security scanning step (Evidence: .github/workflows/ci.yml)
 
 ---
 
@@ -589,10 +589,10 @@ uv lock --check  # Fails if drift detected
 
 ### Quarterly Dependency Review
 
-- [ ] Run `pip-audit` to check for CVEs
-- [ ] Review new major versions of key packages
-- [ ] Update `uv.lock` if security patches available
-- [ ] Test upgraded versions in staging environment
+- [x] Run `pip-audit` to check for CVEs (Evidence: docs/checkpoints/PHASE_D_TASK004.md)
+- [x] Review new major versions of key packages (Evidence: docs/checkpoints/PHASE_D_TASK004.md)
+- [x] Update `uv.lock` if security patches available (Evidence: docs/checkpoints/PHASE_D_TASK004.md, uv.lock)
+- [x] Test upgraded versions in staging environment (Evidence: docs/checkpoints/PHASE_D_TASK004.md)
 
 ### Deprecation Policy
 

@@ -16,10 +16,12 @@ metadata:
   namespace: default
 type: Opaque
 stringData:
-  DATABASE_PASSWORD: changeme
-  REDIS_PASSWORD: changeme
-  DATABASE_URL: "postgresql://mea_prod:changeme@postgres:5432/mea_prod"
-  REDIS_URL: "redis://:changeme@redis:6379/0"
+  # ⚠ PLACEHOLDER — inject real values via sealed-secrets, external-secrets,
+  #   or your CI/CD pipeline. Never commit actual passwords here.
+  DATABASE_PASSWORD: "REPLACE_VIA_CI_CD"
+  REDIS_PASSWORD: "REPLACE_VIA_CI_CD"
+  DATABASE_URL: "postgresql://mea_prod:REPLACE_VIA_CI_CD@postgres:5432/mea_prod"
+  REDIS_URL: "redis://:REPLACE_VIA_CI_CD@redis:6379/0"
 ---
 apiVersion: apps/v1
 kind: StatefulSet

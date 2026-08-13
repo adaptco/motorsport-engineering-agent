@@ -1,6 +1,9 @@
-from typing import Any, Dict
+"""mcp_tools/mea_ci_guardrail module."""
 
-def run_mea_ci_guardrail(args: Dict[str, Any]) -> Dict[str, Any]:
+from typing import Any
+
+
+def run_mea_ci_guardrail(args: dict[str, Any]) -> dict[str, Any]:
     _ = args["ci_state"]
     proposed_patch = args.get("proposed_patch")
 
@@ -9,7 +12,7 @@ def run_mea_ci_guardrail(args: Dict[str, Any]) -> Dict[str, Any]:
             "uncertain": True,
             "safe_action": "ask_clarifying_question",
             "normalized_patch": None,
-            "reason": "No patch provided; cannot safely modify repository."
+            "reason": "No patch provided; cannot safely modify repository.",
         }
 
     lines = proposed_patch.splitlines()
@@ -18,23 +21,27 @@ def run_mea_ci_guardrail(args: Dict[str, Any]) -> Dict[str, Any]:
             "uncertain": True,
             "safe_action": "do_nothing",
             "normalized_patch": None,
-            "reason": "Patch too large; likely to cause unintended changes."
+            "reason": "Patch too large; likely to cause unintended changes.",
         }
 
     touched_paths = [ln[4:].strip() for ln in lines if ln.startswith("+++ ")]
-    signal_paths = (".github/workflows" in " ".join(touched_paths)) or ("tests/" in " ".join(touched_paths)) or ("src/" in " ".join(touched_paths))
+    signal_paths = (
+        (".github/workflows" in " ".join(touched_paths))
+        or ("tests/" in " ".join(touched_paths))
+        or ("src/" in " ".join(touched_paths))
+    )
 
     if not signal_paths:
         return {
             "uncertain": True,
             "safe_action": "do_nothing",
             "normalized_patch": None,
-            "reason": "Patch does not appear related to failing CI/test paths."
+            "reason": "Patch does not appear related to failing CI/test paths.",
         }
 
     return {
         "uncertain": False,
         "safe_action": "emit_patch",
         "normalized_patch": proposed_patch,
-        "reason": "Patch is small and appears related to CI/test failures."
+        "reason": "Patch is small and appears related to CI/test failures.",
     }

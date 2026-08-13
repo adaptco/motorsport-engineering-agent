@@ -25,14 +25,14 @@ services:
     restart: always
     command: redis-server --appendonly yes --appendfsync everysec --requirepass ${REDIS_PASSWORD}
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$REDIS_PASSWORD\" ping"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
 
   control_plane:
-    image: ghcr.io/your-org/your-repo/control-plane:latest
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:control-plane-${VERSION:-latest}
     environment:
       ENV: production
       LOG_LEVEL: warning
@@ -43,16 +43,14 @@ services:
     cpus: "4"
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      replicas: 2
 
   worker:
-    image: ghcr.io/your-org/your-repo/worker:latest
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:worker-${VERSION:-latest}
     environment:
       ENV: production
       LOG_LEVEL: warning
@@ -62,11 +60,9 @@ services:
     mem_limit: 4096m
     cpus: "8"
     restart: always
-    deploy:
-      replicas: 3
 
   mcp_server:
-    image: ghcr.io/your-org/your-repo/mcp-server:latest
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:mcp-server-${VERSION:-latest}
     environment:
       ENV: production
       LOG_LEVEL: warning
@@ -74,10 +70,8 @@ services:
     cpus: "4"
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:7000/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      replicas: 2

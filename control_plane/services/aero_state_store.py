@@ -1,8 +1,10 @@
+"""control_plane/services/aero_state_store module."""
+
 from __future__ import annotations
 
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -24,10 +26,11 @@ from shared.runtime_paths import default_aero_state_root
 
 RUNS_DIR_NAME = "runs"
 CASES_DIR_NAME = "cases"
+SUMMARY_SUFFIX = ".summary.json"
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _state_root() -> Path:
@@ -41,6 +44,10 @@ def _state_path(run_id: str) -> Path:
     return _state_root() / RUNS_DIR_NAME / f"{run_id}.json"
 
 
+def _summary_path(run_id: str) -> Path:
+    return _state_root() / RUNS_DIR_NAME / f"{run_id}{SUMMARY_SUFFIX}"
+
+
 def _case_dir(run_id: str) -> Path:
     path = _state_root() / CASES_DIR_NAME / run_id
     path.mkdir(parents=True, exist_ok=True)
@@ -49,7 +56,12 @@ def _case_dir(run_id: str) -> Path:
 
 @lru_cache(maxsize=1)
 def _schema_path() -> Path:
-    return Path(__file__).resolve().parents[2] / "contracts" / "aero" / "aero_simulation_state.schema.json"
+    return (
+        Path(__file__).resolve().parents[2]
+        / "contracts"
+        / "aero"
+        / "aero_simulation_state.schema.json"
+    )
 
 
 @lru_cache(maxsize=1)
@@ -70,7 +82,11 @@ def _hash_state_payload(payload: dict[str, Any]) -> str:
 
 
 def _seal_state(state: AeroSimulationStateRecord) -> AeroSimulationStateRecord:
-    return state.model_copy(update={"state_hash": _hash_state_payload(state.model_dump(mode="json", exclude={"state_hash"}))})
+    return state.model_copy(
+        update={
+            "state_hash": _hash_state_payload(state.model_dump(mode="json", exclude={"state_hash"}))
+        }
+    )
 
 
 def _build_dimensions(metadata: dict[str, Any]) -> dict[str, Any]:
@@ -101,7 +117,9 @@ def _build_aero_targets(metadata: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _build_vehicle_snapshot(req: AeroSimulationRunRequest, source_refs: list[dict[str, Any]], case_path: Path) -> dict[str, Any]:
+def _build_vehicle_snapshot(
+    req: AeroSimulationRunRequest, source_refs: list[dict[str, Any]], case_path: Path
+) -> dict[str, Any]:
     return {
         "identity": req.vehicle_identity.model_dump(mode="json"),
         "dimensions": _build_dimensions(req.metadata),
@@ -128,7 +146,9 @@ def _build_geometry_state(
     }
 
 
-def _build_execution_state(req: AeroSimulationRunRequest, openfoam_case: OpenFOAMScaffoldResult) -> dict[str, Any]:
+def _build_execution_state(
+    req: AeroSimulationRunRequest, openfoam_case: OpenFOAMScaffoldResult
+) -> dict[str, Any]:
     runtime_target = str(req.metadata.get("runtime_target", "wsl2"))
     environment = "wsl2" if runtime_target == "wsl2" else "sandbox"
     return {
@@ -173,7 +193,9 @@ def _build_solver_state(
         },
         "execution_state": _build_execution_state(req, openfoam_case),
         "openfoam_case": openfoam_case.to_state_dict(),
-        "case_artifacts": [artifact.model_dump(mode="json") for artifact in openfoam_case.case_files],
+        "case_artifacts": [
+            artifact.model_dump(mode="json") for artifact in openfoam_case.case_files
+        ],
         "solver_notes": req.metadata.get("solver_notes", []),
     }
 
@@ -194,7 +216,9 @@ def _build_metric_snapshot(req: AeroSimulationRunRequest) -> dict[str, Any]:
 
 
 def _build_calibration_state(source_refs: list[dict[str, Any]]) -> dict[str, Any]:
-    reference_set_refs = [ref for ref in source_refs if ref["kind"] in {"public_reference", "wind_tunnel"}]
+    reference_set_refs = [
+        ref for ref in source_refs if ref["kind"] in {"public_reference", "wind_tunnel"}
+    ]
     return {
         "status": "uninitialized",
         "reference_set_refs": reference_set_refs,
@@ -225,6 +249,13 @@ def _state_summary(state: AeroSimulationStateRecord) -> AeroSimulationStateSumma
     )
 
 
+def _write_state_summary(state: AeroSimulationStateRecord) -> None:
+    summary = _state_summary(state).model_dump(mode="json")
+    _summary_path(state.simulation_run_id).write_text(
+        json.dumps(summary, indent=2, sort_keys=True), encoding="utf-8"
+    )
+
+
 def build_initial_state(req: AeroSimulationRunRequest) -> AeroSimulationStateRecord:
     run_id = str(uuid.uuid4())
     now = _utcnow()
@@ -234,7 +265,9 @@ def build_initial_state(req: AeroSimulationRunRequest) -> AeroSimulationStateRec
     source_refs = [ref.model_dump(mode="json") for ref in source_ref_models]
     telemetry_links = [ref for ref in source_ref_models if ref.kind == "telemetry"]
     cad_resolution = resolve_cad_candidate(req, run_id=run_id, case_dir=case_path)
-    openfoam_case = scaffold_openfoam_case(req, run_id=run_id, case_dir=case_path, cad_resolution=cad_resolution)
+    openfoam_case = scaffold_openfoam_case(
+        req, run_id=run_id, case_dir=case_path, cad_resolution=cad_resolution
+    )
     state = AeroSimulationStateRecord(
         simulation_run_id=run_id,
         project_id=req.project_id,
@@ -257,7 +290,9 @@ def build_initial_state(req: AeroSimulationRunRequest) -> AeroSimulationStateRec
     return _seal_state(state)
 
 
-def _merge_case_artifacts(existing: list[dict[str, Any]], new_artifacts: list[AeroSourceRef]) -> list[dict[str, Any]]:
+def _merge_case_artifacts(
+    existing: list[dict[str, Any]], new_artifacts: list[AeroSourceRef]
+) -> list[dict[str, Any]]:
     merged: list[dict[str, Any]] = []
     seen_uris: set[str] = set()
     for artifact in existing:
@@ -276,7 +311,9 @@ def _merge_case_artifacts(existing: list[dict[str, Any]], new_artifacts: list[Ae
     return merged
 
 
-def apply_aero_solver_result(run_id: str, result: AeroSimulationSolveResult) -> AeroSimulationStateRecord | None:
+def apply_aero_solver_result(
+    run_id: str, result: AeroSimulationSolveResult
+) -> AeroSimulationStateRecord | None:
     state = load_aero_state(run_id)
     if state is None:
         return None
@@ -286,7 +323,9 @@ def apply_aero_solver_result(run_id: str, result: AeroSimulationSolveResult) -> 
     solver_state = dict(state.solver_state)
     solver_state["case_status"] = execution_state["solver_status"]
     solver_state["execution_state"] = execution_state
-    solver_state["case_artifacts"] = _merge_case_artifacts(solver_state.get("case_artifacts", []), result.artifacts)
+    solver_state["case_artifacts"] = _merge_case_artifacts(
+        solver_state.get("case_artifacts", []), result.artifacts
+    )
 
     openfoam_case = dict(solver_state.get("openfoam_case", {}))
     openfoam_case["scaffold_status"] = execution_state["solver_status"]
@@ -336,7 +375,9 @@ def save_aero_state(state: AeroSimulationStateRecord) -> AeroSimulationStateReco
     _validate_state_payload(payload)
     path = _state_path(state.simulation_run_id)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
-    return AeroSimulationStateRecord.model_validate(payload)
+    validated_state = AeroSimulationStateRecord.model_validate(payload)
+    _write_state_summary(validated_state)
+    return validated_state
 
 
 def load_aero_state(run_id: str) -> AeroSimulationStateRecord | None:
@@ -352,6 +393,14 @@ def list_aero_states() -> list[AeroSimulationStateSummary]:
     root = _state_root() / RUNS_DIR_NAME
     summaries: list[AeroSimulationStateSummary] = []
     for path in sorted(root.glob("*.json"), key=lambda item: item.stat().st_mtime, reverse=True):
+        if path.name.endswith(SUMMARY_SUFFIX):
+            continue
+        summary_path = _summary_path(path.stem)
+        if summary_path.exists():
+            summary_payload = json.loads(summary_path.read_text(encoding="utf-8"))
+            summaries.append(AeroSimulationStateSummary.model_validate(summary_payload))
+            continue
+
         payload = json.loads(path.read_text(encoding="utf-8"))
         _validate_state_payload(payload)
         state = AeroSimulationStateRecord.model_validate(payload)
@@ -359,7 +408,9 @@ def list_aero_states() -> list[AeroSimulationStateSummary]:
     return summaries
 
 
-def append_aero_branch(run_id: str, req: AeroSimulationBranchRequest) -> AeroSimulationStateRecord | None:
+def append_aero_branch(
+    run_id: str, req: AeroSimulationBranchRequest
+) -> AeroSimulationStateRecord | None:
     state = load_aero_state(run_id)
     if state is None:
         return None
@@ -388,6 +439,10 @@ def append_aero_branch(run_id: str, req: AeroSimulationBranchRequest) -> AeroSim
         }
     )
     updated_state = updated_state.model_copy(
-        update={"state_hash": _hash_state_payload(updated_state.model_dump(mode="json", exclude={"state_hash"}))}
+        update={
+            "state_hash": _hash_state_payload(
+                updated_state.model_dump(mode="json", exclude={"state_hash"})
+            )
+        }
     )
     return save_aero_state(updated_state)

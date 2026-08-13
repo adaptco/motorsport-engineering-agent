@@ -1,3 +1,5 @@
+"""shared/runtime_paths module."""
+
 from __future__ import annotations
 
 import os

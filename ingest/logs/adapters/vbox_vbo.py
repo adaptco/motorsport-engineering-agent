@@ -1,3 +1,5 @@
+"""ingest/logs/adapters/vbox_vbo module."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -6,7 +8,6 @@ import pandas as pd
 
 from ingest.logs.types import ParsedLog
 from ingest.logs.util import coerce_numeric_columns
-
 
 VBOX_HEADER_MARKER = "[column names]"
 

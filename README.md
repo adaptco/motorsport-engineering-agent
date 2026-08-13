@@ -1,6 +1,28 @@
-# MEA Root Kernel v3.5.2
+# MEA Root Kernel v3.6.3
 
 MEA Multi-Agent Runtime Template
+
+## Quick Start
+
+1. Install dependencies with a reproducible lockfile workflow:
+   - `uv sync --extra dev`
+   - alternative: `pip install -e .[dev]`
+2. Copy `.env.example` to `.env` and set local credentials.
+3. Start control plane:
+   - `uv run uvicorn control_plane.app:app --reload`
+4. Start MCP server:
+   - `uv run uvicorn mcp_server.app:app --port 7000 --reload`
+5. Start worker:
+   - `uv run python -m worker.backend_worker`
+
+## Operational Docs
+
+- Deployment: `docs/deployment.md`
+- API guide: `docs/API.md`
+- General runbook: `docs/runbook.md`
+- Contributing: `CONTRIBUTING.md`
+- Dependencies: `DEPENDENCIES.md`
+- License notices: `LICENSES/THIRD_PARTY_NOTICES.md`
 
 This template refactors a monolithic MEA-style control plane into a production multi-container runtime:
 

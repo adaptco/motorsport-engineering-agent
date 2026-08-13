@@ -1,17 +1,14 @@
 version: "3.9"
 
-x-mea-base: &mea-base
-  build:
-    context: .
-    dockerfile: ./deploy/containers/mea-v3.6/Dockerfile
-  env_file:
-    - .env
-  restart: unless-stopped
+# MEA v3.6 Docker Compose topology
+# Aligns to deployment sequence: browser → gateway → control plane → worker pool → data plane
+# Usage: docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.6.yml up
 
 services:
+  # Data plane: PostgreSQL
   postgres:
-    image: postgres:16
-    container_name: mea-v3.6-postgres
+    image: postgres:16-alpine
+    container_name: mea-postgres-v3.6
     environment:
       POSTGRES_DB: mea
       POSTGRES_USER: mea
@@ -19,41 +16,162 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_v3.6:/var/lib/postgresql/data
       - ./db/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mea -d mea"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - mea-network-v3.6
+    mem_limit: 1024m
+    cpus: "2"
+    labels:
+      - "com.mea.version=3.6"
+      - "com.mea.lane=data-plane"
 
+  # Data plane: Redis
   redis:
-    image: redis:7
-    container_name: mea-v3.6-redis
+    image: redis:7-alpine
+    container_name: mea-redis-v3.6
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data_v3.6:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - mea-network-v3.6
+    mem_limit: 512m
+    cpus: "1"
+    command: redis-server --appendonly yes --appendfsync everysec
+    labels:
+      - "com.mea.version=3.6"
+      - "com.mea.lane=data-plane"
 
+  # Orchestration plane: Control plane
+  # Handles request validation, policy screening, workflow orchestration
   control_plane:
-    <<: *mea-base
-    container_name: mea-v3.6-control-plane
-    command: ["uvicorn", "control_plane.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: control_plane
+    container_name: mea-control-plane-v3.6
+    environment:
+      PYTHONUNBUFFERED: "1"
+      MEA_VERSION: "3.6"
+      MEA_KERNEL_VERSION: "3.6"
+      MEA_LANE: "orchestration"
+      RUNTIME_CONTRACT_VALIDATION: "true"
+      CHECKPOINT_ENABLED: "true"
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
-      - redis
-      - mcp_server
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mcp_server:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - mea-network-v3.6
+    mem_limit: 1024m
+    cpus: "2"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "com.mea.version=3.6"
+      - "com.mea.lane=orchestration"
+      - "com.mea.critical=true"
+    volumes:
+      - ./runtime_logs:/app/runtime_logs
+      - ./.mea_tmp:/app/.mea_tmp
 
+  # Execution plane: Worker pool
+  # Processes tasks from queue, emits runtime events, persists checkpoints
   worker:
-    <<: *mea-base
-    container_name: mea-v3.6-worker
-    command: ["python", "-m", "worker.backend_worker"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker
+    container_name: mea-worker-v3.6
+    environment:
+      PYTHONUNBUFFERED: "1"
+      MEA_VERSION: "3.6"
+      MEA_KERNEL_VERSION: "3.6"
+      MEA_LANE: "execution"
+      RUNTIME_CONTRACT_VALIDATION: "true"
+      CHECKPOINT_ENABLED: "true"
+      WORKER_CONCURRENCY: "4"
     depends_on:
-      - postgres
-      - redis
-      - control_plane
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      control_plane:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - mea-network-v3.6
+    mem_limit: 2048m
+    cpus: "4"
+    labels:
+      - "com.mea.version=3.6"
+      - "com.mea.lane=execution"
+    volumes:
+      - ./runtime_logs:/app/runtime_logs
+      - ./.mea_tmp:/app/.mea_tmp
 
+  # Tool/capability plane: MCP Server
+  # Provides controlled tool and action surface via MCP v1
   mcp_server:
-    <<: *mea-base
-    container_name: mea-v3.6-mcp-server
-    command: ["uvicorn", "mcp_server.app:app", "--host", "0.0.0.0", "--port", "7000"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: mcp_server
+    container_name: mea-mcp-server-v3.6
+    environment:
+      PYTHONUNBUFFERED: "1"
+      MEA_VERSION: "3.6"
+      MEA_KERNEL_VERSION: "3.6"
+      MEA_LANE: "tool-platform"
+      MCP_VERSION: "1"
     ports:
       - "7000:7000"
+    restart: unless-stopped
+    networks:
+      - mea-network-v3.6
+    mem_limit: 1024m
+    cpus: "2"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "com.mea.version=3.6"
+      - "com.mea.lane=tool-platform"
+    volumes:
+      - ./runtime_logs:/app/runtime_logs
 
 volumes:
-  postgres_data:
+  postgres_data_v3.6:
+  redis_data_v3.6:
+
+networks:
+  mea-network-v3.6:
+    driver: bridge

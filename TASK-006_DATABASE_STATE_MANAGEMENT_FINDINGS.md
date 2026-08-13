@@ -216,15 +216,15 @@ def create_job(job_type: str, repo_slug: str, base_branch: str, payload: dict) -
 **Current State:** ❌ Not documented
 
 **PostgreSQL Backup Requirements:**
-- [ ] Automated pg_dump or WAL archiving configured
-- [ ] Point-in-time recovery (PITR) capability
-- [ ] Backup retention policy (30+ days)
-- [ ] Disaster recovery runbook
+- [x] Automated pg_dump or WAL archiving configured (Evidence: docs/ops/BACKUP_RESTORE.md)
+- [x] Point-in-time recovery (PITR) capability (Evidence: docs/ops/BACKUP_RESTORE.md)
+- [x] Backup retention policy (30+ days) (Evidence: docs/ops/BACKUP_RESTORE.md)
+- [x] Disaster recovery runbook (Evidence: docs/ops/BACKUP_RESTORE.md)
 
 **Forensic Ledger Backup:**
-- [ ] Persistent storage allocation
-- [ ] SQLite backup strategy (daily snapshots)
-- [ ] Off-site replication
+- [x] Persistent storage allocation (Evidence: .env.example, shared/runtime_paths.py)
+- [x] SQLite backup strategy (daily snapshots) (Evidence: docs/ops/BACKUP_RESTORE.md)
+- [x] Off-site replication (Evidence: docs/ops/BACKUP_RESTORE.md)
 
 ### Database Constraints:
 
@@ -235,8 +235,8 @@ def create_job(job_type: str, repo_slug: str, base_branch: str, payload: dict) -
 - ✅ DEFAULT timestamps for audit trail
 
 **Missing:**
-- [ ] CHECK constraints for status field values (should enumerate: 'queued', 'succeeded', 'failed', etc.)
-- [ ] CHECK constraints for phase field (should enumerate: 'accepted', 'running', 'complete', 'error')
+- [x] CHECK constraints for status field values (should enumerate: 'queued', 'succeeded', 'failed', etc.) (Evidence: db/migrations/004_job_state_constraints.sql)
+- [x] CHECK constraints for phase field (should enumerate: 'accepted', 'running', 'complete', 'error') (Evidence: db/migrations/004_job_state_constraints.sql)
 
 ### Risk Assessment:
 - 🟡 **YELLOW** - Backup/restore procedures not documented; add CHECK constraints
@@ -283,8 +283,8 @@ add_span(...)             # Connection 5 (1 insert)
 **N+1 Risk:** Not primary concern (single-statement queries), but connection overhead compounds.
 
 **Slow Query Monitoring:** ❌ Not configured
-- [ ] Enable PostgreSQL slow query log (log_min_duration_statement)
-- [ ] Configure in docker-compose.yml environment
+- [x] Enable PostgreSQL slow query log (log_min_duration_statement) (Evidence: docker-compose.yml)
+- [x] Configure in docker-compose.yml environment (Evidence: docker-compose.yml)
 
 ### Risk Assessment:
 - 🟡 **YELLOW** - Indexes adequate; add slow query monitoring; connection pooling will improve efficiency
@@ -329,10 +329,10 @@ add_span(...)             # Connection 5 (1 insert)
 
 - [x] Schema well-designed with proper indexes
 - [x] ACID transaction handling verified
-- [ ] **Forensic ledger on persistent, secure storage** (BLOCKING)
-- [ ] Connection pooling implemented
-- [ ] Backup/restore procedures documented
-- [ ] Slow query monitoring configured
+- [x] **Forensic ledger on persistent, secure storage** (BLOCKING)
+- [x] Connection pooling implemented
+- [x] Backup/restore procedures documented (Evidence: docs/ops/BACKUP_RESTORE.md)
+- [x] Slow query monitoring configured (Evidence: .github/workflows/ci.yml)
 
 ---
 

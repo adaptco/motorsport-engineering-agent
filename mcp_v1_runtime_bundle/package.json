@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check:json": "node -e \"JSON.parse(require('fs').readFileSync('generation-manifest.json','utf8')); JSON.parse(require('fs').readFileSync('tool-registry.json','utf8')); JSON.parse(require('fs').readFileSync('schemas/generation-state.schema.json','utf8')); JSON.parse(require('fs').readFileSync('registry/agents.registry.json','utf8'));\""
+    "check:json": "node -e \"import fs from 'node:fs'; ['generation-manifest.json','tool-registry.json','schemas/generation-state.schema.json','registry/agents.registry.json'].forEach(f => JSON.parse(fs.readFileSync(f, 'utf8')));\""
   },
   "dependencies": {
     "@langchain/langgraph": "^1.0.0"

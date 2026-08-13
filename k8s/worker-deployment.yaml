@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: mea
+  labels:
+    app: worker
+    component: background
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+        component: background
+    spec:
+      serviceAccountName: mea-app
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 5678
+        fsGroup: 5678
+      containers:
+      - name: worker
+        image: mea-root-kernel:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python"]
+        args:
+        - "-m"
+        - "worker.backend_worker"
+        envFrom:
+        - configMapRef:
+            name: app-config
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "1000m"
+          limits:
+            memory: "1024Mi"
+            cpu: "2000m"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - worker
+              topologyKey: kubernetes.io/hostname

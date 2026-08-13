@@ -1,5 +1,15 @@
+# ============================================================
+# Git and Version Control
+# ============================================================
+.git
+.gitignore
+.gitattributes
+.github
+
+# ============================================================
 # Python
-__pycache__/
+# ============================================================
+__pycache__
 *.py[cod]
 *$py.class
 *.so
@@ -27,8 +37,13 @@ venv/
 ENV/
 env/
 .venv/
+*.mypy_cache/
+.dmypy.json
+dmypy.json
 
-# Testing
+# ============================================================
+# Testing and Coverage
+# ============================================================
 .tox/
 .nox/
 .coverage
@@ -41,40 +56,64 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 .ruff_cache/
+htmlcov/
 
+# ============================================================
 # IDEs
+# ============================================================
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 .DS_Store
+.vscode
+*.sublime-project
+*.sublime-workspace
 
-# Git
-.git/
-.gitignore
-.gitattributes
-
+# ============================================================
 # Docker
+# ============================================================
 Dockerfile*
 docker-compose*.yml
 docker-compose*.yaml
 .dockerignore
 
+# ============================================================
 # Node (if applicable)
+# ============================================================
 node_modules/
 npm-debug.log
 yarn-error.log
 
-# Misc
+# ============================================================
+# Documentation and Meta Files
+# ============================================================
+*.md
+!DEPENDENCIES.md
+LICENSE
+*.txt
 .env
 .env.local
 .env.*.local
-LICENSE
-docs/
-tests/
-scripts/
-.github/
-.gitlab-ci.yml
+
+# ============================================================
+# Project-specific exclusions
+# ============================================================
+/docs
+/tests
+/scripts
+/artifacts
+/Artifacts
+/release
+/runtime_logs
+/.jules
+/.pytest_cache
+/.ruff_cache
+/coverage.json
+.coverage
+
+# CI/CD
 .circleci/
+.gitlab-ci.yml
 Makefile

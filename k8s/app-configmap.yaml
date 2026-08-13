@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: mea
+data:
+  DATABASE_URL: "postgresql://mea:mea@postgres:5432/mea"
+  REDIS_URL: "redis://redis:6379/0"
+  PYTHONUNBUFFERED: "1"
+  LOG_LEVEL: "INFO"

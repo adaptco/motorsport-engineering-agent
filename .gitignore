@@ -1,25 +1,47 @@
+# Python bytecode & compiled
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.log
-.env
+
+# Virtual environments
 .venv/
+.venv-ci/
+
+# Build / packaging
 dist/
 build/
+*.egg-info/
+
+# Test & coverage artifacts
+.coverage
+coverage.json
+htmlcov/
+.pytest_cache/
+
+# Linting / type-checking caches
+.ruff_cache/
+.mypy_cache/
+
+# Runtime / temp
+.mea_tmp/
+runtime_logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Secrets & environment
+.env
+
+# Large binaries that should not be in VCS
+*.zip
 
 # AI Agent / Automation helpers (Local Only)
 GEMINI.md
 .github/agents/
 mcp_tools/ralph_wiggum_agent.py
-
-# A2A persisted workflow state artifacts
-.mea_tmp/workflow_state/
-runtime_logs/workflow_state/
-
-# Aero simulation state artifacts
-.mea_tmp/aero_state/
-runtime_logs/aero_state/
 
 # Local worktree scratch area (must stay outside tracked source)
 /motorsport-engineering-agent.worktrees/

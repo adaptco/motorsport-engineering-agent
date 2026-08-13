@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: mea
+
+resources:
+- namespace.yaml
+- rbac.yaml
+- app-configmap.yaml
+- postgres-secret.yaml
+- postgres-configmap.yaml
+- postgres-pvc.yaml
+- postgres-deployment.yaml
+- postgres-service.yaml
+- redis-pvc.yaml
+- redis-deployment.yaml
+- redis-service.yaml
+- control-plane-deployment.yaml
+- control-plane-service.yaml
+- worker-deployment.yaml
+- mcp-server-deployment.yaml
+- mcp-server-service.yaml
+- hpa-control-plane.yaml
+- hpa-worker.yaml
+- hpa-mcp-server.yaml
+- networkpolicy.yaml
+- ingress.yaml
+
+commonLabels:
+  app: mea-root-kernel
+  version: v1
+
+commonAnnotations:
+  managed-by: kustomize
+  documentation: k8s/README.md

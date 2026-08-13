@@ -1,3 +1,5 @@
+"""tests/test_anp_contract_bundle module."""
+
 from __future__ import annotations
 
 import json
@@ -7,12 +9,15 @@ import pytest
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ANP_SCHEMA_DIR = REPO_ROOT / "contracts" / "anp" / "schemas"
 ANP_EXAMPLE_DIR = REPO_ROOT / "contracts" / "anp" / "examples"
-AXP_SCHEMA_PATH = REPO_ROOT / "contracts" / "axp" / "schemas" / "axp-core-foundation.bundle.schema.json"
-AXP_DICTIONARY_PATH = REPO_ROOT / "contracts" / "axp" / "dictionaries" / "canonical-token-dictionary.json"
+AXP_SCHEMA_PATH = (
+    REPO_ROOT / "contracts" / "axp" / "schemas" / "axp-core-foundation.bundle.schema.json"
+)
+AXP_DICTIONARY_PATH = (
+    REPO_ROOT / "contracts" / "axp" / "dictionaries" / "canonical-token-dictionary.json"
+)
 
 SCHEMA_EXAMPLE_PAIRS = [
     ("anp-route-decision.schema.json", "anp-route-decision.example.json"),

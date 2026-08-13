@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NodeStream | Agent Runtime State Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg: #020617;
+      --panel: rgba(15, 23, 42, 0.8);
+      --line: rgba(34, 211, 238, 0.22);
+      --ink: #67e8f9;
+      --muted: #5eead4;
+      --danger: #fb7185;
+      --ok: #34d399;
+      --warn: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 20% 10%, #062244 0%, var(--bg) 35%, #01040e 100%);
+      color: var(--ink);
+      font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    canvas {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .glass-panel {
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .tiny {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 7px;
+      box-shadow: 0 0 10px currentColor;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      text-transform: uppercase;
+    }
+
+    .tag.local {
+      color: #93c5fd;
+      border-color: #60a5fa;
+      background: rgba(37, 99, 235, 0.15);
+    }
+
+    .tag.worktree {
+      color: #fcd34d;
+      border-color: #f59e0b;
+      background: rgba(217, 119, 6, 0.16);
+    }
+
+    .tag.cloud {
+      color: #86efac;
+      border-color: #4ade80;
+      background: rgba(16, 185, 129, 0.14);
+    }
+
+    .task-state {
+      font-size: 10px;
+      padding: 1px 7px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      text-transform: uppercase;
+    }
+
+    .task-state.queued { color: #bae6fd; border-color: #38bdf8; }
+    .task-state.running { color: #bbf7d0; border-color: #22c55e; }
+    .task-state.blocked { color: #fecdd3; border-color: #fb7185; }
+    .task-state.done { color: #d9f99d; border-color: #84cc16; }
+
+    .table-wrap {
+      max-height: 290px;
+      overflow: auto;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      text-align: left;
+      padding: 7px;
+      white-space: nowrap;
+      vertical-align: top;
+    }
+
+    th {
+      font-size: 10px;
+      position: sticky;
+      top: 0;
+      background: rgba(6, 18, 40, 0.95);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+      width: 100%;
+      background: rgba(2, 6, 23, 0.65);
+      border: 1px solid rgba(34, 211, 238, 0.35);
+      color: #d5fbff;
+      border-radius: 9px;
+      padding: 8px;
+      font-family: inherit;
+      font-size: 12px;
+      outline: none;
+    }
+
+    button {
+      cursor: pointer;
+      transition: 180ms ease;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    button:hover {
+      border-color: rgba(103, 232, 249, 0.8);
+      background: rgba(6, 34, 56, 0.8);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    #activity-log {
+      max-height: 140px;
+      overflow: auto;
+      font-size: 11px;
+      line-height: 1.45;
+      color: #9be8f5;
+    }
+
+    #mcp-payload {
+      width: 100%;
+      min-height: 210px;
+      resize: vertical;
+      background: rgba(2, 10, 20, 0.85);
+      color: #bae6fd;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 11px;
+    }
+
+    .scroll-mini::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    .scroll-mini::-webkit-scrollbar-thumb {
+      background: rgba(56, 189, 248, 0.35);
+      border-radius: 999px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    @media (max-width: 1100px) {
+      body {
+        overflow: auto;
+      }
+
+      #bg3d {
+        position: absolute;
+      }
+
+      .root-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bg3d"></canvas>
+
+  <div class="fixed inset-0 z-10 p-4 md:p-6 pointer-events-none">
+    <div class="root-grid grid grid-cols-1 xl:grid-cols-[360px_1fr_420px] gap-4 h-full">
+      <section class="glass-panel rounded-xl p-4 pointer-events-auto flex flex-col gap-4">
+        <header>
+          <h1 class="text-lg font-bold tracking-tight flex items-center justify-between">
+            NODESTREAM MCP RUNTIME
+            <span class="tiny px-2 py-1 rounded border border-cyan-400/40 bg-cyan-500/15">LIVE</span>
+          </h1>
+          <p class="text-[11px] text-cyan-200/75 mt-1">Durable runtime model for multi-agent task execution.</p>
+        </header>
+
+        <div>
+          <div class="tiny text-cyan-300/70 mb-1">Global Status</div>
+          <div id="global-status" class="text-emerald-300 font-semibold flex items-center">
+            <span class="status-dot" style="color: var(--ok)"></span>
+            MCP TELEMETRY SYNCHRONIZED
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div class="rounded border border-white/10 bg-black/35 p-2">
+            <div class="tiny text-cyan-100/50">Agents</div>
+            <div id="metric-agents" class="text-xl font-bold">0</div>
+          </div>
+          <div class="rounded border border-white/10 bg-black/35 p-2">
+            <div class="tiny text-cyan-100/50">Running Tasks</div>
+            <div id="metric-running" class="text-xl font-bold">0</div>
+          </div>
+          <div class="rounded border border-white/10 bg-black/35 p-2">
+            <div class="tiny text-cyan-100/50">Worktrees</div>
+            <div id="metric-worktree" class="text-xl font-bold">0</div>
+          </div>
+          <div class="rounded border border-white/10 bg-black/35 p-2">
+            <div class="tiny text-cyan-100/50">Cloud Agents</div>
+            <div id="metric-cloud" class="text-xl font-bold">0</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="tiny text-cyan-300/70 mb-1">MCP Snapshot Freshness</div>
+          <div class="w-full h-2 rounded bg-cyan-900/35 border border-cyan-400/20 overflow-hidden">
+            <div id="freshness-bar" class="h-full bg-cyan-300" style="width: 100%"></div>
+          </div>
+          <div id="freshness-label" class="text-[10px] text-cyan-100/60 mt-1">just now</div>
+        </div>
+
+        <div>
+          <div class="tiny text-cyan-300/70 mb-2">Activity Log</div>
+          <div id="activity-log" class="scroll-mini border border-white/10 rounded p-2 bg-black/25">
+            <div>> Runtime boot complete.</div>
+            <div>> Waiting for updates.</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mt-auto">
+          <button id="seed-demo">Load Demo State</button>
+          <button id="clear-state">Clear Durable State</button>
+          <button id="export-json">Export JSON</button>
+          <label class="w-full">
+            <input id="import-json" type="file" accept="application/json" class="hidden" />
+            <span class="block w-full text-center py-2 border border-cyan-400/35 rounded text-[11px] font-bold uppercase tracking-wide bg-cyan-500/10 hover:bg-cyan-500/20">Import JSON</span>
+          </label>
+          <button id="download-html" class="col-span-2">Export Dashboard (HTML)</button>
+        </div>
+      </section>
+
+      <section class="glass-panel rounded-xl p-4 pointer-events-auto overflow-hidden flex flex-col gap-4">
+        <header class="flex flex-col md:flex-row md:items-end md:justify-between gap-2">
+          <div>
+            <h2 class="text-base font-semibold">Agent Runtime Matrix</h2>
+            <p class="text-[11px] text-cyan-100/70">Tracks who is executing what, where, on which branch and commit hash.</p>
+          </div>
+          <div class="grid grid-cols-3 gap-2 w-full md:w-[360px]">
+            <select id="filter-runtime">
+              <option value="all">All Runtimes</option>
+              <option value="local">Local</option>
+              <option value="worktree">Worktree</option>
+              <option value="cloud">Cloud</option>
+            </select>
+            <select id="filter-state">
+              <option value="all">All Task States</option>
+              <option value="queued">Queued</option>
+              <option value="running">Running</option>
+              <option value="blocked">Blocked</option>
+              <option value="done">Done</option>
+            </select>
+            <input id="filter-agent" placeholder="Filter by agent id" />
+          </div>
+        </header>
+
+        <div class="table-wrap scroll-mini">
+          <table>
+            <thead>
+              <tr>
+                <th>Agent</th>
+                <th>Task</th>
+                <th>Runtime</th>
+                <th>Branch</th>
+                <th>Commit</th>
+                <th>Status</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody id="matrix-body"></tbody>
+          </table>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 overflow-hidden">
+          <div class="border border-white/10 rounded p-3 bg-black/20">
+            <h3 class="tiny text-cyan-300/70 mb-2">Upsert Agent Runtime</h3>
+            <div class="grid-2">
+              <input id="agent-id" placeholder="agent_id (required)" />
+              <input id="agent-name" placeholder="display name" />
+              <select id="agent-runtime">
+                <option value="local">local</option>
+                <option value="worktree">worktree</option>
+                <option value="cloud">cloud</option>
+              </select>
+              <input id="agent-host" placeholder="host / region" />
+              <input id="agent-branch" placeholder="branch" />
+              <input id="agent-commit" placeholder="commit hash (7-40 hex)" />
+            </div>
+            <textarea id="agent-note" rows="2" class="mt-2" placeholder="runtime note"></textarea>
+            <button id="save-agent" class="mt-2">Save Agent Runtime</button>
+          </div>
+
+          <div class="border border-white/10 rounded p-3 bg-black/20">
+            <h3 class="tiny text-cyan-300/70 mb-2">Upsert Task Assignment</h3>
+            <div class="grid-2">
+              <input id="task-id" placeholder="task_id (required)" />
+              <input id="task-title" placeholder="task title" />
+              <input id="task-agent" placeholder="assigned agent_id" />
+              <select id="task-state">
+                <option value="queued">queued</option>
+                <option value="running">running</option>
+                <option value="blocked">blocked</option>
+                <option value="done">done</option>
+              </select>
+              <input id="task-source" placeholder="source ref (ticket/PR)" />
+              <input id="task-updated" placeholder="updated_by (optional)" />
+            </div>
+            <textarea id="task-note" rows="2" class="mt-2" placeholder="task note"></textarea>
+            <button id="save-task" class="mt-2">Save Task Assignment</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass-panel rounded-xl p-4 pointer-events-auto overflow-hidden flex flex-col gap-3">
+        <h2 class="text-base font-semibold">MCP Payload Preview</h2>
+        <p class="text-[11px] text-cyan-100/75">This is the durable state model snapshot an MCP server can consume.</p>
+        <textarea id="mcp-payload" readonly class="scroll-mini"></textarea>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "nodestream.mcp.runtime.v2";
+    const API_BASE = (window.RUNTIME_API_BASE || "http://localhost:7000").replace(/\/$/, "");
+    const API_TOKEN = window.RUNTIME_API_TOKEN || "";
+    const SESSION_ID = window.RUNTIME_SESSION_ID || "global";
+
+    const model = {
+      schemaVersion: "1.0.0",
+      sessionId: SESSION_ID,
+      generatedAt: null,
+      lastSeq: 0,
+      lastStateHash: "sha256:0",
+      agents: {},
+      tasks: {},
+      timeline: [],
+      outbox: [],
+      sseConnected: false
+    };
+
+    let scene;
+    let camera;
+    let renderer;
+    let mesh;
+    let stream;
+    let reconnectDelayMs = 1000;
+    const particles = [];
+
+    function initBackground() {
+      const canvas = document.getElementById("bg3d");
+      scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x020617, 0.0026);
+
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1800);
+      camera.position.z = 460;
+
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      const geometry = new THREE.OctahedronGeometry(1.5, 0);
+      const material = new THREE.MeshBasicMaterial({ color: 0x6ee7f9, transparent: true, opacity: 0.8 });
+      const count = 1800;
+      mesh = new THREE.InstancedMesh(geometry, material, count);
+      scene.add(mesh);
+
+      const dummy = new THREE.Object3D();
+      for (let i = 0; i < count; i++) {
+        const p = {
+          x: (Math.random() - 0.5) * 680,
+          y: (Math.random() - 0.5) * 300,
+          z: (Math.random() - 0.5) * 680,
+          vx: (Math.random() - 0.5) * 0.22,
+          vy: (Math.random() - 0.5) * 0.22,
+          vz: (Math.random() - 0.5) * 0.22,
+          phase: Math.random() * Math.PI * 2
+        };
+        particles.push(p);
+        dummy.position.set(p.x, p.y, p.z);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+      }
+
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      requestAnimationFrame(animateBg);
+    }
+
+    function animateBg(time) {
+      if (!mesh) return;
+      const t = (time || performance.now()) * 0.001;
+      const dummy = new THREE.Object3D();
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.z += p.vz;
+
+        if (Math.abs(p.x) > 340) p.vx *= -1;
+        if (Math.abs(p.y) > 160) p.vy *= -1;
+        if (Math.abs(p.z) > 340) p.vz *= -1;
+
+        const scale = 0.85 + Math.sin(t + p.phase) * 0.35;
+        dummy.position.set(p.x, p.y, p.z);
+        dummy.scale.set(scale, scale, scale);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+      }
+
+      mesh.instanceMatrix.needsUpdate = true;
+      scene.rotation.y = Math.sin(t * 0.12) * 0.22;
+      scene.rotation.x = Math.cos(t * 0.09) * 0.1;
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animateBg);
+    }
+
+    function nowIso() {
+      return new Date().toISOString();
+    }
+
+    function pushLog(message) {
+      const root = document.getElementById("activity-log");
+      const line = document.createElement("div");
+      const t = new Date().toLocaleTimeString();
+      line.textContent = `> [${t}] ${message}`;
+      root.prepend(line);
+      while (root.children.length > 35) root.lastElementChild.remove();
+    }
+
+    function persistState() {
+      model.generatedAt = nowIso();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(model));
+      updateFreshness();
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      try {
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") return;
+        model.schemaVersion = parsed.schemaVersion || model.schemaVersion;
+        model.sessionId = parsed.sessionId || model.sessionId;
+        model.generatedAt = parsed.generatedAt || null;
+        model.lastSeq = Number(parsed.lastSeq || 0);
+        model.lastStateHash = parsed.lastStateHash || "sha256:0";
+        model.agents = parsed.agents || {};
+        model.tasks = parsed.tasks || {};
+        model.timeline = Array.isArray(parsed.timeline) ? parsed.timeline.slice(0, 200) : [];
+        model.outbox = Array.isArray(parsed.outbox) ? parsed.outbox.slice(0, 500) : [];
+      } catch {
+        pushLog("Local state parse failed. Starting with empty state.");
+      }
+    }
+
+    function storageSummary() {
+      const agents = Object.values(model.agents);
+      const tasks = Object.values(model.tasks);
+      return {
+        agent_count: agents.length,
+        runtime_counts: {
+          local: agents.filter((a) => a.runtime === "local").length,
+          worktree: agents.filter((a) => a.runtime === "worktree").length,
+          cloud: agents.filter((a) => a.runtime === "cloud").length
+        },
+        task_counts: {
+          queued: tasks.filter((t) => t.state === "queued").length,
+          running: tasks.filter((t) => t.state === "running").length,
+          blocked: tasks.filter((t) => t.state === "blocked").length,
+          done: tasks.filter((t) => t.state === "done").length
+        }
+      };
+    }
+
+    function snapshotPayload() {
+      return {
+        type: "agent_runtime_state",
+        schemaVersion: model.schemaVersion,
+        session_id: model.sessionId,
+        generatedAt: model.generatedAt || nowIso(),
+        last_seq: model.lastSeq,
+        last_state_hash: model.lastStateHash,
+        summary: storageSummary(),
+        agents: model.agents,
+        tasks: model.tasks,
+        timeline: model.timeline,
+        outbox_depth: model.outbox.length
+      };
+    }
+
+    function updateMetrics(payload) {
+      const agents = Object.values(payload.agents);
+      const tasks = Object.values(payload.tasks);
+
+      document.getElementById("metric-agents").textContent = agents.length;
+      document.getElementById("metric-running").textContent = tasks.filter((t) => t.state === "running").length;
+      document.getElementById("metric-worktree").textContent = agents.filter((a) => a.runtime === "worktree").length;
+      document.getElementById("metric-cloud").textContent = agents.filter((a) => a.runtime === "cloud").length;
+
+      const nominal = tasks.every((t) => t.state !== "blocked");
+      const global = document.getElementById("global-status");
+      const streamState = model.sseConnected ? "STREAM ONLINE" : "STREAM OFFLINE";
+      global.innerHTML = nominal
+        ? `<span class="status-dot" style="color: var(--ok)"></span>${streamState}`
+        : `<span class="status-dot" style="color: var(--danger)"></span>BLOCKED TASKS DETECTED`;
+      global.className = nominal
+        ? "text-emerald-300 font-semibold flex items-center"
+        : "text-rose-300 font-semibold flex items-center";
+    }
+
+    function renderMatrix(payload) {
+      const runtimeFilter = document.getElementById("filter-runtime").value;
+      const taskFilter = document.getElementById("filter-state").value;
+      const agentFilter = document.getElementById("filter-agent").value.trim().toLowerCase();
+
+      const rows = Object.values(payload.tasks)
+        .map((task) => {
+          const agent = payload.agents[task.assigned_agent] || null;
+          return {
+            task,
+            agent,
+            runtime: agent ? agent.runtime : "unassigned",
+            branch: agent?.branch || "-",
+            commit: agent?.commit_hash || "-"
+          };
+        })
+        .filter((row) => {
+          const runtimePass = runtimeFilter === "all" || row.runtime === runtimeFilter;
+          const statePass = taskFilter === "all" || row.task.state === taskFilter;
+          const agentPass = !agentFilter || (row.agent?.agent_id || "").toLowerCase().includes(agentFilter);
+          return runtimePass && statePass && agentPass;
+        })
+        .sort((a, b) => new Date(b.task.updated_at).getTime() - new Date(a.task.updated_at).getTime());
+
+      const body = document.getElementById("matrix-body");
+      body.innerHTML = "";
+
+      if (!rows.length) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = '<td colspan="7" class="text-cyan-100/70">No rows match current filters.</td>';
+        body.appendChild(tr);
+        return;
+      }
+
+      for (const row of rows) {
+        const tr = document.createElement("tr");
+        const runtimeTag = row.runtime === "unassigned"
+          ? '<span class="tag">unassigned</span>'
+          : `<span class="tag ${row.runtime}">${row.runtime}</span>`;
+
+        tr.innerHTML = `
+          <td>${row.agent ? row.agent.agent_id : "-"}</td>
+          <td>
+            <div>${row.task.task_id}</div>
+            <div class="text-[10px] text-cyan-100/55">${row.task.title || ""}</div>
+          </td>
+          <td>${runtimeTag}</td>
+          <td>${row.branch}</td>
+          <td class="font-semibold ${row.commit === "INVALID_HASH" ? "text-rose-300" : "text-cyan-100"}">${row.commit}</td>
+          <td><span class="task-state ${row.task.state}">${row.task.state}</span></td>
+          <td>${new Date(row.task.updated_at).toLocaleString()}</td>
+        `;
+        body.appendChild(tr);
+      }
+    }
+
+    function renderPayload(payload) {
+      document.getElementById("mcp-payload").value = JSON.stringify(payload, null, 2);
+    }
+
+    function updateFreshness() {
+      const label = document.getElementById("freshness-label");
+      const bar = document.getElementById("freshness-bar");
+      const ts = model.generatedAt ? new Date(model.generatedAt).getTime() : Date.now();
+      const ageSeconds = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+      const freshness = Math.max(0, 100 - ageSeconds * 2);
+      bar.style.width = `${freshness}%`;
+      label.textContent = ageSeconds < 2 ? "just now" : `${ageSeconds}s ago`;
+    }
+
+    function render() {
+      const payload = snapshotPayload();
+      updateMetrics(payload);
+      renderMatrix(payload);
+      renderPayload(payload);
+    }
+
+    function secureHeaders() {
+      const headers = { "Content-Type": "application/json" };
+      if (API_TOKEN) headers["Authorization"] = `Bearer ${API_TOKEN}`;
+      return headers;
+    }
+
+    function newIdempotencyKey(prefix) {
+      if (window.crypto && typeof window.crypto.randomUUID === "function") {
+        return `${prefix}:${window.crypto.randomUUID()}`;
+      }
+      return `${prefix}:${Date.now()}:${Math.random().toString(16).slice(2)}`;
+    }
+
+    function applyLocalEvent(eventType, payload, acceptedAtIso) {
+      const acceptedAt = acceptedAtIso || nowIso();
+      if (eventType === "agent_upsert") {
+        const id = payload.agent_id;
+        if (!id) return;
+        model.agents[id] = {
+          agent_id: id,
+          display_name: payload.display_name || id,
+          runtime: payload.runtime,
+          host: payload.host || "unknown",
+          branch: payload.branch || "unknown",
+          commit_hash: payload.commit_hash || "unknown",
+          dirty: !!payload.dirty,
+          note: payload.note || "",
+          last_seen_at: acceptedAt
+        };
+        return;
+      }
+
+      if (eventType === "task_upsert") {
+        const id = payload.task_id;
+        if (!id) return;
+        const existing = model.tasks[id] || {};
+        model.tasks[id] = {
+          task_id: id,
+          title: payload.title || existing.title || id,
+          state: payload.state,
+          assigned_agent: existing.assigned_agent || null,
+          source: payload.source || "",
+          note: payload.note || "",
+          updated_by: payload.updated_by || "operator",
+          updated_at: acceptedAt
+        };
+        return;
+      }
+
+      if (eventType === "assignment_upsert") {
+        const id = payload.task_id;
+        if (!id) return;
+        const existing = model.tasks[id] || {
+          task_id: id,
+          title: id,
+          state: "queued",
+          source: "",
+          note: ""
+        };
+        existing.assigned_agent = payload.agent_id || null;
+        existing.updated_by = payload.updated_by || "operator";
+        existing.updated_at = acceptedAt;
+        model.tasks[id] = existing;
+        return;
+      }
+
+      if (eventType === "heartbeat") {
+        const id = payload.agent_id;
+        if (!id) return;
+        if (!model.agents[id]) {
+          model.agents[id] = {
+            agent_id: id,
+            display_name: id,
+            runtime: "local",
+            host: "unknown",
+            branch: "unknown",
+            commit_hash: "unknown",
+            dirty: false,
+            note: "",
+            last_seen_at: acceptedAt
+          };
+        } else {
+          model.agents[id].last_seen_at = payload.at || acceptedAt;
+        }
+      }
+    }
+
+    async function fetchSnapshotFromServer() {
+      const url = `${API_BASE}/runtime-state/snapshot?session_id=${encodeURIComponent(model.sessionId)}`;
+      const response = await fetch(url, { headers: API_TOKEN ? { Authorization: `Bearer ${API_TOKEN}` } : {} });
+      if (!response.ok) throw new Error(`snapshot_http_${response.status}`);
+      const snapshot = await response.json();
+      model.lastSeq = Number(snapshot.last_seq || 0);
+      model.lastStateHash = snapshot.last_state_hash || "sha256:0";
+      model.agents = snapshot.agents || {};
+      model.tasks = snapshot.tasks || {};
+      model.generatedAt = snapshot.generated_at || nowIso();
+      persistState();
+      render();
+      pushLog(`Snapshot synced from server (seq=${model.lastSeq}).`);
+    }
+
+    async function fetchDeltas(afterSeq) {
+      const url = `${API_BASE}/runtime-state/events?session_id=${encodeURIComponent(model.sessionId)}&after_seq=${afterSeq}`;
+      const response = await fetch(url, { headers: API_TOKEN ? { Authorization: `Bearer ${API_TOKEN}` } : {} });
+      if (!response.ok) throw new Error(`events_http_${response.status}`);
+      const body = await response.json();
+      const events = body.events || [];
+      for (const event of events) {
+        applyServerEvent(event);
+      }
+      if (events.length > 0) {
+        pushLog(`Applied ${events.length} replay event(s) from server.`);
+      }
+    }
+
+    function applyServerEvent(event) {
+      const seq = Number(event.seq || 0);
+      if (seq <= model.lastSeq) return;
+      applyLocalEvent(event.event_type, event.payload || {}, event.accepted_at || nowIso());
+      model.lastSeq = seq;
+      model.lastStateHash = event.state_hash || model.lastStateHash;
+      model.timeline.unshift({ at: nowIso(), event: event.event_type, payload: event.payload || {}, seq });
+      model.timeline = model.timeline.slice(0, 200);
+      persistState();
+      render();
+    }
+
+    function connectEventStream() {
+      if (stream) {
+        stream.close();
+        stream = null;
+      }
+      const params = new URLSearchParams({ session_id: model.sessionId, after_seq: String(model.lastSeq) });
+      if (API_TOKEN) params.set("access_token", API_TOKEN);
+      stream = new EventSource(`${API_BASE}/runtime-state/stream?${params.toString()}`);
+
+      stream.addEventListener("open", () => {
+        model.sseConnected = true;
+        reconnectDelayMs = 1000;
+        pushLog("SSE stream connected.");
+        render();
+      });
+
+      stream.addEventListener("runtime_state", async (evt) => {
+        try {
+          const parsed = JSON.parse(evt.data || "{}");
+          const seq = Number(parsed.seq || 0);
+          if (seq > model.lastSeq + 1) {
+            await fetchDeltas(model.lastSeq);
+          }
+          applyServerEvent(parsed);
+        } catch {
+          pushLog("Failed to parse stream event.");
+        }
+      });
+
+      stream.addEventListener("error", async () => {
+        model.sseConnected = false;
+        render();
+        pushLog("SSE disconnected. Reconnecting...");
+        stream.close();
+        stream = null;
+        setTimeout(() => {
+          connectEventStream();
+        }, reconnectDelayMs);
+        reconnectDelayMs = Math.min(reconnectDelayMs * 2, 15000);
+      });
+    }
+
+    async function sendOutboxItem(item) {
+      const response = await fetch(`${API_BASE}/runtime-state/events`, {
+        method: "POST",
+        headers: secureHeaders(),
+        body: JSON.stringify(item)
+      });
+      if (!response.ok) {
+        throw new Error(`mutation_http_${response.status}`);
+      }
+      const body = await response.json();
+      if (body.applied_seq && Number(body.applied_seq) > model.lastSeq) {
+        model.lastSeq = Number(body.applied_seq);
+      }
+      if (body.state_hash) {
+        model.lastStateHash = body.state_hash;
+      }
+      return body;
+    }
+
+    async function flushOutbox() {
+      if (!model.outbox.length) return;
+      for (const item of [...model.outbox]) {
+        try {
+          await sendOutboxItem(item);
+          model.outbox = model.outbox.filter((queued) => queued.idempotency_key !== item.idempotency_key);
+          persistState();
+        } catch {
+          break;
+        }
+      }
+      render();
+    }
+
+    async function emitMutation(eventType, payload) {
+      const mutation = {
+        idempotency_key: newIdempotencyKey(eventType),
+        session_id: model.sessionId,
+        event_type: eventType,
+        payload,
+        client_ts: nowIso()
+      };
+      model.outbox.push(mutation);
+      applyLocalEvent(eventType, payload, mutation.client_ts);
+      model.timeline.unshift({ at: mutation.client_ts, event: `${eventType}_queued`, payload });
+      model.timeline = model.timeline.slice(0, 200);
+      persistState();
+      render();
+      await flushOutbox();
+    }
+
+    function clearState() {
+      model.agents = {};
+      model.tasks = {};
+      model.timeline = [];
+      model.outbox = [];
+      model.lastSeq = 0;
+      model.lastStateHash = "sha256:0";
+      persistState();
+      pushLog("Local durable state cleared.");
+      render();
+    }
+
+    function exportJson() {
+      const blob = new Blob([JSON.stringify(snapshotPayload(), null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "nodestream-mcp-runtime-state.json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      pushLog("Exported runtime state JSON.");
+    }
+
+    function importJson(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          if (!parsed || typeof parsed !== "object") throw new Error("invalid JSON payload");
+          model.schemaVersion = parsed.schemaVersion || model.schemaVersion;
+          model.sessionId = parsed.session_id || parsed.sessionId || model.sessionId;
+          model.lastSeq = Number(parsed.last_seq || parsed.lastSeq || 0);
+          model.lastStateHash = parsed.last_state_hash || parsed.lastStateHash || "sha256:0";
+          model.agents = parsed.agents || {};
+          model.tasks = parsed.tasks || {};
+          model.timeline = Array.isArray(parsed.timeline) ? parsed.timeline.slice(0, 200) : [];
+          model.outbox = [];
+          persistState();
+          pushLog("Imported runtime state JSON.");
+          render();
+        } catch (err) {
+          alert(`Import failed: ${err.message}`);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function loadDemoState() {
+      const now = nowIso();
+      model.agents = {
+        "agent.alpha": {
+          agent_id: "agent.alpha",
+          display_name: "Alpha Planner",
+          runtime: "local",
+          host: "ws://localhost:8901",
+          branch: "feature/mcp-runtime-state",
+          commit_hash: "a8f4c1d",
+          dirty: false,
+          note: "Planning tasks and dispatching work.",
+          last_seen_at: now
+        },
+        "agent.beta": {
+          agent_id: "agent.beta",
+          display_name: "Beta Worker",
+          runtime: "worktree",
+          host: "C:/repo/.worktrees/task-17",
+          branch: "task/telemetry-ui",
+          commit_hash: "c21b8e2",
+          dirty: false,
+          note: "Implementing dashboard cards.",
+          last_seen_at: now
+        },
+        "agent.gamma": {
+          agent_id: "agent.gamma",
+          display_name: "Gamma Cloud",
+          runtime: "cloud",
+          host: "aws-us-east-1/i-046fd2",
+          branch: "release/candidate",
+          commit_hash: "9f0c8aa",
+          dirty: false,
+          note: "Running integration tests.",
+          last_seen_at: now
+        }
+      };
+
+      model.tasks = {
+        "TASK-114": {
+          task_id: "TASK-114",
+          title: "Implement MCP runtime state schema",
+          assigned_agent: "agent.alpha",
+          state: "running",
+          source: "prd#runtime-state",
+          note: "schema + validation",
+          updated_by: "operator",
+          updated_at: now
+        },
+        "TASK-115": {
+          task_id: "TASK-115",
+          title: "Build telemetry dashboard controls",
+          assigned_agent: "agent.beta",
+          state: "running",
+          source: "issue#511",
+          note: "form wiring + filtering",
+          updated_by: "operator",
+          updated_at: now
+        },
+        "TASK-116": {
+          task_id: "TASK-116",
+          title: "Cloud verification run",
+          assigned_agent: "agent.gamma",
+          state: "queued",
+          source: "pipeline#nightly",
+          note: "execute after merge",
+          updated_by: "operator",
+          updated_at: now
+        }
+      };
+
+      model.timeline.unshift({ at: now, event: "demo_seed", payload: { agents: 3, tasks: 3 } });
+      persistState();
+      pushLog("Demo state loaded (local). Use sync for server snapshot.");
+      render();
+    }
+
+    function bindEvents() {
+      document.getElementById("save-agent").addEventListener("click", async () => {
+        try {
+          const payload = {
+            agent_id: document.getElementById("agent-id").value.trim(),
+            display_name: document.getElementById("agent-name").value.trim() || null,
+            runtime: document.getElementById("agent-runtime").value,
+            host: document.getElementById("agent-host").value.trim() || "unknown",
+            branch: document.getElementById("agent-branch").value.trim() || "unknown",
+            commit_hash: document.getElementById("agent-commit").value.trim() || "unknown",
+            note: document.getElementById("agent-note").value.trim(),
+            dirty: false
+          };
+          if (!payload.agent_id) throw new Error("agent_id is required.");
+          await emitMutation("agent_upsert", payload);
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+
+      document.getElementById("save-task").addEventListener("click", async () => {
+        try {
+          const taskPayload = {
+            task_id: document.getElementById("task-id").value.trim(),
+            title: document.getElementById("task-title").value.trim() || null,
+            state: document.getElementById("task-state").value,
+            source: document.getElementById("task-source").value.trim(),
+            updated_by: document.getElementById("task-updated").value.trim() || "operator",
+            note: document.getElementById("task-note").value.trim()
+          };
+          if (!taskPayload.task_id) throw new Error("task_id is required.");
+          await emitMutation("task_upsert", taskPayload);
+
+          const assignedAgent = document.getElementById("task-agent").value.trim();
+          if (assignedAgent) {
+            await emitMutation("assignment_upsert", {
+              task_id: taskPayload.task_id,
+              agent_id: assignedAgent,
+              updated_by: taskPayload.updated_by
+            });
+          }
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+
+      document.getElementById("clear-state").addEventListener("click", () => {
+        if (confirm("Clear all persisted runtime state?")) clearState();
+      });
+
+      document.getElementById("seed-demo").addEventListener("click", loadDemoState);
+      document.getElementById("export-json").addEventListener("click", exportJson);
+
+      document.getElementById("import-json").addEventListener("change", (event) => {
+        const file = event.target.files && event.target.files[0];
+        if (file) importJson(file);
+      });
+
+      document.getElementById("download-html").addEventListener("click", () => {
+        const html = document.documentElement.outerHTML;
+        const blob = new Blob([html], { type: "text/html" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "nodestream-agent-runtime-dashboard.html";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        pushLog("Dashboard HTML exported.");
+      });
+
+      ["filter-runtime", "filter-state", "filter-agent"].forEach((id) => {
+        document.getElementById(id).addEventListener("input", render);
+      });
+
+      window.addEventListener("storage", (evt) => {
+        if (evt.key === STORAGE_KEY && evt.newValue) {
+          loadState();
+          render();
+        }
+      });
+
+      window.addEventListener("online", async () => {
+        pushLog("Network online. Syncing state...");
+        try {
+          await fetchSnapshotFromServer();
+          await flushOutbox();
+          connectEventStream();
+        } catch {
+          pushLog("Online sync attempt failed.");
+        }
+      });
+
+      setInterval(updateFreshness, 1000);
+      setInterval(() => { flushOutbox(); }, 3000);
+      setInterval(() => {
+        Object.keys(model.agents).forEach((agentId) => {
+          emitMutation("heartbeat", { agent_id: agentId, at: nowIso() });
+        });
+      }, 30000);
+    }
+
+    async function bootstrap() {
+      initBackground();
+      loadState();
+      bindEvents();
+      render();
+      pushLog(`UI initialized. API base: ${API_BASE}`);
+
+      try {
+        await fetchSnapshotFromServer();
+      } catch {
+        pushLog("Snapshot fetch failed. Operating from local durable cache.");
+      }
+
+      connectEventStream();
+      flushOutbox();
+    }
+
+    window.addEventListener("load", () => {
+      bootstrap();
+    });
+  </script>
+</body>
+</html>
+

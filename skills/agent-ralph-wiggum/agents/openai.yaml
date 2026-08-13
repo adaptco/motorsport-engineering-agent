@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Ralph Wiggum"
+  short_description: "Persist workflow loops until task closure."
+  default_prompt: "Use Agent Ralph Wiggum to reconcile tasks, persist state, and continue until completion."
