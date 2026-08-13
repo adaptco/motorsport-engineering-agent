@@ -18,10 +18,9 @@ from fastapi.responses import StreamingResponse
 from shared.forensic_ledger import append_receipt, list_receipts
 from shared.models import (
     RuntimeAgentRecord,
-    RuntimeHeartbeatPayload,
     RuntimeAgentUpsertPayload,
-    RuntimeTaskUpsertPayload,
     RuntimeAssignmentUpsertPayload,
+    RuntimeHeartbeatPayload,
     RuntimeStateAgentUpsertEvent,
     RuntimeStateAssignmentUpsertEvent,
     RuntimeStateDeltaEvent,
@@ -32,6 +31,7 @@ from shared.models import (
     RuntimeStateSummary,
     RuntimeStateTaskUpsertEvent,
     RuntimeTaskRecord,
+    RuntimeTaskUpsertPayload,
 )
 from shared.runtime_paths import default_session_ledger_path
 
@@ -90,7 +90,9 @@ def _coerce_event(event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
         return event.model_dump(mode="json")
     if event_type == "assignment_upsert":
         typed_payload = RuntimeAssignmentUpsertPayload(**(payload or {}))
-        event = RuntimeStateAssignmentUpsertEvent(event_type="assignment_upsert", payload=typed_payload)
+        event = RuntimeStateAssignmentUpsertEvent(
+            event_type="assignment_upsert", payload=typed_payload
+        )
         return event.model_dump(mode="json")
     if event_type == "heartbeat":
         event = RuntimeHeartbeatPayload(**payload)
