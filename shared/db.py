@@ -25,7 +25,7 @@ DB_POOL_TIMEOUT_SECONDS = int(os.environ.get("DB_POOL_TIMEOUT_SECONDS", "30"))
 DB_POOL_MAX_WAITING = int(os.environ.get("DB_POOL_MAX_WAITING", "20"))
 
 _pool_lock = Lock()
-_pool: Any = None
+_pool: Any | None = None
 
 
 def get_pool():
