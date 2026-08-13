@@ -1,3 +1,19 @@
+## v3.8 / 0.3.8
+1. Version Manifest & Release Metadata Synchronization
+Unified Kernel & Package Semver: Updated and synchronized the kernel version (3.8) and package version (0.3.8) across VERSION.json, pyproject.toml, README.md, and CHANGELOG.md.
+
+Release Gate Validation: Enforced automated version alignment CI checks (tests/test_version_alignment.py) to validate that all package metadata, top-level headings, and manifest files strictly match prior to deployment.
+
+2. Multi-Modal CFD & Simulation Expansion
+CFD Multimodal Agent Package: Introduced the new A2A_MCP/packages/cfd-multimodal-agent workspace scaffold, including FastAPI microservice routes and Pydantic data models for handling multimodal aerodynamics and CFD pipeline execution.
+
+Aerodynamics Simulator Enhancements: Integrated updated telemetry and aero-simulation state models to process aerodynamics data alongside core engine runtime state.
+
+3. CI/CD Hardening & Code Quality
+Ruff Formatting & Import Sorting: Enforced standard PEP 8 import sorting (I001) and lint rules across all new subpackages and test suites (tests/test_aero_simulation_state.py, tests/test_mcp_tools_guardrail.py, tests/test_time_domains.py).
+
+Dependency & Security Maintenance: Upgraded core dependencies (including pytest coverage tools via pytest-cov >= 7.1.0) and updated environment locks to address security audit advisories across runtime packages (click, pyjwt, starlette, urllib3).
+
 ## v3.6.3 / 0.3.6.3
 
 - consolidated production-readiness hardening and release metadata alignment for v3.6.3
