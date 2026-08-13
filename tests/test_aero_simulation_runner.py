@@ -10,7 +10,10 @@ from types import SimpleNamespace
 
 import pytest
 
-from control_plane.services.aero_runner import AeroSandboxRunner, OpenFoamRuntimeProfile, WslOpenFoamRunner
+from control_plane.services.aero_runner import (
+    AeroSandboxRunner,
+    WslOpenFoamRunner,
+)
 from control_plane.services.aero_state_store import (
     apply_aero_solver_result,
     build_initial_state,
@@ -97,7 +100,9 @@ def test_wsl_runner_bootstrap_and_launch_command_scaffold(tmp_path: Path) -> Non
 
 def test_wsl_runner_is_wsl_available(monkeypatch) -> None:
     runner = WslOpenFoamRunner()
-    monkeypatch.setattr("control_plane.services.aero_runner.shutil.which", lambda binary: "/usr/bin/wsl.exe")
+    monkeypatch.setattr(
+        "control_plane.services.aero_runner.shutil.which", lambda binary: "/usr/bin/wsl.exe"
+    )
     assert runner.is_wsl_available() is True
 
     monkeypatch.setattr("control_plane.services.aero_runner.shutil.which", lambda binary: None)
@@ -109,7 +114,9 @@ def test_wsl_runner_validate_distro_success(monkeypatch) -> None:
     monkeypatch.setattr("control_plane.services.aero_runner.shutil.which", lambda binary: "wsl.exe")
     mock_os_release = 'NAME="Ubuntu"\nVERSION="22.04.4 LTS (Jammy Jellyfish)"\nID=ubuntu\nVERSION_ID="22.04"\n---UNAME---\n5.15.153.1-microsoft-standard-WSL2\n'
     fake_completed = SimpleNamespace(returncode=0, stdout=mock_os_release, stderr="")
-    monkeypatch.setattr("control_plane.services.aero_runner.subprocess.run", lambda *args, **kwargs: fake_completed)
+    monkeypatch.setattr(
+        "control_plane.services.aero_runner.subprocess.run", lambda *args, **kwargs: fake_completed
+    )
 
     status = runner.validate_distro()
     assert status["available"] is True
@@ -129,7 +136,9 @@ def test_wsl_runner_validate_distro_failures(monkeypatch) -> None:
 
     monkeypatch.setattr("control_plane.services.aero_runner.shutil.which", lambda binary: "wsl.exe")
     fake_failed = SimpleNamespace(returncode=1, stdout="", stderr="Distro not found\n")
-    monkeypatch.setattr("control_plane.services.aero_runner.subprocess.run", lambda *args, **kwargs: fake_failed)
+    monkeypatch.setattr(
+        "control_plane.services.aero_runner.subprocess.run", lambda *args, **kwargs: fake_failed
+    )
     status_failed = runner.validate_distro()
     assert status_failed["available"] is False
     assert "Distro not found" in status_failed["error"]
@@ -140,7 +149,9 @@ def test_wsl_runner_validate_toolchain_success(monkeypatch) -> None:
     monkeypatch.setattr("control_plane.services.aero_runner.shutil.which", lambda binary: "wsl.exe")
     mock_output = "BASHRC:1\nBLOCKMESH:1\nCHECKMESH:1\nSIMPLEFOAM:1\nOF_VERSION:11\n"
     fake_completed = SimpleNamespace(returncode=0, stdout=mock_output, stderr="")
-    monkeypatch.setattr("control_plane.services.aero_runner.subprocess.run", lambda *args, **kwargs: fake_completed)
+    monkeypatch.setattr(
+        "control_plane.services.aero_runner.subprocess.run", lambda *args, **kwargs: fake_completed
+    )
 
     status = runner.validate_toolchain()
     assert status["valid"] is True
@@ -156,7 +167,9 @@ def test_wsl_runner_validate_toolchain_missing_tools(monkeypatch) -> None:
     monkeypatch.setattr("control_plane.services.aero_runner.shutil.which", lambda binary: "wsl.exe")
     mock_output = "BASHRC:0\nBLOCKMESH:0\nCHECKMESH:0\nSIMPLEFOAM:0\nOF_VERSION:\n"
     fake_completed = SimpleNamespace(returncode=0, stdout=mock_output, stderr="")
-    monkeypatch.setattr("control_plane.services.aero_runner.subprocess.run", lambda *args, **kwargs: fake_completed)
+    monkeypatch.setattr(
+        "control_plane.services.aero_runner.subprocess.run", lambda *args, **kwargs: fake_completed
+    )
 
     status = runner.validate_toolchain()
     assert status["valid"] is False
@@ -168,7 +181,9 @@ def test_wsl_runner_provision_environment_success_and_failure(monkeypatch) -> No
     runner = WslOpenFoamRunner()
     monkeypatch.setattr("control_plane.services.aero_runner.shutil.which", lambda binary: "wsl.exe")
     fake_completed = SimpleNamespace(returncode=0, stdout="OpenFOAM 11 installed\n", stderr="")
-    monkeypatch.setattr("control_plane.services.aero_runner.subprocess.run", lambda *args, **kwargs: fake_completed)
+    monkeypatch.setattr(
+        "control_plane.services.aero_runner.subprocess.run", lambda *args, **kwargs: fake_completed
+    )
 
     provision_res = runner.provision_environment()
     assert provision_res["success"] is True
@@ -184,8 +199,12 @@ def test_wsl_runner_smoke_path_returns_meshed_status(tmp_path: Path, monkeypatch
     req = build_gt4_aero_run_request(runtime_target="wsl2", runner_kind="wsl")
     case_dir = tmp_path / "wsl_smoke_case"
 
-    fake_completed = SimpleNamespace(returncode=0, stdout="blockMesh completed\ncheckMesh: Mesh OK.\n", stderr="")
-    monkeypatch.setattr("control_plane.services.aero_runner.subprocess.run", lambda *args, **kwargs: fake_completed)
+    fake_completed = SimpleNamespace(
+        returncode=0, stdout="blockMesh completed\ncheckMesh: Mesh OK.\n", stderr=""
+    )
+    monkeypatch.setattr(
+        "control_plane.services.aero_runner.subprocess.run", lambda *args, **kwargs: fake_completed
+    )
 
     result = WslOpenFoamRunner().run_smoke(req, case_dir=case_dir)
     assert result.execution_state.runner_kind == "wsl"
@@ -238,8 +257,12 @@ def test_wsl_runner_nonzero_exit_code_returns_failed_result(tmp_path: Path, monk
     req = build_gt4_aero_run_request(runtime_target="wsl2", runner_kind="wsl")
     case_dir = tmp_path / "wsl_fail_case"
 
-    fake_failed = SimpleNamespace(returncode=2, stdout="blockMesh error\n", stderr="FOAM FATAL ERROR\n")
-    monkeypatch.setattr("control_plane.services.aero_runner.subprocess.run", lambda *args, **kwargs: fake_failed)
+    fake_failed = SimpleNamespace(
+        returncode=2, stdout="blockMesh error\n", stderr="FOAM FATAL ERROR\n"
+    )
+    monkeypatch.setattr(
+        "control_plane.services.aero_runner.subprocess.run", lambda *args, **kwargs: fake_failed
+    )
 
     result = WslOpenFoamRunner().run(req, case_dir=case_dir)
     assert result.execution_state.runner_kind == "wsl"

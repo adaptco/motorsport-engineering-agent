@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  cfd-api:
+    build:
+      context: ./packages/cfd-multimodal-agent/apps/api
+    ports:
+      - "8000:8000"
+    environment:
+      CFD_ENV: dev
+      CFD_HOST: 0.0.0.0
+      CFD_PORT: 8000
+
+  cfd-web:
+    build:
+      context: ./packages/cfd-multimodal-agent/apps/web
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+    depends_on:
+      - cfd-api

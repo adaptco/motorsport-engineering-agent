@@ -156,10 +156,10 @@ from sqlalchemy.pool import QueuePool
 engine = create_engine(
     DATABASE_URL,
     poolclass=QueuePool,
-    pool_size=10,           # Connections to keep in pool
-    max_overflow=20,        # Additional connections when pool exhausted
-    pool_recycle=3600,      # Recycle connections after 1 hour
-    pool_pre_ping=True,     # Verify connection before reuse
+    pool_size=10,  # Connections to keep in pool
+    max_overflow=20,  # Additional connections when pool exhausted
+    pool_recycle=3600,  # Recycle connections after 1 hour
+    pool_pre_ping=True,  # Verify connection before reuse
 )
 ```
 
@@ -273,11 +273,11 @@ CREATE INDEX idx_evidence_packets_session_ts ON evidence_packets(session_id, tim
 **Pattern Identified:** Sequential connection creates per operation
 ```python
 # Each line creates a NEW connection
-create_job(...)           # Connection 1 (3 inserts)
-update_job_phase(...)     # Connection 2 (2 operations)
-get_job(...)              # Connection 3 (1 select)
-list_trace(...)           # Connection 4 (2 selects)
-add_span(...)             # Connection 5 (1 insert)
+create_job(...)  # Connection 1 (3 inserts)
+update_job_phase(...)  # Connection 2 (2 operations)
+get_job(...)  # Connection 3 (1 select)
+list_trace(...)  # Connection 4 (2 selects)
+add_span(...)  # Connection 5 (1 insert)
 ```
 
 **N+1 Risk:** Not primary concern (single-statement queries), but connection overhead compounds.
@@ -365,7 +365,7 @@ ON forensic_ledger(session_id, logical_clock);
 # control_plane/repository.py
 SESSION_LEDGER_DB_PATH = os.environ.get(
     "SESSION_LEDGER_DB_PATH",
-    "postgresql://mea:mea@localhost:5432/mea_ledger"  # Persistent!
+    "postgresql://mea:mea@localhost:5432/mea_ledger",  # Persistent!
 )
 ```
 
@@ -393,6 +393,7 @@ pool = ConnectionPool(
     max_size=20,
     timeout=30,
 )
+
 
 @contextmanager
 def get_conn():

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+coverage/
+.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.env
+.env.*
+*.pyc
+.DS_Store
+.turbo/
+pnpm-lock.yaml

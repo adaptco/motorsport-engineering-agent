@@ -5,24 +5,22 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
 from fastapi.testclient import TestClient
 from jsonschema import Draft202012Validator
 
 from control_plane.app import app
-from tests.fixtures import build_gt4_aero_run_payload, build_gt4_aero_run_request
-from control_plane.services.aero_state_store import (
-    build_initial_state,
-    save_aero_state,
-    apply_aero_solver_result,
-    load_aero_state,
-    append_aero_branch,
-)
 from control_plane.services.aero_runner import AeroSandboxRunner
+from control_plane.services.aero_state_store import (
+    append_aero_branch,
+    apply_aero_solver_result,
+    build_initial_state,
+    load_aero_state,
+    save_aero_state,
+)
 from control_plane.services.cad_resolver import resolve_cad_candidate
 from shared.forensic_ledger import sha256_prefixed
 from shared.models import AeroSimulationBranchRequest
-
+from tests.fixtures import build_gt4_aero_run_payload, build_gt4_aero_run_request
 
 client = TestClient(app)
 
@@ -293,7 +291,9 @@ def test_missing_cad_and_missing_solver_cases_fail_cleanly_without_touching_tele
     assert updated.metric_snapshot["cl"] is None
 
 
-def test_regression_guard_aero_isolated_from_telemetry_and_replay(tmp_path: Path, monkeypatch) -> None:
+def test_regression_guard_aero_isolated_from_telemetry_and_replay(
+    tmp_path: Path, monkeypatch
+) -> None:
     aero_root = tmp_path / "aero_state"
     monkeypatch.setenv("AERO_STATE_ROOT", str(aero_root))
 
