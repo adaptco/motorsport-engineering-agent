@@ -8,6 +8,7 @@ from .models import (
     PromptPackResponse,
     SimulateRequest,
     SimulateResponse,
+    VehiclePreset,
 )
 from .presets import PRESETS
 from .simulation import run_simulation
