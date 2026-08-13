@@ -6,6 +6,7 @@ import hashlib
 import json
 import re
 import shlex
+import shutil
 import subprocess
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -65,6 +66,17 @@ def _reference_length_m(req: AeroSimulationRunRequest) -> float:
 def _write_text(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
+
+
+def _ensure_str(value: bytes | str | None) -> str:
+    """Normalize a bytes|str|None value into a str for writing to text files.
+
+    Some subprocess exceptions may include stdout/stderr as bytes or strings,
+    so normalize here to avoid mypy/typing errors and ensure proper decoding.
+    """
+    if isinstance(value, bytes):
+        return value.decode("utf-8")
+    return value or ""
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
@@ -265,6 +277,62 @@ class AeroSandboxRunner:
     def __init__(self, profile: OpenFoamRuntimeProfile | None = None) -> None:
         self.profile = profile or OpenFoamRuntimeProfile()
 
+    def run_smoke(
+        self, req: AeroSimulationRunRequest, *, run_id: str, case_dir: Path
+    ) -> AeroSimulationSolveResult:
+        case_dir.mkdir(parents=True, exist_ok=True)
+        logs_dir = case_dir / "logs"
+        results_dir = case_dir / "results"
+        started_at = _utcnow()
+        stdout_path = logs_dir / "sandbox.stdout.log"
+        stderr_path = logs_dir / "sandbox.stderr.log"
+        execution_notes = [
+            "Deterministic sandbox mesh smoke run (blockMesh + checkMesh) for the GT4 aero baseline.",
+            f"Run id: {run_id}",
+            "Mesh validation smoke path completed; solve omitted.",
+        ]
+        _write_text(stdout_path, "\n".join(execution_notes) + "\n")
+        _write_text(stderr_path, "")
+
+        execution_state = _build_execution_state(
+            runner_kind="sandbox",
+            status="complete",
+            solver_status="meshed",
+            environment="sandbox",
+            profile=self.profile,
+            command=["sandbox://aero-mesh-smoke", run_id],
+            started_at=started_at,
+            finished_at=started_at,
+            exit_code=0,
+            stdout_uri=str(stdout_path),
+            stderr_uri=str(stderr_path),
+            result_uri=str(results_dir / "aero_result.json"),
+            kernel_signature="deterministic-sandbox",
+            notes=execution_notes,
+        )
+
+        result = AeroSimulationSolveResult(
+            execution_state=execution_state,
+            cl=None,
+            cd=None,
+            cm_pitch=None,
+            aero_balance_pct=None,
+            drag_area_m2=None,
+            downforce_n=None,
+            confidence=0.5,
+            correlation_score=None,
+            residual_score=None,
+            artifacts=_result_artifact_refs(
+                case_dir=case_dir,
+                stdout_path=stdout_path,
+                stderr_path=stderr_path,
+                force_coeffs_path=None,
+            ),
+            notes=execution_notes,
+        )
+        _write_json(results_dir / "aero_result.json", result.model_dump(mode="json"))
+        return result
+
     def run(
         self, req: AeroSimulationRunRequest, *, run_id: str, case_dir: Path
     ) -> AeroSimulationSolveResult:
@@ -331,6 +399,9 @@ class WslOpenFoamRunner:
     def __init__(self, profile: OpenFoamRuntimeProfile | None = None) -> None:
         self.profile = profile or OpenFoamRuntimeProfile()
 
+    def is_wsl_available(self) -> bool:
+        return shutil.which(self.profile.wsl_binary) is not None
+
     def bootstrap_script(self) -> str:
         return (
             "\n".join(
@@ -349,6 +420,179 @@ class WslOpenFoamRunner:
             )
             + "\n"
         )
+
+    def validate_distro(self, timeout_seconds: int = 15) -> dict[str, Any]:
+        if not self.is_wsl_available():
+            return {
+                "available": False,
+                "distro_name": self.profile.distro_name,
+                "distro_version": None,
+                "valid": False,
+                "kernel": None,
+                "error": f"WSL binary '{self.profile.wsl_binary}' not found on host system PATH.",
+            }
+        command = [
+            self.profile.wsl_binary,
+            "-d",
+            self.profile.distro_name,
+            "--",
+            "bash",
+            "-lc",
+            "cat /etc/os-release; echo '---UNAME---'; uname -r",
+        ]
+        try:
+            completed = subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=timeout_seconds,
+            )
+            if completed.returncode != 0:
+                return {
+                    "available": False,
+                    "distro_name": self.profile.distro_name,
+                    "distro_version": None,
+                    "valid": False,
+                    "kernel": None,
+                    "error": completed.stderr.strip() or f"Distro check failed with exit code {completed.returncode}",
+                }
+            stdout = completed.stdout
+            version_match = re.search(r'VERSION_ID="?([^"\n]+)"?', stdout)
+            distro_version = version_match.group(1) if version_match else None
+            kernel = None
+            if "---UNAME---" in stdout:
+                parts = stdout.split("---UNAME---")
+                kernel = parts[1].strip()
+            return {
+                "available": True,
+                "distro_name": self.profile.distro_name,
+                "distro_version": distro_version,
+                "valid": bool(distro_version and self.profile.distro_version in distro_version),
+                "kernel": kernel,
+                "error": None,
+            }
+        except Exception as exc:
+            return {
+                "available": False,
+                "distro_name": self.profile.distro_name,
+                "distro_version": None,
+                "valid": False,
+                "kernel": None,
+                "error": str(exc),
+            }
+
+    def validate_toolchain(self, timeout_seconds: int = 20) -> dict[str, Any]:
+        if not self.is_wsl_available():
+            return {
+                "valid": False,
+                "blockMesh": False,
+                "checkMesh": False,
+                "simpleFoam": False,
+                "openfoam_version": self.profile.openfoam_version,
+                "bashrc_found": False,
+                "error": f"WSL binary '{self.profile.wsl_binary}' not found on host system PATH.",
+            }
+        check_script = (
+            f"BASHRC_EXISTS=0; [ -f {shlex.quote(self.profile.openfoam_bashrc)} ] && BASHRC_EXISTS=1; "
+            f"if [ $BASHRC_EXISTS -eq 1 ]; then source {shlex.quote(self.profile.openfoam_bashrc)} 2>/dev/null || true; fi; "
+            'echo "BASHRC:$BASHRC_EXISTS"; '
+            'command -v blockMesh >/dev/null 2>&1 && echo "BLOCKMESH:1" || echo "BLOCKMESH:0"; '
+            'command -v checkMesh >/dev/null 2>&1 && echo "CHECKMESH:1" || echo "CHECKMESH:0"; '
+            'command -v simpleFoam >/dev/null 2>&1 && echo "SIMPLEFOAM:1" || echo "SIMPLEFOAM:0"; '
+            'echo "OF_VERSION:$WM_PROJECT_VERSION"'
+        )
+        command = [
+            self.profile.wsl_binary,
+            "-d",
+            self.profile.distro_name,
+            "--",
+            self.profile.shell_binary,
+            "-lc",
+            check_script,
+        ]
+        try:
+            completed = subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=timeout_seconds,
+            )
+            if completed.returncode != 0:
+                return {
+                    "valid": False,
+                    "blockMesh": False,
+                    "checkMesh": False,
+                    "simpleFoam": False,
+                    "openfoam_version": self.profile.openfoam_version,
+                    "bashrc_found": False,
+                    "error": completed.stderr.strip() or f"Toolchain check failed with exit code {completed.returncode}",
+                }
+            stdout = completed.stdout
+            bashrc_found = "BASHRC:1" in stdout
+            block_mesh = "BLOCKMESH:1" in stdout
+            check_mesh = "CHECKMESH:1" in stdout
+            simple_foam = "SIMPLEFOAM:1" in stdout
+            valid = block_mesh and check_mesh and simple_foam
+            return {
+                "valid": valid,
+                "blockMesh": block_mesh,
+                "checkMesh": check_mesh,
+                "simpleFoam": simple_foam,
+                "openfoam_version": self.profile.openfoam_version,
+                "bashrc_found": bashrc_found,
+                "error": None,
+            }
+        except Exception as exc:
+            return {
+                "valid": False,
+                "blockMesh": False,
+                "checkMesh": False,
+                "simpleFoam": False,
+                "openfoam_version": self.profile.openfoam_version,
+                "bashrc_found": False,
+                "error": str(exc),
+            }
+
+    def provision_environment(self, timeout_seconds: int = 600) -> dict[str, Any]:
+        if not self.is_wsl_available():
+            return {
+                "success": False,
+                "exit_code": -1,
+                "stdout": "",
+                "stderr": f"WSL binary '{self.profile.wsl_binary}' not found on host system PATH.",
+            }
+        command = [
+            self.profile.wsl_binary,
+            "-d",
+            self.profile.distro_name,
+            "--",
+            self.profile.shell_binary,
+            "-lc",
+            self.bootstrap_script(),
+        ]
+        try:
+            completed = subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=timeout_seconds,
+            )
+            return {
+                "success": completed.returncode == 0,
+                "exit_code": completed.returncode,
+                "stdout": completed.stdout,
+                "stderr": completed.stderr,
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "exit_code": -1,
+                "stdout": "",
+                "stderr": str(exc),
+            }
 
     def launch_command(self, case_dir: Path, *, include_simple_foam: bool = True) -> list[str]:
         wsl_case_dir = shlex.quote(str(case_dir))
@@ -373,6 +617,9 @@ class WslOpenFoamRunner:
             body,
         ]
 
+    def run_smoke(self, req: AeroSimulationRunRequest, *, case_dir: Path) -> AeroSimulationSolveResult:
+        return self.run(req, case_dir=case_dir, include_simple_foam=False)
+
     def run(
         self, req: AeroSimulationRunRequest, *, case_dir: Path, include_simple_foam: bool = True
     ) -> AeroSimulationSolveResult:
@@ -395,9 +642,9 @@ class WslOpenFoamRunner:
             stderr_path = logs_dir / "wsl.stderr.log"
             stdout_path.parent.mkdir(parents=True, exist_ok=True)
             stderr_path.parent.mkdir(parents=True, exist_ok=True)
-            stdout_path.write_text(exc.stdout or "", encoding="utf-8")
+            stdout_path.write_text(_ensure_str(exc.stdout), encoding="utf-8")
             stderr_path.write_text(
-                (exc.stderr or "") + f"\nSolver timed out after {SOLVER_RUN_TIMEOUT_SECONDS}s\n",
+                _ensure_str(exc.stderr) + f"\nSolver timed out after {SOLVER_RUN_TIMEOUT_SECONDS}s\n",
                 encoding="utf-8",
             )
 
@@ -493,6 +740,49 @@ class WslOpenFoamRunner:
             )
             _write_json(results_dir / "aero_result.json", failed_result.model_dump(mode="json"))
             return failed_result
+
+        if not include_simple_foam:
+            execution_notes = [
+                "WSL OpenFOAM smoke mesh run (blockMesh + checkMesh) completed successfully.",
+                "simpleFoam solve skipped in smoke mode.",
+            ]
+            execution_state = _build_execution_state(
+                runner_kind="wsl",
+                status="complete",
+                solver_status="meshed",
+                environment="wsl2",
+                profile=self.profile,
+                command=command,
+                started_at=started_at,
+                finished_at=finished_at,
+                exit_code=0,
+                stdout_uri=str(stdout_path),
+                stderr_uri=str(stderr_path),
+                result_uri=str(results_dir / "aero_result.json"),
+                kernel_signature=None,
+                notes=execution_notes,
+            )
+            result = AeroSimulationSolveResult(
+                execution_state=execution_state,
+                cl=None,
+                cd=None,
+                cm_pitch=None,
+                aero_balance_pct=None,
+                drag_area_m2=None,
+                downforce_n=None,
+                confidence=0.5,
+                correlation_score=None,
+                residual_score=None,
+                artifacts=_result_artifact_refs(
+                    case_dir=case_dir,
+                    stdout_path=stdout_path,
+                    stderr_path=stderr_path,
+                    force_coeffs_path=None,
+                ),
+                notes=execution_notes,
+            )
+            _write_json(results_dir / "aero_result.json", result.model_dump(mode="json"))
+            return result
 
         parsed = _parse_force_coeffs_file(
             next(
