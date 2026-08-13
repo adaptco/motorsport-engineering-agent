@@ -21,9 +21,9 @@ def healthz() -> dict:
     return {"status": "ok"}
 
 
-@app.get("/presets")
-def list_presets() -> list[dict]:
-    return [preset.model_dump() for preset in PRESETS.values()]
+@app.get("/presets", response_model=list[VehiclePreset])
+def list_presets() -> list[VehiclePreset]:
+    return list(PRESETS.values())
 
 
 @app.post("/simulate", response_model=SimulateResponse)
