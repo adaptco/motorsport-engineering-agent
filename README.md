@@ -1,4 +1,4 @@
-# MEA Root Kernel v3.6.3
+# MEA Root Kernel v3.8
 
 MEA Multi-Agent Runtime Template
 
