@@ -68,7 +68,7 @@ def test_frontend_endpoint_references_match_contract():
         refs.update(
             re.findall(
                 r'["`](/(?:healthz(?:/dependencies)?|metrics|runtime/sessions|'
-                r'ingest/sources|aero/runs|runtime/logs/parse|runtime-state/snapshot)'
+                r"ingest/sources|aero/runs|runtime/logs/parse|runtime-state/snapshot)"
                 r'[^"`?]*)',
                 path.read_text(),
             )
