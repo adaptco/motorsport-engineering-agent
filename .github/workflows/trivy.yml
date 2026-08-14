@@ -1,9 +1,36 @@
-- name: Run Trivy vulnerability scanner
-  uses: aquasecurity/trivy-action@master
-  with:
-    scan-type: 'image'
-    image-ref: 'mea-mcp-server:latest'
-    ignore-unfixed: true          # Ignores CVEs without an available distribution fix
-    severity: 'CRITICAL,HIGH'
-    format: 'sarif'
-    output: 'trivy-results.sarif'
+name: Security Audit (Trivy)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 0' # Optional: Run weekly
+
+jobs:
+  trivy-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build local Docker image
+        run: |
+          docker build -t mea-mcp-server:latest --target mcp_server .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'image'
+          image-ref: 'mea-mcp-server:latest'
+          ignore-unfixed: true # Ignores CVEs without an available distribution fix
+          severity: 'CRITICAL,HIGH'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
