@@ -23,3 +23,7 @@ request.received
 3. Policy gate
 4. Budget gate
 5. Idempotency gate
+
+## Additive execution control
+
+`execution-control.schema.json` defines **only** the missing command and worker-lease primitives used to schedule, pause, resume, cancel, or checkpoint an existing run. It does not replace `agent_runtime_contract_bundle.schema.json`, which remains the authority for event-gated runtime behavior, or `contracts/orchestrator/orchestrator_run.schema.json`, which remains the authority for aggregate run state.

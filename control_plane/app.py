@@ -10,6 +10,7 @@ from pathlib import Path
 from threading import Lock
 
 from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import JSONResponse
@@ -120,7 +121,21 @@ async def lifespan(app: FastAPI):
     close_pool()
 
 
+def _cors_allowed_origins() -> list[str]:
+    configured = os.environ.get(
+        "MEA_CORS_ALLOWED_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000"
+    )
+    return [origin.strip() for origin in configured.split(",") if origin.strip()]
+
+
 app = FastAPI(title="MEA Control Plane", lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_allowed_origins(),
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Accept", "Authorization", "Content-Type", "x-request-id"],
+)
 app.include_router(github_router)
 app.include_router(session_router)
 app.include_router(replay_router)
@@ -194,6 +209,18 @@ async def rate_limit_middleware(request: Request, call_next):
 @app.get("/", include_in_schema=False)
 def get_agent_manager_window():
     return FileResponse("frontend/index.html")
+
+
+@app.get("/api/routes", include_in_schema=False)
+def list_routes() -> dict[str, list[dict[str, str]]]:
+    """Return a read-only index of documented control-plane operations for operator tooling."""
+    routes = [
+        {"method": method.upper(), "path": path}
+        for path, operations in app.openapi()["paths"].items()
+        for method in operations
+        if method.lower() in {"delete", "get", "patch", "post", "put"}
+    ]
+    return {"routes": sorted(routes, key=lambda route: (route["path"], route["method"]))}
 
 
 @app.get("/healthz")
