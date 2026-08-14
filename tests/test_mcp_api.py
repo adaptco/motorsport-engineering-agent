@@ -12,6 +12,8 @@ def test_mcp_info_reports_contract_metadata():
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["runtime_id"] == "motorsport-engineering-agent-mcp"
+    assert body["version"] == "3.8"
+    assert body["package_version"] == "0.3.8"
     assert body["agent_count"] == 5
     assert "planner" in body["agent_ids"]
 

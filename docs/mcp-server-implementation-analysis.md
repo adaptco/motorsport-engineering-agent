@@ -58,7 +58,7 @@ The A2A (Agent-to-Agent) invoke functionality is currently scaffolded:
 The implementation provides the framework for future LLM integration but requires API keys and transport logic to enable actual model invocations.
 
 ## Verification Results
-- ✅ Health check endpoint (`/healthz`) returns `{"status": "ok", "kernel_version": "3.2"}`
+- ✅ Health check endpoint (`/healthz`) returns `{"status": "ok", "kernel_version": "3.8", "package_version": "0.3.8"}`
 - ✅ Providers endpoint (`/providers`) returns correct status for all 4 supported providers
 - ✅ Server starts successfully and handles requests properly
 - ✅ Authentication logic validated (though not fully tested without token)

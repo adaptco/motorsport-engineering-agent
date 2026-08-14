@@ -54,6 +54,7 @@ class MCPAgentContract(BaseModel):
 class MCPRuntimeConfig(BaseModel):
     runtime_id: str
     version: str
+    package_version: str
     description: str
     agents: list[MCPAgentContract]
 
@@ -85,6 +86,7 @@ class MCPInvokeResponse(BaseModel):
 class MCPInfoResponse(BaseModel):
     runtime_id: str
     version: str
+    package_version: str
     config_path: str
     agent_count: int
     agent_ids: list[str]
@@ -150,6 +152,7 @@ def mcp_info() -> MCPInfoResponse:
     return MCPInfoResponse(
         runtime_id=config.runtime_id,
         version=config.version,
+        package_version=config.package_version,
         config_path=str(_config_path()),
         agent_count=len(config.agents),
         agent_ids=[agent.agent_id for agent in config.agents],

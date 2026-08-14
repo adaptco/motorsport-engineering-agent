@@ -73,7 +73,7 @@ Uses file watches to sync code changes into running containers.
 
 ### Building Specific Service
 ```bash
-docker build -f control_plane/Dockerfile -t mea-control-plane:latest .
+docker build -f control_plane/Dockerfile -t mea-control-plane:3.8 .
 ```
 
 ### Viewing Logs
@@ -91,7 +91,7 @@ docker compose logs -f control_plane
 ## Image Sizes
 
 ```
-mea-root-kernel:latest      831MB
+mea-control-plane:3.8      831MB
 mea-control-plane           (derived from builder)
 mea-mcp-server             (derived from builder)
 mea-worker                 (derived from builder)
@@ -118,7 +118,7 @@ mea-worker                 (derived from builder)
 
 1. **Use Docker Buildx for caching**: `docker buildx build --cache-to type=local,dest=.buildx-cache`
 2. **Enable BuildKit**: `DOCKER_BUILDKIT=1 docker build`
-3. **Scan images for vulnerabilities**: `docker scout cves mea-root-kernel:latest`
+3. **Scan images for vulnerabilities**: `docker scout cves mea-control-plane:3.8`
 4. **Use Docker secrets** for production credentials (instead of .env files)
 5. **Add nginx reverse proxy** for production load balancing
 6. **Implement Docker layer caching** by moving COPY commands after RUN commands

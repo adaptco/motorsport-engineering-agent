@@ -28,7 +28,7 @@ resources:
 
 commonLabels:
   app: mea-root-kernel
-  version: v1
+  app.kubernetes.io/version: "3.8"
 
 commonAnnotations:
   managed-by: kustomize

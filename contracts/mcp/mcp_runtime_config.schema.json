@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adaptco.github.io/motorsport-engineering-agent/contracts/mcp/mcp_runtime_config.schema.json",
+  "title": "Motorsport Engineering Agent MCP Runtime Configuration",
+  "type": "object",
+  "required": [
+    "runtime_id",
+    "version",
+    "package_version",
+    "description",
+    "agents"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "./contracts/mcp/mcp_runtime_config.schema.json"
+    },
+    "runtime_id": {
+      "type": "string",
+      "const": "motorsport-engineering-agent-mcp"
+    },
+    "version": {
+      "type": "string",
+      "const": "3.8",
+      "description": "Canonical MEA kernel release version."
+    },
+    "package_version": {
+      "type": "string",
+      "const": "0.3.8",
+      "description": "Canonical MEA Python package version."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "agents": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "agent_id",
+          "name",
+          "role",
+          "concurrency_limit",
+          "capabilities",
+          "tool_scopes",
+          "resource_uris",
+          "envelope"
+        ],
+        "properties": {
+          "agent_id": {"type": "string"},
+          "name": {"type": "string"},
+          "role": {"type": "string"},
+          "concurrency_limit": {"type": "integer", "minimum": 1},
+          "capabilities": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "minLength": 1},
+            "uniqueItems": true
+          },
+          "tool_scopes": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1},
+            "uniqueItems": true
+          },
+          "resource_uris": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1},
+            "uniqueItems": true
+          },
+          "envelope": {
+            "type": "object",
+            "required": [
+              "protocol",
+              "lease_seconds",
+              "checkpoint_required",
+              "handoff_required"
+            ],
+            "properties": {
+              "protocol": {"type": "string", "const": "ANP"},
+              "lease_seconds": {"type": "integer", "minimum": 1},
+              "checkpoint_required": {"type": "boolean"},
+              "handoff_required": {"type": "boolean"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

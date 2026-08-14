@@ -32,7 +32,7 @@ services:
       start_period: 10s
 
   control_plane:
-    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:control-plane-${VERSION:-latest}
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:control-plane-${VERSION:-3.8}
     environment:
       ENV: production
       LOG_LEVEL: warning
@@ -50,7 +50,7 @@ services:
       start_period: 40s
 
   worker:
-    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:worker-${VERSION:-latest}
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:worker-${VERSION:-3.8}
     environment:
       ENV: production
       LOG_LEVEL: warning
@@ -62,7 +62,7 @@ services:
     restart: always
 
   mcp_server:
-    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:mcp-server-${VERSION:-latest}
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:mcp-server-${VERSION:-3.8}
     environment:
       ENV: production
       LOG_LEVEL: warning

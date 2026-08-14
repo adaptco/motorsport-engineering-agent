@@ -79,9 +79,9 @@ PROD_USER               # SSH user for production
 
 Images are pushed to **GitHub Container Registry (GHCR)**:
 ```
-ghcr.io/<owner>/<repo>/control_plane:latest
-ghcr.io/<owner>/<repo>/worker:latest
-ghcr.io/<owner>/<repo>/mcp_server:latest
+ghcr.io/<owner>/<repo>/control_plane:3.8
+ghcr.io/<owner>/<repo>/worker:3.8
+ghcr.io/<owner>/<repo>/mcp_server:3.8
 ```
 
 To push to Docker Hub instead, modify `container-build.yml`:

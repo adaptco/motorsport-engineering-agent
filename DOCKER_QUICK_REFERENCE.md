@@ -229,13 +229,13 @@ docker compose up -d
 ## Image Tags
 
 Standardized naming:
-- `mea-control-plane:latest` - Production control plane
-- `mea-worker:latest` - Production worker
-- `mea-mcp-server:latest` - Production MCP server
+- `mea-control-plane:3.8` - Production control plane
+- `mea-worker:3.8` - Production worker
+- `mea-mcp-server:3.8` - Production MCP server
 
 Built with:
 ```bash
-docker build -t mea-control-plane:latest --target control_plane .
+docker build -t mea-control-plane:3.8 --target control_plane .
 ```
 
 ---
@@ -260,7 +260,7 @@ docker system prune -a
 
 ### Export image for transfer
 ```bash
-docker save mea-control-plane:latest | gzip > control-plane.tar.gz
+docker save mea-control-plane:3.8 | gzip > control-plane.tar.gz
 docker load < control-plane.tar.gz
 ```
 

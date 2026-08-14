@@ -5,7 +5,7 @@ metadata:
   namespace: default
   labels:
     app: control-plane
-    version: v1
+    version: "3.8"
 spec:
   replicas: 2
   strategy:
@@ -24,7 +24,7 @@ spec:
       serviceAccountName: mea-sa
       containers:
       - name: control-plane
-        image: ${REGISTRY}/${IMAGE_NAME}:control-plane-${VERSION:-latest}
+        image: ${REGISTRY}/${IMAGE_NAME}:control-plane-${VERSION:-3.8}
         imagePullPolicy: Always
         ports:
         - name: http

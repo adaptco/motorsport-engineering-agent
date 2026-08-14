@@ -1,9 +1,14 @@
-.PHONY: test build-images
+.PHONY: test build-images build-images-v38
+
+VERSION ?= 3.8
 
 test:
-	pytest -q
+	uv run --extra dev pytest -q
 
 build-images:
-	docker build -t mea/control-plane:local -f control_plane/Dockerfile .
-	docker build -t mea/mcp-server:local -f mcp_server/Dockerfile .
-	docker build -t mea/worker:local -f worker/Dockerfile .
+	docker build --target control_plane -t mea-control-plane:$(VERSION) .
+	docker build --target mcp_server -t mea-mcp-server:$(VERSION) .
+	docker build --target worker -t mea-worker:$(VERSION) .
+
+build-images-v38: VERSION=3.8
+build-images-v38: build-images

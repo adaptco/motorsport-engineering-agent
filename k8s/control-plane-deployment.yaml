@@ -29,7 +29,7 @@ spec:
         fsGroup: 5678
       containers:
       - name: control-plane
-        image: mea-root-kernel:latest
+        image: mea-control-plane:3.8
         imagePullPolicy: IfNotPresent
         command: ["uvicorn"]
         args:
