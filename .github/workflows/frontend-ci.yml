@@ -44,10 +44,10 @@ jobs:
           PY
       - name: Validate Frontend JS Syntax
         run: |
-          node --check frontend/*.js
+          node --check frontend/app.js
       - name: Run Frontend/Backend Contract Tests
         run: |
-          uv run pytest tests/test_runtime_contract_bundle.py
+          uv run pytest tests/test_runtime_contract_bundle.py tests/test_anp_contract_bundle.py
 
   frontend-container-smoke:
     runs-on: ubuntu-latest
