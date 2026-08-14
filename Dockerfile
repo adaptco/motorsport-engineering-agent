@@ -18,8 +18,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install common system dependencies
-RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/* && \
+# Install common system dependencies in a single atomic apt step
+RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
     postgresql-client \
     curl \
