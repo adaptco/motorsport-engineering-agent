@@ -1,6 +1,24 @@
 {
-  "kernel_version": "3.5",
-  "package_version": "0.3.5",
-  "source_base": "MEA-Root-Kernel-v3.4-bundle.zip",
-  "notes": "v3.5 adds static-log ingestion skeleton and normalization outputs for local telemetry I/O testing."
+  "kernel_version": "3.8",
+  "package_version": "0.3.8",
+  "release_channel": "stable",
+  "source_base": "adaptco/motorsport-engineering-agent",
+  "runtime_contract": "contracts/runtime/agent_runtime_contract_bundle.schema.json",
+  "skill_contract": "contracts/skills/skill_contract.schema.json",
+  "reliability_policy": "config/reliability/slo.yaml",
+  "deployment": {
+    "compose": "deploy/compose/docker-compose.v3.8.yml",
+    "container": "deploy/containers/mea-v3.8/Dockerfile",
+    "verification": "deploy/verify-v3.8.sh"
+  },
+  "compatibility_endpoints": [
+    "/healthz",
+    "/healthz/dependencies",
+    "/ingest/sources",
+    "/ingest/normalize",
+    "/runtime/logs/parse",
+    "/runtime/sessions",
+    "/agent/decision",
+    "/verifier/execute"
+  ]
 }

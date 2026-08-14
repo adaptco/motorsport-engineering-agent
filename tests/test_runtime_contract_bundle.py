@@ -20,6 +20,7 @@ def _base_event(event_type: str, lane: str, fsm_state: str) -> dict[str, object]
         "schema_version": "1.0.0",
         "event_id": "evt-1",
         "run_id": "run-1",
+        "agent_id": "agent-orchestrator",
         "task_id": "task-1",
         "step_id": "step-1",
         "created_at": _now(),
@@ -42,6 +43,22 @@ def test_valid_tool_requested_event_includes_idempotency_key() -> None:
         },
     }
     validate_runtime_event(event)
+
+
+def test_runtime_event_rejects_missing_agent_id() -> None:
+    event = {
+        **_base_event("tool.requested", "mcp", "TOOL_PENDING"),
+        "payload": {
+            "tool_name": "mea_ci_guardrail",
+            "idempotency_key": "idem-001",
+            "mode": "read",
+            "arguments_digest": "sha256:" + ("b" * 64),
+        },
+    }
+    event.pop("agent_id")
+
+    with pytest.raises(ValidationError):
+        validate_runtime_event(event)
 
 
 def test_tool_requested_event_rejects_missing_idempotency_key() -> None:

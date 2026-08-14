@@ -1,6 +1,11 @@
 ---
 name: mea-runtime-contract-authority
-description: Enforce a single-source runtime contract for orchestration and tool discovery. Use when updating MCP runtime wiring, A2A handoff contracts, tool registries, or agent runtime docs so every consumer resolves tools from mcp.json plus mcp_v1_runtime_bundle/tool-registry.json without repository-wide scanning.
+description: Enforce a single-source runtime contract for orchestration and tool discovery so every consumer resolves tools from mcp.json plus mcp_v1_runtime_bundle/tool-registry.json without repository-wide scanning.
+contract_version: "1.0"
+policy_scope: read
+source_of_truth:
+  - mcp.json
+  - mcp_v1_runtime_bundle/tool-registry.json
 ---
 
 # MEA Runtime Contract Authority

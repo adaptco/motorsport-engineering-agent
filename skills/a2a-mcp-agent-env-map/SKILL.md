@@ -1,6 +1,11 @@
 ---
 name: a2a-mcp-agent-env-map
-description: Build and maintain a fail-closed environment-variable and runtime contract map for Motorsport Engineering Agent (MEA) across control plane, worker, MCP server, and GitHub integration paths. Use when auditing env drift, wiring deployments, or documenting startup contracts.
+description: Build and maintain a fail-closed environment-variable and runtime contract map across control plane, worker, MCP server, and GitHub integration paths.
+contract_version: "1.0"
+policy_scope: read
+source_of_truth:
+  - infra/render.yaml
+  - mcp.json
 ---
 
 # a2a-mcp-agent-env-map

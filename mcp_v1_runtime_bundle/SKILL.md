@@ -1,3 +1,13 @@
+---
+name: mcp-v1-single-agent-release
+description: Drive a checkpointed and resumable MCP V1 runtime generation workflow with bounded context and local validation.
+contract_version: "1.0"
+policy_scope: execute
+source_of_truth:
+  - mcp.json
+  - mcp_v1_runtime_bundle/tool-registry.json
+---
+
 # SKILL.md
 
 ## Skill Name

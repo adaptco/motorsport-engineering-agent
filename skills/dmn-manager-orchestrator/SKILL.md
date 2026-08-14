@@ -1,6 +1,12 @@
 ---
 name: dmn-manager-orchestrator
-description: Govern Motorsport Engineering Agent production-readiness execution using DMN gate policy, evidence-first Ralph reconciliation loops, and phase checkpoints. Use for multi-phase repo closure, task-ledger completion, and safe delegation control.
+description: Govern production-readiness execution using DMN gate policy, evidence-first reconciliation loops, and phase checkpoints.
+contract_version: "1.0"
+policy_scope: execute
+source_of_truth:
+  - PRD.md
+  - PROGRESS.md
+  - TASK_LEDGER.md
 ---
 
 # DMN Manager Orchestrator
@@ -12,11 +18,10 @@ Coordinate phased repository closure and release hardening with explicit gates a
 - `PRD.md`
 - `PROGRESS.md`
 - `TASK_LEDGER.md`
-- `TASK-004_DEPENDENCY_MANAGEMENT_FINDINGS.md`
-- `TASK-005_DOCUMENTATION_AUDIT_FINDINGS.md`
-- `TASK-006_DATABASE_STATE_MANAGEMENT_FINDINGS.md`
-- `TASK-007_OPERATIONAL_HARDENING_FINDINGS.md`
-- `.github/dmn-manager-decisions.md`
+- `VERSION.json`
+- `release/RELEASE_MANIFEST.json`
+- `config/reliability/slo.yaml`
+- `docs/ops/V3_8_PRODUCTION_READINESS.md`
 
 ## Worker Roles
 - **Manager:** dmn-manager-orchestrator (gate owner)
@@ -26,26 +31,25 @@ Coordinate phased repository closure and release hardening with explicit gates a
 - **Runtime Worker:** contract/schema/tool-registry and agent loop consistency
 
 ## Governance Rules
-1. Treat `.github/dmn-manager-decisions.md` as top-level gate policy.
+1. Treat the V3.8 PRD, release manifest, and reliability policy as top-level gate authority.
 2. Do not close any task item without concrete file evidence.
-3. Enforce phase checkpoints under `docs/checkpoints/PHASE_*.md`.
-4. Prefer additive compatibility shims before destructive removals.
-5. Allow destructive cleanup only after the phase gate explicitly approves it.
-6. Always record residual risk and next gate in each checkpoint.
+3. Record verification results and residual risk in `PROGRESS.md` and `TASK_LEDGER.md`.
+4. Preserve active compatibility routes and contract authorities during cleanup.
+5. Allow destructive cleanup only after the release gate explicitly approves it.
+6. Require a passing rollback and incident-readiness review before release close.
 
 ## Closure Loop
-1. Reconcile open checklist items from task findings and `TASK_LEDGER.md`.
+1. Reconcile open V3.8 items from `PRD.md`, `PROGRESS.md`, and `TASK_LEDGER.md`.
 2. Implement fixes and generate evidence paths.
-3. Update task finding checkboxes only where evidence exists.
-4. Persist checkpoint with tests and unresolved blockers.
+3. Update the V3.8 ledger only where evidence exists.
+4. Persist validation results and unresolved blockers in the release tracker.
 5. Re-run reconciliation until open count is zero or externally blocked.
 
-## Phase Gate Exit Conditions
-- **A:** Branch + orchestration artifacts created.
-- **B:** Baseline drift report produced and accepted.
-- **C:** Strict v3.6.3 semver/dependency/workflow baseline locked.
-- **D:** TASK-004..007 evidence-closed or explicitly externally blocked.
-- **E:** Namespace/duplicate compaction complete with runtime-safe references.
-- **F:** `mcp.json` authoritative mapping aligned across runtime bundle artifacts.
-- **G:** Full validation matrix passing; docs/ledger/progress synchronized.
-- **H:** PR automation, review resolution, merge readiness report complete.
+## V3.8 Release Gate Exit Conditions
+- **A:** Canonical package, release manifest, and deployment topology agree on V3.8.
+- **B:** Runtime-contract and tool-registry authorities remain singular and path-valid.
+- **C:** Governed skills validate with versioned metadata, policy scopes, and source paths.
+- **D:** Runtime events enforce run, agent, and lane observability dimensions.
+- **E:** Reliability policy, incident procedure, and rollback command validate.
+- **F:** Full validation matrix passes and release docs contain no deprecated release references.
+- **G:** Pull-request checks and review are complete before squash-merge readiness is reported.

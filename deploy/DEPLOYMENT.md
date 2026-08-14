@@ -190,7 +190,7 @@ Release validation (already exists).
 
 ### Production Deployment (Automatic)
 
-1. Version tag pushed (e.g., `v0.3.5.1`)
+1. Version tag pushed (e.g., `v3.8`)
 2. Version alignment validated
 3. CI tests run
 4. Container images built and tagged
@@ -241,8 +241,8 @@ ssh user@host "cd /opt/mea && docker compose logs -f control_plane"
 ```
 
 Health check endpoints:
-- Control Plane: `http://<host>:8000/health`
-- MCP Server: `http://<host>:7000/health`
+- Control Plane: `http://<host>:8000/healthz`
+- MCP Server: `http://<host>:7000/healthz`
 
 ## Troubleshooting
 
@@ -313,7 +313,7 @@ Deploy different versions to different environments:
 
 ```bash
 # Deploy specific version to staging
-./deploy.sh staging v0.3.5
+./deploy.sh staging v3.8
 
 # Deploy latest to production
 ./deploy.sh production latest

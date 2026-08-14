@@ -384,6 +384,7 @@
         "schema_version",
         "event_id",
         "run_id",
+        "agent_id",
         "created_at",
         "lane",
         "fsm_state",
@@ -402,6 +403,9 @@
           "$ref": "#/$defs/Id"
         },
         "run_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "agent_id": {
           "$ref": "#/$defs/Id"
         },
         "task_id": {

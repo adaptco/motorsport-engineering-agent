@@ -22,7 +22,7 @@ cd deploy
 ./deploy.sh staging
 
 # Production (from version tag)
-./deploy.sh production v0.3.5.1
+./deploy.sh production v3.8
 ```
 
 #### Kubernetes
@@ -30,7 +30,7 @@ cd deploy
 ```bash
 # Update image
 kubectl set image deployment/control-plane \
-  control-plane=ghcr.io/your-org/your-repo/control-plane:v0.3.5.1
+  control-plane=ghcr.io/adaptco/motorsport-engineering-agent/control-plane:v3.8
 
 # Monitor rollout
 kubectl rollout status deployment/control-plane -w
@@ -99,15 +99,15 @@ kubectl describe hpa worker-hpa
 
 ```bash
 # Docker Compose
-curl http://localhost:8000/health          # control-plane
-curl http://localhost:7000/health          # mcp-server
+curl --fail http://localhost:8000/healthz  # control-plane
+curl --fail http://localhost:7000/healthz  # mcp-server
 
 # Kubernetes
 kubectl port-forward svc/control-plane 8000:8000
-curl http://localhost:8000/health
+curl --fail http://localhost:8000/healthz
 
 kubectl port-forward svc/mcp-server 7000:7000
-curl http://localhost:7000/health
+curl --fail http://localhost:7000/healthz
 ```
 
 #### Service Status
