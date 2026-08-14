@@ -42,6 +42,12 @@ jobs:
               raise SystemExit(f"missing control-plane routes: {sorted(missing)}")
           print(f"verified {len(paths)} control-plane routes")
           PY
+      - name: Validate Frontend JS Syntax
+        run: |
+          node --check frontend/*.js
+      - name: Run Frontend/Backend Contract Tests
+        run: |
+          uv run pytest tests/test_runtime_contract_bundle.py
 
   frontend-container-smoke:
     runs-on: ubuntu-latest
