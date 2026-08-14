@@ -35,8 +35,16 @@ jobs:
         run: |
           uv run python - <<'PY'
           from control_plane.app import app
-          paths = {route.path for route in app.routes}
-          required = {"/", "/healthz", "/healthz/dependencies", "/runtime/sessions", "/runtime-state/snapshot", "/aero/runs"}
+
+          paths = set(app.openapi().get("paths", {}))
+          required = {
+              "/",
+              "/healthz",
+              "/healthz/dependencies",
+              "/runtime/sessions",
+              "/runtime-state/snapshot",
+              "/aero/runs",
+          }
           missing = required - paths
           if missing:
               raise SystemExit(f"missing control-plane routes: {sorted(missing)}")
