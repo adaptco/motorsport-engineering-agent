@@ -13,7 +13,7 @@ services:
     cpus: "1"
 
   control_plane:
-    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:control-plane-${VERSION:-latest}
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:control-plane-${VERSION:-3.8}
     environment:
       ENV: staging
       LOG_LEVEL: info
@@ -29,7 +29,7 @@ services:
       start_period: 40s
 
   worker:
-    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:worker-${VERSION:-latest}
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:worker-${VERSION:-3.8}
     environment:
       ENV: staging
       LOG_LEVEL: info
@@ -39,7 +39,7 @@ services:
     restart: always
 
   mcp_server:
-    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:mcp-server-${VERSION:-latest}
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-adaptco/motorsport-engineering-agent}:mcp-server-${VERSION:-3.8}
     environment:
       ENV: staging
       LOG_LEVEL: info

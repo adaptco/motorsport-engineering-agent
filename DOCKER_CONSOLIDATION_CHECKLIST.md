@@ -22,9 +22,9 @@
 ## Validation Checks
 - [x] Unified Dockerfile compiles with 4 targets
 - [x] All images build successfully:
-  - mea-control-plane:latest (840 MB)
-  - mea-worker:latest (897 MB)
-  - mea-mcp-server:latest (839 MB)
+  - mea-control-plane:3.8 (840 MB)
+  - mea-worker:3.8 (897 MB)
+  - mea-mcp-server:3.8 (839 MB)
 - [x] docker-compose.yml is valid (docker compose config --quiet ✓)
 - [x] docker-compose.override.yml is valid
 - [x] No nested Dockerfiles remain in project
@@ -132,7 +132,7 @@ docker compose ps
 - [x] Production deployment: `docker compose up -d`
 - [x] Development workflow: `docker compose up`
 - [x] CI/CD pipelines: Build with `--target control_plane|worker|mcp_server`
-- [x] Image scanning: `docker scout cves mea-control-plane:latest`
+- [x] Image scanning: `docker scout cves mea-control-plane:3.8`
 - [x] DHI migration: Base images support hardening
 - [x] Multi-platform builds: No Alpine-only dependencies
 

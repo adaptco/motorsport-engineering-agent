@@ -24,7 +24,7 @@ spec:
         fsGroup: 5678
       containers:
       - name: worker
-        image: mea-root-kernel:latest
+        image: mea-worker:3.8
         imagePullPolicy: IfNotPresent
         command: ["python"]
         args:

@@ -57,13 +57,13 @@
 ### Build Commands
 ```bash
 # Control plane (uvicorn, port 8000)
-docker build -t mea-control-plane:latest --target control_plane .
+docker build -t mea-control-plane:3.8 --target control_plane .
 
 # Worker (background processor)
-docker build -t mea-worker:latest --target worker .
+docker build -t mea-worker:3.8 --target worker .
 
 # MCP server (uvicorn, port 7000)
-docker build -t mea-mcp-server:latest --target mcp_server .
+docker build -t mea-mcp-server:3.8 --target mcp_server .
 
 # All three via compose
 docker compose build

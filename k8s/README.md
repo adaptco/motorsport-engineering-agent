@@ -1,6 +1,6 @@
-# MEA Root Kernel - Kubernetes Deployment Guide
+# Motorsport Engineering Agent V3.8 — Kubernetes Deployment Guide
 
-This directory contains Kubernetes manifests for deploying the MEA Root Kernel multi-service application.
+This directory contains Kubernetes manifests for deploying the Motorsport Engineering Agent V3.8 multi-service runtime.
 
 ## Architecture
 
@@ -16,23 +16,27 @@ The deployment consists of:
 
 - Kubernetes cluster (v1.24+)
 - `kubectl` configured with cluster access
-- Docker image `mea-root-kernel:latest` pushed to your registry
+- V3.8 component images (`mea-control-plane:3.8`, `mea-worker:3.8`, and `mea-mcp-server:3.8`) pushed to your registry
 - (Optional) NGINX Ingress Controller for external access
 - (Optional) cert-manager for TLS certificates
 
 ## Quick Start
 
-### 1. Build and Push the Docker Image
+### 1. Build and Push V3.8 Component Images
 
 ```bash
-# Build the image
-docker build -t mea-root-kernel:latest .
+# Build the pinned V3.8 component images
+docker build --target control_plane -t mea-control-plane:3.8 .
+docker build --target worker -t mea-worker:3.8 .
+docker build --target mcp_server -t mea-mcp-server:3.8 .
 
-# Tag for your registry
-docker tag mea-root-kernel:latest <your-registry>/mea-root-kernel:latest
-
-# Push to registry
-docker push <your-registry>/mea-root-kernel:latest
+# Tag and push each V3.8 image for your registry
+docker tag mea-control-plane:3.8 <your-registry>/mea-control-plane:3.8
+docker tag mea-worker:3.8 <your-registry>/mea-worker:3.8
+docker tag mea-mcp-server:3.8 <your-registry>/mea-mcp-server:3.8
+docker push <your-registry>/mea-control-plane:3.8
+docker push <your-registry>/mea-worker:3.8
+docker push <your-registry>/mea-mcp-server:3.8
 ```
 
 ### 2. Update Image Reference (if using a registry)
@@ -40,8 +44,9 @@ docker push <your-registry>/mea-root-kernel:latest
 Edit `control-plane-deployment.yaml`, `worker-deployment.yaml`, and `mcp-server-deployment.yaml`:
 
 ```yaml
-image: <your-registry>/mea-root-kernel:latest
-imagePullPolicy: Always  # Change from IfNotPresent if using external registry
+# Preserve the V3.8 component tag for the deployment being edited.
+image: <your-registry>/mea-control-plane:3.8
+imagePullPolicy: Always  # Change from IfNotPresent if using an external registry
 ```
 
 ### 3. Deploy Using Kustomize

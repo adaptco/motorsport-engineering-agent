@@ -29,7 +29,7 @@ spec:
         fsGroup: 5678
       containers:
       - name: mcp-server
-        image: mea-root-kernel:latest
+        image: mea-mcp-server:3.8
         imagePullPolicy: IfNotPresent
         command: ["uvicorn"]
         args:

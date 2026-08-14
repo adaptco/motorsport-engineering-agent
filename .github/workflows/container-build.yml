@@ -146,13 +146,13 @@ jobs:
           file: Dockerfile
           target: control_plane
           load: true
-          tags: mea-sbom:latest
+          tags: mea-sbom:3.8
           cache-from: type=gha
 
       - name: Generate SBOM with Syft
         uses: anchore/sbom-action@v0
         with:
-          image: mea-sbom:latest
+          image: mea-sbom:3.8
           format: cyclonedx-json
           output-file: sbom-control-plane.json
 

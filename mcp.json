@@ -1,7 +1,8 @@
 {
-  "$schema": "./schemas/mcp.runtime.contract.schema.json",
+  "$schema": "./contracts/mcp/mcp_runtime_config.schema.json",
   "runtime_id": "motorsport-engineering-agent-mcp",
-  "version": "1.0.0",
+  "version": "3.8",
+  "package_version": "0.3.8",
   "description": "Declarative MCP contract for planner, researcher, coder, reviewer, and tester agents.",
   "agents": [
     {

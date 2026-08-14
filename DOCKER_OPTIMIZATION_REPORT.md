@@ -82,16 +82,16 @@ Stage 6: latest
 ### Build all targets
 ```bash
 # Control plane
-docker build -t mea-control-plane:latest --target control_plane .
+docker build -t mea-control-plane:3.8 --target control_plane .
 
 # Worker
-docker build -t mea-worker:latest --target worker .
+docker build -t mea-worker:3.8 --target worker .
 
 # MCP server
-docker build -t mea-mcp-server:latest --target mcp_server .
+docker build -t mea-mcp-server:3.8 --target mcp_server .
 
 # Default (control_plane)
-docker build -t mea-app:latest .
+docker build -t mea-control-plane:3.8 .
 ```
 
 ### Compose operations
@@ -288,7 +288,7 @@ docker compose logs -f control_plane
 ## Next Steps (Optional Enhancements)
 
 1. **BuildKit caching:** `DOCKER_BUILDKIT=1 docker compose build`
-2. **Image scanning:** `docker scout cves mea-control-plane:latest`
+2. **Image scanning:** `docker scout cves mea-control-plane:3.8`
 3. **Docker Secrets:** Use for production secrets (instead of .env)
 4. **Layer caching exports:** Use with BuildKit for CI/CD
 5. **Distroless base:** Switch from slim to distroless for smaller images

@@ -1,17 +1,18 @@
 """tests/test_ci_workflow module."""
 
 from pathlib import Path
+from typing import Any, cast
 
 import yaml
 
 
-def _load_workflow(filename: str) -> dict:
+def _load_workflow(filename: str) -> dict[str, Any]:
     workflow_path = Path(".github/workflows") / filename
     assert workflow_path.exists(), "CI workflow file is missing"
-    return yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
+    return cast(dict[str, Any], yaml.safe_load(workflow_path.read_text(encoding="utf-8")))
 
 
-def _find_step(steps: list[dict], uses: str) -> dict:
+def _find_step(steps: list[dict[str, Any]], uses: str) -> dict[str, Any]:
     for step in steps:
         if step.get("uses") == uses:
             return step
@@ -43,10 +44,10 @@ def test_container_build_workflow_defines_build_images_job() -> None:
     assert checkout_step_build["uses"] == "actions/checkout@v4"
 
 
-def _load_yaml(path: str) -> dict:
+def _load_yaml(path: str) -> dict[str, Any]:
     file_path = Path(path)
     assert file_path.exists(), f"Expected config file is missing: {path}"
-    return yaml.safe_load(file_path.read_text(encoding="utf-8"))
+    return cast(dict[str, Any], yaml.safe_load(file_path.read_text(encoding="utf-8")))
 
 
 def test_deploy_compose_overlays_target_ci_published_image_tags() -> None:
@@ -55,9 +56,9 @@ def test_deploy_compose_overlays_target_ci_published_image_tags() -> None:
 
     for compose in (staging, production):
         services = compose["services"]
-        assert services["control_plane"]["image"].endswith(":control-plane-${VERSION:-latest}")
-        assert services["worker"]["image"].endswith(":worker-${VERSION:-latest}")
-        assert services["mcp_server"]["image"].endswith(":mcp-server-${VERSION:-latest}")
+        assert services["control_plane"]["image"].endswith(":control-plane-${VERSION:-3.8}")
+        assert services["worker"]["image"].endswith(":worker-${VERSION:-3.8}")
+        assert services["mcp_server"]["image"].endswith(":mcp-server-${VERSION:-3.8}")
         assert "your-org/your-repo" not in services["control_plane"]["image"]
         assert "your-org/your-repo" not in services["worker"]["image"]
         assert "your-org/your-repo" not in services["mcp_server"]["image"]
@@ -68,6 +69,6 @@ def test_k8s_manifests_target_ci_published_image_tags() -> None:
     worker_manifest = Path("deploy/k8s/worker.yaml").read_text(encoding="utf-8")
     mcp_manifest = Path("deploy/k8s/mcp-server.yaml").read_text(encoding="utf-8")
 
-    assert "${REGISTRY}/${IMAGE_NAME}:control-plane-${VERSION:-latest}" in control_plane_manifest
-    assert "${REGISTRY}/${IMAGE_NAME}:worker-${VERSION:-latest}" in worker_manifest
-    assert "${REGISTRY}/${IMAGE_NAME}:mcp-server-${VERSION:-latest}" in mcp_manifest
+    assert "${REGISTRY}/${IMAGE_NAME}:control-plane-${VERSION:-3.8}" in control_plane_manifest
+    assert "${REGISTRY}/${IMAGE_NAME}:worker-${VERSION:-3.8}" in worker_manifest
+    assert "${REGISTRY}/${IMAGE_NAME}:mcp-server-${VERSION:-3.8}" in mcp_manifest

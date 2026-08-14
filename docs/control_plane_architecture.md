@@ -105,7 +105,7 @@ following components.
 ## Health Check Endpoints
 
 - **Primary Health Check**: `GET /healthz`.
-  - Returns `{"status": "ok", "kernel_version": "3.3"}`.
+  - Returns `{"status": "ok", "kernel_version": "3.8", "package_version": "0.3.8"}`.
   - Used for liveness and readiness probes.
   - No dependencies required for basic health.
 
