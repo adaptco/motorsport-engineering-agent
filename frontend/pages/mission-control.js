@@ -104,6 +104,17 @@ export async function render(mount) {
     </div>
     <div class="grid grid-2" style="margin-top:12px">
       <section class="panel">
+        <div class="panel-header"><span class="panel-title">ORCHESTRATOR WORKFLOW</span></div>
+        <div class="panel-body stack">
+          <div class="form-grid">
+            <div class="field"><label for="mc-orchestrator-run">EXECUTION RUN ID</label><input id="mc-orchestrator-run" placeholder="run-id"></div>
+            <div class="field"><label for="mc-orchestrator-status">LIFECYCLE STATE</label><select id="mc-orchestrator-status"><option value="">all states</option><option value="scheduled">scheduled</option><option value="attempt_created">attempt created</option><option value="leased">leased</option></select></div>
+          </div>
+          <div class="actions"><button id="mc-load-orchestrator-run" class="button" type="button">INSPECT RUN</button><button id="mc-list-orchestrator-runs" class="button" type="button">LIST RUNS</button></div>
+          <div id="mc-orchestrator-detail" class="small">Read-only lifecycle, event, receipt, and projection inspection. Commands remain bounded to the API contract.</div>
+        </div>
+      </section>
+      <section class="panel">
         <div class="panel-header"><span class="panel-title">JOB STATUS INSPECTOR</span></div>
         <div class="panel-body stack">
           <div class="form-grid">
@@ -112,6 +123,12 @@ export async function render(mount) {
           </div>
           <div id="mc-job-detail" class="small">Read-only lookup. CI-fix submission remains outside this bounded operator panel.</div>
         </div>
+      </section>
+    </div>
+    <div class="grid grid-2" style="margin-top:12px">
+      <section class="panel">
+        <div class="panel-header"><span class="panel-title">ORCHESTRATOR EVIDENCE</span></div>
+        <div class="panel-body" id="mc-orchestrator-evidence"><div class="empty">Inspect an execution run to view its ordered event stream and receipt chain.</div></div>
       </section>
       <section class="panel">
         <div class="panel-header"><span class="panel-title">API SURFACE</span><button id="mc-load-routes" class="button" type="button">DISCOVER</button></div>
@@ -138,6 +155,8 @@ export async function render(mount) {
   const stateDetailElement = document.getElementById("mc-state-detail");
   const jobDetailElement = document.getElementById("mc-job-detail");
   const routeDetailElement = document.getElementById("mc-route-detail");
+  const orchestratorDetailElement = document.getElementById("mc-orchestrator-detail");
+  const orchestratorEvidenceElement = document.getElementById("mc-orchestrator-evidence");
 
   const loadSession = async (sessionId) => {
     try {
@@ -195,6 +214,46 @@ export async function render(mount) {
       jobDetailElement.innerHTML = jsonBlock(job);
     } catch (error) {
       renderNotice(jobDetailElement, error.message);
+    }
+  };
+
+  const loadOrchestrator = async ({ listOnly = false } = {}) => {
+    const runId = document.getElementById("mc-orchestrator-run").value.trim();
+    const status = document.getElementById("mc-orchestrator-status").value;
+    if (!listOnly && !runId) {
+      renderNotice(orchestratorDetailElement, "Enter an execution run ID before requesting its evidence.");
+      return;
+    }
+    try {
+      orchestratorDetailElement.innerHTML = '<div class="small">Loading orchestration evidence…</div>';
+      if (listOnly) {
+        const query = status ? `?status=${encodeURIComponent(status)}` : "";
+        const data = await get(`/orchestrator/runs${query}`);
+        orchestratorDetailElement.innerHTML = renderRouteTable(
+          (data.runs || []).map((run) => ({ method: run.status || "unknown", path: run.run_id })),
+        );
+        orchestratorEvidenceElement.innerHTML = '<div class="small">Select a run ID from the list and inspect it to view evidence.</div>';
+        return;
+      }
+      const [projection, events, receipts] = await Promise.all([
+        get(`/orchestrator/runs/${encodeURIComponent(runId)}/projection`),
+        get(`/orchestrator/runs/${encodeURIComponent(runId)}/events`),
+        get(`/orchestrator/runs/${encodeURIComponent(runId)}/receipts`),
+      ]);
+      orchestratorDetailElement.innerHTML = `
+        <div class="split">
+          <div><div class="metric-label">STATE</div><div class="metric-value">${esc(projection.status || "—")}</div></div>
+          <div><div class="metric-label">ATTEMPT</div><div class="metric-value">${esc(projection.current_attempt_id || "—")}</div></div>
+        </div>
+        <div class="small">Trace: ${esc(projection.trace_id || "—")} · Version: ${esc(String(projection.aggregate_version ?? "—"))}</div>`;
+      orchestratorEvidenceElement.innerHTML = `
+        <div class="stack">
+          <div><div class="metric-label">EVENT TIMELINE</div>${jsonBlock(events.events || [])}</div>
+          <div><div class="metric-label">RECEIPT CHAIN</div>${jsonBlock(receipts.receipts || [])}</div>
+        </div>`;
+    } catch (error) {
+      renderNotice(orchestratorDetailElement, error.message);
+      renderNotice(orchestratorEvidenceElement, `Orchestration evidence is unavailable: ${error.message}`);
     }
   };
 
@@ -274,6 +333,8 @@ export async function render(mount) {
   };
   document.getElementById("mc-load-state").onclick = loadRuntimeState;
   document.getElementById("mc-load-job").onclick = loadJob;
+  document.getElementById("mc-load-orchestrator-run").onclick = () => loadOrchestrator();
+  document.getElementById("mc-list-orchestrator-runs").onclick = () => loadOrchestrator({ listOnly: true });
   document.getElementById("mc-load-routes").onclick = loadRoutes;
 
   startPolling("mc", load, 5000);
