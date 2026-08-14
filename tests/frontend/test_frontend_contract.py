@@ -83,3 +83,15 @@ def test_frontend_endpoint_references_match_contract():
         "/runtime/logs/parse",
         "/runtime-state/snapshot",
     } <= refs
+
+
+def test_aero_studio_exercises_run_provenance_and_branch_contracts():
+    js = (FRONTEND / "pages/aero-studio.js").read_text()
+
+    assert 'post("/aero/runs"' in js
+    assert "/branches" in js
+    assert "source_refs: sourceRefs" in js
+    assert "collectSourceRefs" in js
+    assert "collectAdjustments" in js
+    assert "PROPOSE DESIGN BRANCH" in js
+    assert "state_hash" in js
