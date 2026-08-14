@@ -55,7 +55,8 @@ jobs:
 
       - name: Run unit tests
         run: |
-          uv run pytest tests/ -v --cov=control_plane,worker,mcp_server --cov-report=xml --cov-report=term
+          uv run pytest tests/ -v --cov=control_plane --cov=worker --cov=mcp_server \
+            --cov-report=xml --cov-report=term
 
       - name: Enforce execution-kernel coverage
         if: matrix.python-version == '3.11'
