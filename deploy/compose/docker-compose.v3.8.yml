@@ -1,14 +1,14 @@
 version: "3.9"
 
-# MEA v3.6 Docker Compose topology
+# MEA v3.8 Docker Compose topology
 # Aligns to deployment sequence: browser → gateway → control plane → worker pool → data plane
-# Usage: docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.6.yml up
+# Usage: docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.8.yml up
 
 services:
   # Data plane: PostgreSQL
   postgres:
     image: postgres:16-alpine
-    container_name: mea-postgres-v3.6
+    container_name: mea-postgres-v3.8
     environment:
       POSTGRES_DB: mea
       POSTGRES_USER: mea
@@ -16,7 +16,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data_v3.6:/var/lib/postgresql/data
+      - postgres_data_v3.8:/var/lib/postgresql/data
       - ./db/migrations:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U mea -d mea"]
@@ -26,21 +26,21 @@ services:
       start_period: 10s
     restart: unless-stopped
     networks:
-      - mea-network-v3.6
+      - mea-network-v3.8
     mem_limit: 1024m
     cpus: "2"
     labels:
-      - "com.mea.version=3.6"
+      - "com.mea.version=3.8"
       - "com.mea.lane=data-plane"
 
   # Data plane: Redis
   redis:
     image: redis:7-alpine
-    container_name: mea-redis-v3.6
+    container_name: mea-redis-v3.8
     ports:
       - "6379:6379"
     volumes:
-      - redis_data_v3.6:/data
+      - redis_data_v3.8:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -49,12 +49,12 @@ services:
       start_period: 10s
     restart: unless-stopped
     networks:
-      - mea-network-v3.6
+      - mea-network-v3.8
     mem_limit: 512m
     cpus: "1"
     command: redis-server --appendonly yes --appendfsync everysec
     labels:
-      - "com.mea.version=3.6"
+      - "com.mea.version=3.8"
       - "com.mea.lane=data-plane"
 
   # Orchestration plane: Control plane
@@ -64,11 +64,11 @@ services:
       context: .
       dockerfile: Dockerfile
       target: control_plane
-    container_name: mea-control-plane-v3.6
+    container_name: mea-control-plane-v3.8
     environment:
       PYTHONUNBUFFERED: "1"
-      MEA_VERSION: "3.6"
-      MEA_KERNEL_VERSION: "3.6"
+      MEA_VERSION: "3.8"
+      MEA_KERNEL_VERSION: "3.8"
       MEA_LANE: "orchestration"
       RUNTIME_CONTRACT_VALIDATION: "true"
       CHECKPOINT_ENABLED: "true"
@@ -83,7 +83,7 @@ services:
         condition: service_started
     restart: unless-stopped
     networks:
-      - mea-network-v3.6
+      - mea-network-v3.8
     mem_limit: 1024m
     cpus: "2"
     healthcheck:
@@ -93,7 +93,7 @@ services:
       retries: 3
       start_period: 10s
     labels:
-      - "com.mea.version=3.6"
+      - "com.mea.version=3.8"
       - "com.mea.lane=orchestration"
       - "com.mea.critical=true"
     volumes:
@@ -107,11 +107,11 @@ services:
       context: .
       dockerfile: Dockerfile
       target: worker
-    container_name: mea-worker-v3.6
+    container_name: mea-worker-v3.8
     environment:
       PYTHONUNBUFFERED: "1"
-      MEA_VERSION: "3.6"
-      MEA_KERNEL_VERSION: "3.6"
+      MEA_VERSION: "3.8"
+      MEA_KERNEL_VERSION: "3.8"
       MEA_LANE: "execution"
       RUNTIME_CONTRACT_VALIDATION: "true"
       CHECKPOINT_ENABLED: "true"
@@ -125,11 +125,11 @@ services:
         condition: service_started
     restart: unless-stopped
     networks:
-      - mea-network-v3.6
+      - mea-network-v3.8
     mem_limit: 2048m
     cpus: "4"
     labels:
-      - "com.mea.version=3.6"
+      - "com.mea.version=3.8"
       - "com.mea.lane=execution"
     volumes:
       - ./runtime_logs:/app/runtime_logs
@@ -142,18 +142,18 @@ services:
       context: .
       dockerfile: Dockerfile
       target: mcp_server
-    container_name: mea-mcp-server-v3.6
+    container_name: mea-mcp-server-v3.8
     environment:
       PYTHONUNBUFFERED: "1"
-      MEA_VERSION: "3.6"
-      MEA_KERNEL_VERSION: "3.6"
+      MEA_VERSION: "3.8"
+      MEA_KERNEL_VERSION: "3.8"
       MEA_LANE: "tool-platform"
       MCP_VERSION: "1"
     ports:
       - "7000:7000"
     restart: unless-stopped
     networks:
-      - mea-network-v3.6
+      - mea-network-v3.8
     mem_limit: 1024m
     cpus: "2"
     healthcheck:
@@ -163,15 +163,15 @@ services:
       retries: 3
       start_period: 10s
     labels:
-      - "com.mea.version=3.6"
+      - "com.mea.version=3.8"
       - "com.mea.lane=tool-platform"
     volumes:
       - ./runtime_logs:/app/runtime_logs
 
 volumes:
-  postgres_data_v3.6:
-  redis_data_v3.6:
+  postgres_data_v3.8:
+  redis_data_v3.8:
 
 networks:
-  mea-network-v3.6:
+  mea-network-v3.8:
     driver: bridge

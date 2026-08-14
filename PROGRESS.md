@@ -2,8 +2,8 @@
 
 **Document Version:** 2.0 (Release Roadmap Baseline)
 **Last Updated:** 2026-04-09
-**Status:** ACTIVE EXECUTION (v3.6.3 production-readiness in progress)
-**Current Baseline:** `v3.6.3 / 0.3.6.3`
+**Status:** ACTIVE EXECUTION (v3.8 production-readiness and release alignment in progress)
+**Current Baseline:** `v3.8 / 0.3.8`
 **Reference:** [PRD.md](./PRD.md), [docs/releases](./docs/releases)
 
 ---
@@ -12,10 +12,10 @@
 
 This tracker is the canonical execution board for the additive migration path:
 
-1. `v3.6.3` production-readiness lock and closure of Task-004/005/006/007
-2. `v3.6` runtime contract harness and container cut
-3. `v3.7` multi-agent orchestration and MCP gateway v1
-4. `v3.8` platform consolidation + skill tooling + production hardening
+1. `v3.8` production-readiness, release metadata, and dependency alignment
+2. `v3.8` runtime contracts, compose topology, and deployment verification
+3. Preserve `v3.7` multi-agent orchestration and MCP gateway compatibility
+4. Retain `v3.6` release records only as historical traceability
 
 The release strategy is intentionally non-destructive. Legacy v3.5.2 operational surfaces remain compatibility-backed while newer slices are layered in behind versioned routes and additive migrations.
 
@@ -63,9 +63,10 @@ The release strategy is intentionally non-destructive. Legacy v3.5.2 operational
 
 | Phase | Objective | Status | Gate | Owner | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| v3.5.2 | Lock baseline and eliminate known pre-v3.6 blockers | In Progress | Baseline lock checklist complete | codex | [docs/releases/v3.5.2_STABILIZATION.md](./docs/releases/v3.5.2_STABILIZATION.md) |
-| v3.6 | Runtime contract harness + containerization + compatibility gates | Planned | Contract/event-order tests green | codex | [docs/releases/v3.6_RUNTIME_CONTRACT_PLAN.md](./docs/releases/v3.6_RUNTIME_CONTRACT_PLAN.md) |
-| v3.7 | Multi-agent runtime slices via six PRs (contracts -> deploy) | Planned | Orchestrator + MCP v1 + HITL exit criteria met | codex | [docs/releases/v3.7_IMPLEMENTATION_PLAN.md](./docs via skills, harden to production SLOs | Pla| [docs/releases/v3.8_PLATFORM_CONSOLIDATION_AND_HARDENING.md](./docs/releases/v3.8_PLATFORM_CONSOLIDATION_AND_HARDENING.md) |
+| v3.5.2 | Lock baseline and eliminate known pre-v3.6 blockers | Historical | Baseline lock checklist complete | codex | [V3.5.2 stabilization record](./docs/releases/v3.5.2_STABILIZATION.md) |
+| v3.6 | Runtime contract harness + containerization + compatibility gates | Superseded by V3.8 | Contract/event-order concepts retained in V3.8 | codex | [V3.6 runtime-contract record](./docs/releases/v3.6_RUNTIME_CONTRACT_PLAN.md) |
+| v3.7 | Multi-agent runtime slices via six PRs (contracts -> deploy) | Planned | Orchestrator + MCP v1 + HITL exit criteria met | codex | [V3.7 implementation plan](./docs/releases/v3.7_IMPLEMENTATION_PLAN.md) |
+| v3.8 | Platform consolidation, governed skills, and production hardening | Active | Release metadata, dependency, deployment, and compatibility checks pass | Agent | [V3.8 consolidation and hardening](./docs/releases/v3.8_PLATFORM_CONSOLIDATION_AND_HARDENING.md) |
 
 ---
 

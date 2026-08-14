@@ -1,6 +1,6 @@
-# MEA V3.6 runtime contract bundle
+# MEA V3.8 runtime contract bundle
 
-This directory is the runtime event-gate surface for MEA V3.6.
+This directory is the runtime event-gate surface for MEA V3.8.
 
 ## Event order
 request.received

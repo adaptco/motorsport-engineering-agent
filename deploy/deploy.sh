@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Deployment script for mea-root-kernel v3.6+
+# Deployment script for mea-root-kernel v3.8+
 # Usage: ./deploy.sh [staging|production] [version]
 # Validates runtime contracts before deployment
 
@@ -55,12 +55,12 @@ else
 fi
 
 # ============================================================
-# V3.6+ Contract Validation
+# V3.8+ Contract Validation
 # ============================================================
-log_info "Validating v3.6 runtime contracts..."
+log_info "Validating v3.8 runtime contracts..."
 
 if [ ! -f "contracts/runtime/agent_runtime_contract_bundle.schema.json" ]; then
-    log_warn "Runtime contract bundle not found. Aero contracts are optional for v3.6.0."
+    log_warn "Runtime contract bundle not found. Aero contracts are optional for v3.8.0."
 fi
 
 # Validate VERSION.json kernel version
@@ -71,8 +71,9 @@ if [ -z "$kernel_version" ]; then
 fi
 
 log_info "Kernel version: $kernel_version"
-if [[ ! "$kernel_version" =~ ^3\.[6-9] ]]; then
-    log_warn "Expected kernel version 3.6+, found $kernel_version. Proceeding with caution."
+if [[ "$kernel_version" != "3.8" ]]; then
+    log_error "Expected kernel version 3.8, found $kernel_version."
+    exit 1
 fi
 
 # Pull latest images for the target environment overlay
@@ -83,11 +84,11 @@ docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" pull
 log_info "Validating docker-compose configuration..."
 docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" config > /dev/null
 
-# Additional v3.6 compose validation if available
-if [ -f "deploy/compose/docker-compose.v3.6.yml" ]; then
-    log_info "Validating v3.6 compose topology..."
-    docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.6.yml config > /dev/null
-    log_info "✓ v3.6 compose topology valid"
+# Additional v3.8 compose validation if available
+if [ -f "deploy/compose/docker-compose.v3.8.yml" ]; then
+    log_info "Validating v3.8 compose topology..."
+    docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.8.yml config > /dev/null
+    log_info "✓ v3.8 compose topology valid"
 fi
 
 # Backup current state
@@ -156,7 +157,7 @@ else
     exit 1
 fi
 
-# Check runtime contract validation (v3.6+)
+# Check runtime contract validation (v3.8+)
 if docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" exec -T control_plane curl -f http://localhost:8000/healthz/dependencies 2>/dev/null | grep -q '"contracts"'; then
     log_info "✓ Runtime contracts accessible"
 fi

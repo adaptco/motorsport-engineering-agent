@@ -10,7 +10,7 @@ Usage:
 Commands:
   normalize
     Add a version tag label and post a standardized lifecycle comment on one PR.
-    version_tag defaults to v3.6.3.
+    version_tag defaults to v3.8.
 
   bulk-tag
     Apply a label to all pull requests in the requested state.
@@ -81,7 +81,7 @@ ensure_label() {
 normalize_pr() {
   local gh_cmd="$1"
   local pr_number="$2"
-  local version_tag="${3:-v3.6.3}"
+  local version_tag="${3:-v3.8}"
   local repo
   repo="$(repo_slug "$gh_cmd")"
 
@@ -128,7 +128,7 @@ main() {
   case "$cmd" in
     normalize)
       local pr_number="${2:-}"
-      local version_tag="${3:-v3.6.3}"
+      local version_tag="${3:-v3.8}"
       [[ -n "$pr_number" ]] || { usage; exit 1; }
       normalize_pr "$gh_cmd" "$pr_number" "$version_tag"
       ;;

@@ -63,6 +63,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
 COPY control_plane/ ./control_plane/
 COPY ingest/ ./ingest/
 COPY shared/ ./shared/
+COPY contracts/ ./contracts/
 COPY pyproject.toml ./
 COPY VERSION.json ./
 COPY LICENSES/ ./LICENSES/
@@ -99,6 +100,7 @@ COPY control_plane/ ./control_plane/
 COPY ingest/ ./ingest/
 COPY worker/ ./worker/
 COPY shared/ ./shared/
+COPY contracts/ ./contracts/
 COPY pyproject.toml ./
 COPY VERSION.json ./
 COPY LICENSES/ ./LICENSES/
@@ -124,6 +126,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
 COPY mcp_server/ ./mcp_server/
 COPY mcp_tools/ ./mcp_tools/
 COPY shared/ ./shared/
+COPY contracts/ ./contracts/
 COPY pyproject.toml ./
 COPY VERSION.json ./
 COPY LICENSES/ ./LICENSES/

@@ -32,7 +32,7 @@ Track open checklist items and PRD acceptance criteria as durable workflow state
 - Keep unresolved items explicit in `pending_actions` rather than dropping them from the loop
 
 5. After any PR is created:
-- Normalize PR lifecycle labels/comments using `scripts/github_pr_lifecycle.sh normalize <pr_number> v3.6.3`.
+- Normalize PR lifecycle labels/comments using `scripts/github_pr_lifecycle.sh normalize <pr_number> v3.8`.
 - Run review follow-up automation using `scripts/github_pr_api.sh post-yeet-followup <pr_number> [test_command]`.
 - Keep closure actions open until review conversations are resolved and validation passes.
 

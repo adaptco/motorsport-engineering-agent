@@ -63,19 +63,19 @@ Add a separate aerodynamic simulation lane that runs in its own service layer af
 - Schema validation rejects malformed state payloads.
 - The control plane route layer and the aero state layer remain logically separate from the telemetry ingest/replay loop.
 
-# Feature: MEA V3.6 Runtime Contract Harness + Deployment Container Cut
+# Feature: MEA V3.8 Runtime Contract Harness + Deployment Container Cut
 
 ## Overview
-Upgrade Motorsport Engineering Agent from the current V3.5 baseline to **MEA V3.6** by promoting runtime contracts into first-class event gates, aligning the control-plane / runtime / tool surfaces to the approved swimlane model, and shipping a reproducible containerized deployment cut.
+Maintain and verify the **MEA V3.8** baseline by promoting runtime contracts into first-class event gates, aligning the control-plane / runtime / tool surfaces to the approved swimlane model, and shipping a reproducible containerized deployment cut.
 
-The current repository baseline is still versioned as package `0.3.5` and kernel `3.5`, while the existing `PRD.md` is scoped to a codebase review rather than implementation delivery. V3.6 replaces that with an execution PRD focused on contract-driven runtime control, resumable checkpoints, explicit policy gates, and deployment artifacts.
+The current repository baseline is versioned as package `0.3.8` and kernel `3.8`. This execution PRD defines the V3.8 contract-driven runtime, resumable checkpoint, explicit policy-gate, and deployment-artifact baseline.
 
 ## Current Repo Snapshot
 - Repository: `adaptco/motorsport-engineering-agent`
 - Baseline branch: `main`
 - Baseline commit: `3a7d53a462d2ed446fd0171bcb67d07bad64a801`
-- Current package version: `0.3.5`
-- Current kernel version: `3.5`
+- Current package version: `0.3.8`
+- Current kernel version: `3.8`
 
 ## Problem Statement
 The repository already contains A2A handoff contracts, ingestion surfaces, and trust-surface hardening, but it lacks a runtime-wide event contract harness for:
@@ -100,15 +100,15 @@ The repository already contains A2A handoff contracts, ingestion surfaces, and t
 - `run.failed`
 - `audit.bundle.written`
 
-V3.6 must make those contracts enforceable at runtime, not advisory documentation.
+V3.8 must make those contracts enforceable at runtime, not advisory documentation.
 
 ## Goals
 1. Add a first-class JSON schema bundle for runtime events and state-transition gates.
 2. Bind the orchestration loop to schema validation, policy screening, checkpoint persistence, and resumable execution.
-3. Add a V3.6 container cut aligned to the deployment sequence:
+3. Add a V3.8 container cut aligned to the deployment sequence:
    browser → gateway → control plane → worker pool → data plane
 4. Replace the review-only PRD with a delivery PRD that enumerates concrete repo changes.
-5. Version bump the repo from `0.3.5` / kernel `3.5` to `0.3.6` / kernel `3.6`.
+5. Keep all active version, dependency, deployment, and documentation surfaces aligned to `0.3.8` / kernel `3.8`.
 
 ## Non-Goals
 - Rewriting all existing feature surfaces in one PR.
@@ -123,10 +123,10 @@ V3.6 must make those contracts enforceable at runtime, not advisory documentatio
 - [ ] `state.transitioned` emitted after each approved runtime step
 - [ ] `checkpoint.persisted` emitted for each safe resume point
 - [ ] Resume token contract added for blocked/retry branches
-- [ ] MEA V3.6 compose file and container Dockerfile added
+- [ ] MEA V3.8 compose file and container Dockerfile added
 - [ ] Root Dockerfile deprecation decision recorded
 - [ ] Tests added for event bundle validity and event order
-- [ ] `PRD.md`, `VERSION.json`, and `pyproject.toml` updated to V3.6
+- [ ] `PRD.md`, `VERSION.json`, and `pyproject.toml` updated to V3.8
 
 ## Architecture Alignment
 The implementation must preserve the lane ownership model:
@@ -186,8 +186,8 @@ The implementation must preserve the lane ownership model:
 
 ### Workstream 3 — Containerization
 **Add**
-- `deploy/containers/mea-v3.6/Dockerfile`
-- `deploy/compose/docker-compose.v3.6.yml`
+- `deploy/containers/mea-v3.8/Dockerfile`
+- `deploy/compose/docker-compose.v3.8.yml`
 
 **Modify**
 - `docker-compose.yml`
@@ -196,7 +196,7 @@ The implementation must preserve the lane ownership model:
 - `mcp_server/Dockerfile`
 
 **Delete or Deprecate**
-- root `Dockerfile` after V3.6 service image adoption
+- root `Dockerfile` after V3.8 service image adoption
 
 **Acceptance Criteria**
 - Compose topology maps cleanly to:
@@ -205,7 +205,7 @@ The implementation must preserve the lane ownership model:
   - Control plane
   - Worker pool
   - Data plane
-- Control plane, worker, and MCP services run from a common V3.6 base image or explicitly version-matched service images.
+- Control plane, worker, and MCP services run from a common V3.8 base image or explicitly version-matched service images.
 - Existing Postgres and Redis dependencies remain intact.
 
 ### Workstream 4 — Versioning + Documentation
@@ -219,8 +219,8 @@ The implementation must preserve the lane ownership model:
 
 **Acceptance Criteria**
 - `PRD.md` becomes this implementation document.
-- `VERSION.json` updates kernel version to `3.6`.
-- `pyproject.toml` updates package version to `0.3.6`.
+- `VERSION.json` updates kernel version to `3.8`.
+- `pyproject.toml` updates package version to `0.3.8`.
 - Snapshot doc records the exact baseline commit and current deployment shape.
 
 ### Workstream 5 — Verification
@@ -243,8 +243,8 @@ The implementation must preserve the lane ownership model:
 ### Add
 - `contracts/runtime/agent_runtime_contract_bundle.schema.json`
 - `contracts/runtime/README.md`
-- `deploy/containers/mea-v3.6/Dockerfile`
-- `deploy/compose/docker-compose.v3.6.yml`
+- `deploy/containers/mea-v3.8/Dockerfile`
+- `deploy/compose/docker-compose.v3.8.yml`
 - `docs/REPO_SNAPSHOT_2026-04-07.md`
 - `tests/test_runtime_contract_bundle.py`
 - `tests/test_runtime_event_order.py`
@@ -271,12 +271,12 @@ The implementation must preserve the lane ownership model:
 python -m pytest -q
 python -m pytest tests/test_runtime_contract_bundle.py -q
 python -m pytest tests/test_runtime_event_order.py -q
-docker compose -f deploy/compose/docker-compose.v3.6.yml config
-docker build -f deploy/containers/mea-v3.6/Dockerfile -t mea:v3.6 .
+docker compose -f deploy/compose/docker-compose.v3.8.yml config
+docker build -f deploy/containers/mea-v3.8/Dockerfile -t mea:v3.8 .
 ```
 
 ## Exit Condition
-V3.6 is complete when the runtime contracts are enforceable, the per-step execution loop is resumable and receipted, the container cut is reproducible, and the repo version and PRD reflect the new delivery baseline.
+V3.8 is complete when the runtime contracts are enforceable, the per-step execution loop is resumable and receipted, the container cut is reproducible, and the repo version and PRD reflect the new delivery baseline.
 
 
 # Feature: Comprehensive Codebase Review for Motorsport Engineering Agent
@@ -317,7 +317,7 @@ Add a dedicated aerodynamic simulation lane after the control-plane boundary. Th
 
 ---
 
-## Feature Intent B: v3.6 Runtime Contract Harness + Container Cut
+## Feature Intent B: v3.8 Runtime Contract Harness + Container Cut
 
 ### Overview
 
@@ -388,7 +388,7 @@ Deliver the first production-grade multi-agent orchestration slice on top of the
 5. eval/HITL
 6. deploy/versioning
 
-This order is mandatory for v3.7 and informs v3.6/v3.8 planning dependencies.
+This order is mandatory for v3.7 and informs the current v3.8 planning dependencies while preserving the historical v3.6 foundation.
 
 ### Release-by-Release Execution
 

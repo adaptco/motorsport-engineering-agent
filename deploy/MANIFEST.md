@@ -1,8 +1,8 @@
-# Deployment Pipeline v3.6 Patch - File Manifest
+# Deployment Pipeline v3.8 Patch - File Manifest
 
-**Date**: April 5, 2026  
-**Baseline**: v3.5.2  
-**Target**: v3.6  
+**Date**: April 5, 2026
+**Baseline**: v3.5.2
+**Target**: v3.8
 
 ---
 
@@ -17,29 +17,29 @@
   - Enhanced `deploy-staging` with health verification
   - Enhanced `deploy-production` with health verification
   - Added concurrency control
-  - Added environment variables for v3.6 validation
+  - Added environment variables for v3.8 validation
 
-### 2. `deploy/compose/docker-compose.v3.6.yml` (NEW)
+### 2. `deploy/compose/docker-compose.v3.8.yml` (NEW)
 - **Type**: Docker Compose Configuration
 - **Size**: ~4.4 KB
 - **Contains**:
-  - PostgreSQL service with v3.6 labels
-  - Redis service with v3.6 labels
+  - PostgreSQL service with v3.8 labels
+  - Redis service with v3.8 labels
   - Control plane with lane=orchestration
   - Worker with lane=execution
   - MCP server with lane=tool-platform
   - Environment variables: MEA_VERSION, MEA_LANE, RUNTIME_CONTRACT_VALIDATION, CHECKPOINT_ENABLED
-  - Isolated volume namespace (v3.6)
+  - Isolated volume namespace (v3.8)
 
-### 3. `deploy/containers/mea-v3.6/Dockerfile` (NEW)
+### 3. `deploy/containers/mea-v3.8/Dockerfile` (NEW)
 - **Type**: Dockerfile
 - **Size**: ~3.7 KB
 - **Contains**:
-  - Base image: v3.6-base (Python 3.11-slim)
-  - Builder stage: v3.6-builder with contract bundle validation
-  - Three service stages: v3.6-control-plane, v3.6-worker, v3.6-mcp-server
+  - Base image: v3.8-base (Python 3.11-slim)
+  - Builder stage: v3.8-builder with contract bundle validation
+  - Three service stages: v3.8-control-plane, v3.8-worker, v3.8-mcp-server
   - Build-time contract validation
-  - Default target: v3.6-control-plane as latest
+  - Default target: v3.8-control-plane as latest
   - Version/kernel labels
 
 ### 4. `deploy/deploy.sh` (MODIFIED)
@@ -54,7 +54,7 @@
   - Enhanced logging with contract status
   - Backward compatible with v3.5.2
 
-### 5. `deploy/verify-v3.6.sh` (NEW)
+### 5. `deploy/verify-v3.8.sh` (NEW)
 - **Type**: Bash Script
 - **Size**: ~10.6 KB
 - **Contains**:
@@ -75,12 +75,12 @@
 - **Type**: Markdown Documentation
 - **Size**: ~16.6 KB (was ~8.4 KB)
 - **Changes**:
-  - Title updated to "MEA v3.6+ Deployment Pipeline"
+  - Title updated to "MEA v3.8+ Deployment Pipeline"
   - Overview section expanded with runtime contracts
-  - Quick start now includes `./verify-v3.6.sh`
-  - New "Runtime Contracts (v3.6+)" section with event flow and envelope structure
-  - New "GitHub Actions Workflows" section with v3.6 details
-  - Environment variables section updated with v3.6 variables
+  - Quick start now includes `./verify-v3.8.sh`
+  - New "Runtime Contracts (v3.8+)" section with event flow and envelope structure
+  - New "GitHub Actions Workflows" section with v3.8 details
+  - Environment variables section updated with v3.8 variables
   - Service configuration now includes lane ownership
   - New "Verification & Monitoring" section
   - New "Runtime Contract Inspection" subsection
@@ -132,13 +132,13 @@
 - ✓ `mcp_server/Dockerfile` - Unchanged
 
 ### Deployment Scripts
-- ✓ `deploy/rollback.sh` - Unchanged (compatible with v3.6 backups)
+- ✓ `deploy/rollback.sh` - Unchanged (compatible with v3.8 backups)
 - ✓ `deploy/backup.sh` - Unchanged (backs up contracts if present)
 - ✓ `deploy/setup.sh` - Unchanged
 - ✓ `deploy/k8s-deploy.sh` - Unchanged
 
 ### Documentation
-- ✓ `deploy/DEPLOYMENT.md` - Unchanged (v3.5.2 and v3.6 compatible)
+- ✓ `deploy/DEPLOYMENT.md` - Unchanged (v3.5.2 and v3.8 compatible)
 - ✓ `deploy/K8S.md` - Unchanged
 - ✓ `deploy/RUNBOOK.md` - Unchanged
 
@@ -168,7 +168,7 @@
 
 ### Contract Definitions (PRD Workstream 1)
 - ❌ `contracts/runtime/agent_runtime_contract_bundle.schema.json` - Must be created separately
-- ❌ `contracts/aero/aero_simulation_state.schema.json` - Optional for v3.6.0
+- ❌ `contracts/aero/aero_simulation_state.schema.json` - Optional for v3.8.0
 - ❌ `contracts/runtime/README.md` - Documentation for contracts
 
 ### Test Suite (PRD Workstream 5)
@@ -176,9 +176,9 @@
 - ❌ `tests/test_runtime_event_order.py` - Event order enforcement tests
 
 ### Version Updates (Manual)
-- ❌ `VERSION.json` - Must update kernel: "3.6", package: "0.3.6"
-- ❌ `pyproject.toml` - Must update package version to 0.3.6
-- ❌ `CHANGELOG.md` - Must document v3.6 release
+- ❌ `VERSION.json` - Must update kernel: "3.8", package: "0.3.8"
+- ❌ `pyproject.toml` - Must update package version to 0.3.8
+- ❌ `CHANGELOG.md` - Must document v3.8 release
 
 ---
 
@@ -187,20 +187,20 @@
 ```
 New Files Created
 ├── .github/workflows/deploy.yml
-│   ├── Requires: VERSION.json (kernel >= 3.6)
+│   ├── Requires: VERSION.json (kernel >= 3.8)
 │   ├── Requires: contracts/runtime/agent_runtime_contract_bundle.schema.json
 │   ├── Validates: docker-compose.yml (unchanged)
-│   └── Validates: deploy/compose/docker-compose.v3.6.yml
+│   └── Validates: deploy/compose/docker-compose.v3.8.yml
 │
-├── deploy/compose/docker-compose.v3.6.yml
+├── deploy/compose/docker-compose.v3.8.yml
 │   ├── Overlays: docker-compose.yml
-│   ├── Uses: Dockerfile (unchanged) or deploy/containers/mea-v3.6/Dockerfile
-│   └── Environment: v3.6-specific variables
+│   ├── Uses: Dockerfile (unchanged) or deploy/containers/mea-v3.8/Dockerfile
+│   └── Environment: v3.8-specific variables
 │
-├── deploy/containers/mea-v3.6/Dockerfile
+├── deploy/containers/mea-v3.8/Dockerfile
 │   ├── Validates: contracts/runtime/agent_runtime_contract_bundle.schema.json at build time
 │   ├── Sources: pyproject.toml (unchanged)
-│   └── Targets: v3.6-control-plane, v3.6-worker, v3.6-mcp-server
+│   └── Targets: v3.8-control-plane, v3.8-worker, v3.8-mcp-server
 │
 ├── deploy/deploy.sh (enhanced)
 │   ├── Validates: VERSION.json kernel version
@@ -208,7 +208,7 @@ New Files Created
 │   ├── Backs up: contracts/runtime/ directory
 │   └── Uses: docker-compose.yml + environment overlay
 │
-├── deploy/verify-v3.6.sh (new)
+├── deploy/verify-v3.8.sh (new)
 │   ├── Validates: All above dependencies
 │   ├── Checks: CI/CD workflows
 │   └── Output: Pass/warn/fail summary
@@ -251,14 +251,14 @@ Before deploying, complete these in order:
 
 1. **Merge this patch**
    ```bash
-   git merge deployment-v3.6-patch
+   git merge deployment-v3.8-patch
    ```
 
 2. **Update VERSION.json** ⚠️ MANUAL
    ```json
    {
-     "kernel_version": "3.6",
-     "package_version": "0.3.6",
+     "kernel_version": "3.8",
+     "package_version": "0.3.8",
      "release_channel": "stable",
      "compatibility": {
        "replay_schema": 1,
@@ -273,7 +273,7 @@ Before deploying, complete these in order:
 
 4. **Verify Readiness**
    ```bash
-   ./deploy/verify-v3.6.sh
+   ./deploy/verify-v3.8.sh
    ```
 
 5. **Deploy to Staging**
@@ -283,8 +283,8 @@ Before deploying, complete these in order:
 
 6. **Create Release Tag**
    ```bash
-   git tag v0.3.6
-   git push origin v0.3.6
+   git tag v0.3.8
+   git push origin v0.3.8
    ```
 
 ---
@@ -293,7 +293,7 @@ Before deploying, complete these in order:
 
 ```
 deploy/
-├── README.md                         ✏️ MODIFIED (v3.6+ docs)
+├── README.md                         ✏️ MODIFIED (v3.8+ docs)
 ├── DEPLOYMENT.md                     ✓ UNCHANGED
 ├── K8S.md                            ✓ UNCHANGED
 ├── RUNBOOK.md                        ✓ UNCHANGED
@@ -305,16 +305,16 @@ deploy/
 ├── backup.sh                         ✓ UNCHANGED
 ├── rollback.sh                       ✓ UNCHANGED
 ├── k8s-deploy.sh                     ✓ UNCHANGED
-├── verify-v3.6.sh                    ✨ NEW (pre-deploy checklist)
+├── verify-v3.8.sh                    ✨ NEW (pre-deploy checklist)
 │
 ├── compose/
 │   ├── staging.yml                   ✓ UNCHANGED
 │   ├── production.yml                ✓ UNCHANGED
-│   └── docker-compose.v3.6.yml       ✨ NEW (v3.6 overlay)
+│   └── docker-compose.v3.8.yml       ✨ NEW (v3.8 overlay)
 │
 ├── containers/
-│   └── mea-v3.6/
-│       └── Dockerfile                ✨ NEW (v3.6 build)
+│   └── mea-v3.8/
+│       └── Dockerfile                ✨ NEW (v3.8 build)
 │
 └── k8s/
     ├── postgres.yaml                 ✓ UNCHANGED
@@ -328,7 +328,7 @@ Root
 ├── docker-compose.yml                ✓ UNCHANGED
 ├── Dockerfile                        ✓ UNCHANGED
 └── .github/workflows/
-    ├── deploy.yml                    ✏️ MODIFIED (v3.6 validation)
+    ├── deploy.yml                    ✏️ MODIFIED (v3.8 validation)
     ├── ci.yml                        ✓ UNCHANGED
     ├── container-build.yml           ✓ UNCHANGED
     └── release-gate.yml              ✓ UNCHANGED
@@ -342,24 +342,24 @@ Run these to verify patch integrity:
 
 ```bash
 # 1. Check file presence
-ls -lah deploy/{verify-v3.6.sh,PATCH_SUMMARY.md,HANDOFF.md}
-ls -lah deploy/compose/docker-compose.v3.6.yml
-ls -lah deploy/containers/mea-v3.6/Dockerfile
+ls -lah deploy/{verify-v3.8.sh,PATCH_SUMMARY.md,HANDOFF.md}
+ls -lah deploy/compose/docker-compose.v3.8.yml
+ls -lah deploy/containers/mea-v3.8/Dockerfile
 
 # 2. Check modified files
 grep -l "validate-version" .github/workflows/deploy.yml
 grep -l "RUNTIME_CONTRACT_VALIDATION" deploy/deploy.sh
-grep -l "v3.6+" deploy/README.md
+grep -l "v3.8+" deploy/README.md
 
 # 3. Validate syntax
-docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.6.yml config
-bash -n deploy/verify-v3.6.sh
+docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.8.yml config
+bash -n deploy/verify-v3.8.sh
 bash -n deploy/deploy.sh
-docker build -f deploy/containers/mea-v3.6/Dockerfile --target v3.6-control-plane --dry-run .
+docker build -f deploy/containers/mea-v3.8/Dockerfile --target v3.8-control-plane --dry-run .
 ```
 
 ---
 
-**Manifest created**: April 5, 2026  
-**Total artifacts**: 8 new/modified, 20+ preserved  
+**Manifest created**: April 5, 2026
+**Total artifacts**: 8 new/modified, 20+ preserved
 **Status**: ✅ Ready for integration

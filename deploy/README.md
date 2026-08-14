@@ -1,26 +1,26 @@
-# MEA v3.6+ Deployment Pipeline
+# MEA v3.8+ Deployment Pipeline
 
-Complete deployment pipeline for the mea-root-kernel v3.6+ application with runtime contracts, checkpoint resumption, and enforceable event gates. Supports Docker Compose and Kubernetes deployments.
+Complete deployment pipeline for the mea-root-kernel v3.8+ application with runtime contracts, checkpoint resumption, and enforceable event gates. Supports Docker Compose and Kubernetes deployments.
 
 ## Overview
 
-This deployment system provides v3.6+ runtime contract validation, checkpoint-based resumption, and deterministic event ordering:
+This deployment system provides v3.8+ runtime contract validation, checkpoint-based resumption, and deterministic event ordering:
 
 - **Runtime Contracts**: Enforced event gates (`request.received → run.created → workflow.policy.screened → ... → run.completed`)
 - **CI/CD Automation**: GitHub Actions workflows with version and contract validation
 - **Multi-Environment Support**: Development, staging, and production deployments
-- **Docker Compose**: Local development and simple deployments with v3.6 topology overlay
+- **Docker Compose**: Local development and simple deployments with v3.8 topology overlay
 - **Kubernetes**: Production-grade deployments with auto-scaling, health checks, and high availability
 - **Backup & Recovery**: Automated backups and rollback capabilities with contract preservation
 - **Health Monitoring**: Built-in health checks, runtime contract validation, and status monitoring
 
 ## Quick Start
 
-### 1. Verify v3.6 Deployment Readiness
+### 1. Verify v3.8 Deployment Readiness
 
 ```bash
-# Run comprehensive v3.6 checks
-./verify-v3.6.sh
+# Run comprehensive v3.8 checks
+./verify-v3.8.sh
 ```
 
 This validates:
@@ -41,14 +41,14 @@ This validates:
 ./deploy.sh staging
 
 # Deploy to production
-./deploy.sh production v0.3.6
+./deploy.sh production v0.3.8
 ```
 
-### 3. v3.6 Topology (Optional)
+### 3. v3.8 Topology (Optional)
 
 ```bash
-# Deploy with v3.6-specific compose overlay
-docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.6.yml up -d
+# Deploy with v3.8-specific compose overlay
+docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.8.yml up -d
 ```
 
 ## Documentation
@@ -63,11 +63,11 @@ deploy/
 ├── compose/                              # Docker Compose environment overlays
 │   ├── staging.yml                      # Staging configuration
 │   ├── production.yml                   # Production configuration
-│   └── docker-compose.v3.6.yml          # v3.6 topology overlay (NEW)
+│   └── docker-compose.v3.8.yml          # v3.8 topology overlay (NEW)
 │
 ├── containers/
-│   └── mea-v3.6/                        # v3.6 container definitions (NEW)
-│       └── Dockerfile                   # Multi-stage v3.6 build
+│   └── mea-v3.8/                        # v3.8 container definitions (NEW)
+│       └── Dockerfile                   # Multi-stage v3.8 build
 │
 ├── k8s/                                 # Kubernetes manifests
 │   ├── postgres.yaml                    # PostgreSQL StatefulSet
@@ -77,12 +77,12 @@ deploy/
 │   ├── mcp-server.yaml                  # MCP server Deployment
 │   └── rbac.yaml                        # RBAC and PodDisruptionBudgets
 │
-├── deploy.sh                            # Main deployment script (v3.6+ aware)
+├── deploy.sh                            # Main deployment script (v3.8+ aware)
 ├── rollback.sh                          # Rollback script
 ├── backup.sh                            # Backup script
 ├── setup.sh                             # Development environment setup
 ├── k8s-deploy.sh                        # Kubernetes deployment script
-├── verify-v3.6.sh                       # v3.6 verification checklist (NEW)
+├── verify-v3.8.sh                       # v3.8 verification checklist (NEW)
 │
 ├── README.md                            # This file
 ├── DEPLOYMENT.md                        # Detailed Docker Compose guide
@@ -90,9 +90,9 @@ deploy/
 └── RUNBOOK.md                           # Operations and troubleshooting
 ```
 
-## Runtime Contracts (v3.6+)
+## Runtime Contracts (v3.8+)
 
-The v3.6 deployment enforces a runtime contract bundle for deterministic execution and audit:
+The v3.8 deployment enforces a runtime contract bundle for deterministic execution and audit:
 
 ### Required Contract Bundle
 
@@ -142,7 +142,7 @@ run.completed / run.failed
 - `checkpoint.persisted` enables resumable execution
 - `run.failed` includes `failure_code` and `error_context`
 
-### Aero Simulation Contracts (Optional for v3.6.0)
+### Aero Simulation Contracts (Optional for v3.8.0)
 
 Location: `contracts/aero/aero_simulation_state.schema.json`
 
@@ -160,22 +160,22 @@ Location: `contracts/aero/aero_simulation_state.schema.json`
 
 ## GitHub Actions Workflows
 
-### deploy.yml (v3.6+ Enhanced)
+### deploy.yml (v3.8+ Enhanced)
 
 Automated deployment pipeline triggered by:
 - Push to `main` → deploys to staging
 - Push of version tags `v*` → deploys to production
 - Manual workflow dispatch
 
-**v3.6+ Enhancements:**
-- `validate-version` job: Checks kernel version ≥ 3.6, validates contract bundle
-- `test-compose` job: Validates Docker Compose topology with v3.6 overlays
+**v3.8+ Enhancements:**
+- `validate-version` job: Checks kernel version ≥ 3.8, validates contract bundle
+- `test-compose` job: Validates Docker Compose topology with v3.8 overlays
 - Contract preservation: Backups include runtime contracts
 - Health verification: Post-deployment contract validation checks
 
 **Status Checks:**
-- validate-version: Kernel version >= 3.6 + contract bundle presence
-- test-compose: Docker Compose configuration + v3.6 overlay validation
+- validate-version: Kernel version >= 3.8 + contract bundle presence
+- test-compose: Docker Compose configuration + v3.8 overlay validation
 - build-and-push: Builds and pushes Docker images
 - deploy-staging: Deploys to staging with contract validation
 - deploy-production: Deploys to production with version tag + contract validation
@@ -186,8 +186,8 @@ Automated deployment pipeline triggered by:
 - `ENV`: Current environment (development/staging/production)
 - `LOG_LEVEL`: Logging verbosity (debug/info/warning)
 - `PYTHONUNBUFFERED`: Set to 1 for unbuffered output
-- `MEA_VERSION`: Current v3.6+ version
-- `MEA_KERNEL_VERSION`: Current kernel version (3.6+)
+- `MEA_VERSION`: Current v3.8+ version
+- `MEA_KERNEL_VERSION`: Current kernel version (3.8+)
 - `RUNTIME_CONTRACT_VALIDATION`: Enable runtime event validation (true)
 - `CHECKPOINT_ENABLED`: Enable checkpoint persistence (true)
 
@@ -208,15 +208,15 @@ Automated deployment pipeline triggered by:
 
 ## Key Scripts
 
-### verify-v3.6.sh (NEW)
-Comprehensive v3.6 deployment readiness verification.
+### verify-v3.8.sh (NEW)
+Comprehensive v3.8 deployment readiness verification.
 
 ```bash
-./verify-v3.6.sh
+./verify-v3.8.sh
 ```
 
 Validates:
-- Version alignment (kernel 3.6+, package 0.3.6+)
+- Version alignment (kernel 3.8+, package 0.3.8+)
 - Runtime contract bundle presence and JSON validity
 - Aero simulation contracts (optional)
 - Dockerfile multi-stage targets
@@ -226,14 +226,14 @@ Validates:
 - CI/CD workflows configured
 - Running services health (if deployed)
 
-### deploy.sh (v3.6+ Enhanced)
+### deploy.sh (v3.8+ Enhanced)
 Deploy services with automatic backups and health checks.
 
 ```bash
 ./deploy.sh [staging|production] [version]
 ```
 
-**v3.6+ Enhancements:**
+**v3.8+ Enhancements:**
 - Contract bundle validation before deployment
 - VERSION.json kernel version check
 - Contract preservation in backups
@@ -323,7 +323,7 @@ Creates:
 
 ### Staging (Automatic on main branch)
 1. Push to main triggers CI
-2. Version validation (3.6+)
+2. Version validation (3.8+)
 3. Contract bundle presence check
 4. Tests and image builds complete
 5. Images pushed to registry
@@ -332,7 +332,7 @@ Creates:
 8. Health checks performed
 
 ### Production (Automatic on version tags)
-1. Create version tag: `git tag v0.3.6`
+1. Create version tag: `git tag v0.3.8`
 2. Push tag triggers version validation
 3. Contract bundle validation
 4. Tests run
@@ -348,10 +348,10 @@ Creates:
 
 ```bash
 # Run verification suite
-./verify-v3.6.sh
+./verify-v3.8.sh
 
 # Validate specific component
-docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.6.yml config
+docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.8.yml config
 ```
 
 ### Post-Deployment
@@ -373,10 +373,10 @@ docker compose logs -f worker | grep -i "contract\|checkpoint"
 
 ```bash
 # Verify contract bundle in deployment
-docker compose exec control_plane curl -f http://localhost:8000/contracts
+docker compose exec control_plane test -f /app/contracts/runtime/agent_runtime_contract_bundle.schema.json
 
 # Test event emission path
-docker compose exec worker python -m worker.contracts.validate_bundle
+docker compose exec worker python -m json.tool /app/contracts/runtime/agent_runtime_contract_bundle.schema.json > /dev/null
 ```
 
 ## Monitoring & Troubleshooting
@@ -442,11 +442,11 @@ ls backups/
 For zero-downtime updates with contract validation:
 
 ```bash
-# Start new v3.6 version
-docker compose -p mea-blue -f docker-compose.yml -f deploy/compose/docker-compose.v3.6.yml up -d
+# Start new v3.8 version
+docker compose -p mea-blue -f docker-compose.yml -f deploy/compose/docker-compose.v3.8.yml up -d
 
 # Verify contract validation
-docker compose -p mea-blue exec control_plane curl -f http://localhost:8000/contracts
+docker compose -p mea-blue exec control_plane test -f /app/contracts/runtime/agent_runtime_contract_bundle.schema.json
 
 # Switch traffic (requires load balancer)
 # Tear down old version
@@ -459,7 +459,7 @@ To add a new environment (e.g., integration):
 1. Create `deploy/compose/integration.yml`
 2. Add secrets to GitHub Actions
 3. Add deployment job to `.github/workflows/deploy.yml`
-4. Update `verify-v3.6.sh` to include new environment
+4. Update `verify-v3.8.sh` to include new environment
 5. Run verification suite
 
 ### Runtime Contract Inspection
@@ -467,10 +467,10 @@ Access deployed contracts at runtime:
 
 ```bash
 # View contract bundle
-curl -s http://localhost:8000/contracts | jq .
+docker compose exec control_plane python -m json.tool /app/contracts/runtime/agent_runtime_contract_bundle.schema.json
 
 # View aero contracts (if deployed)
-curl -s http://localhost:8000/contracts/aero | jq .
+docker compose exec control_plane python -m json.tool /app/contracts/aero/aero_simulation_state.schema.json
 ```
 
 ### Event Ledger Access
@@ -520,8 +520,8 @@ docker compose exec postgres psql -U mea -d mea -c "DELETE FROM runtime_events W
 
 ## Resources
 
-- [PRD.md](../../PRD.md) - Product requirements and feature roadmap
-- [VERSION.json](../../VERSION.json) - Current version and compatibility
+- [PRD.md](../PRD.md) - Product requirements and feature roadmap
+- [VERSION.json](../VERSION.json) - Current version and compatibility
 - [Docker Documentation](https://docs.docker.com/)
 - [Docker Compose Reference](https://docs.docker.com/compose/reference/)
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
@@ -530,7 +530,7 @@ docker compose exec postgres psql -U mea -d mea -c "DELETE FROM runtime_events W
 ## Support
 
 For deployment issues:
-1. Run verification: `./verify-v3.6.sh`
+1. Run verification: `./verify-v3.8.sh`
 2. Check logs: `docker compose logs` or `kubectl logs`
 3. Review backups: `ls -lah backups/`
 4. Check configuration: `docker compose config`
@@ -541,16 +541,16 @@ For deployment issues:
 
 Current version: See VERSION.json in project root
 
-**v3.6+ Requirements:**
-- Kernel version must be 3.6 or higher
+**v3.8+ Requirements:**
+- Kernel version must be 3.8 or higher
 - Runtime contract bundle must be present in `contracts/runtime/`
 - Docker Compose uses multi-environment overlays
 - All events must comply with runtime contract schema
 
 Release process:
-1. Update VERSION.json (kernel: 3.6+, package: 0.3.6+)
+1. Update VERSION.json (kernel: 3.8+, package: 0.3.8+)
 2. Validate runtime contracts in `contracts/runtime/`
 3. Update CHANGELOG.md
-4. Run `./verify-v3.6.sh` to confirm readiness
-5. Create git tag: `git tag v0.3.6` (example)
+4. Run `./verify-v3.8.sh` to confirm readiness
+5. Create git tag: `git tag v0.3.8` (example)
 6. Push tag to trigger automated deployment with contract validation

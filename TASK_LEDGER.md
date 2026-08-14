@@ -1,4 +1,4 @@
-# Task Ledger (V3.6.3 Production Readiness)
+# Task Ledger (V3.8 Production Readiness)
 
 | Task | Status | Owner | Evidence | Notes |
 | --- | --- | --- | --- | --- |
@@ -27,7 +27,7 @@
 | Phase F runtime contract authority unification | 🟢 Done | codex | `docs/checkpoints/PHASE_F.md`, `SKILL.md`, `mcp_v1_runtime_bundle/Agents.md`, `mcp.json` | Runtime contract and tool discovery now pointer-aligned to single authority paths. |
 | PR lifecycle automation normalization | 🟢 Done | codex | `scripts/github_pr_lifecycle.sh`, `skills/github-pr-lifecycle/SKILL.md`, `skills/agent-ralph-wiggum/SKILL.md` | Standardized label/comment process and embedded it into skill workflow. |
 
-## V3.6 Preparation Roadmap
+## V3.8 Release Alignment Roadmap
 
 | Task | Status | Owner | Evidence | Notes |
 | --- | --- | --- | --- | --- |

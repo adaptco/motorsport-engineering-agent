@@ -1,26 +1,26 @@
-# Deployment Pipeline v3.6 Patch - Handoff Document
+# Deployment Pipeline v3.8 Patch - Handoff Document
 
-**Date**: April 5, 2026  
-**Baseline**: v3.5.2  
-**Target**: v3.6 (Runtime Contract Harness + Container Cut)  
+**Date**: April 5, 2026
+**Baseline**: v3.5.2
+**Target**: v3.8 (Runtime Contract Harness + Container Cut)
 **Status**: ✅ **COMPLETE** - Ready for integration and testing
 
 ---
 
 ## What Was Delivered
 
-Complete deployment pipeline refresh aligned to **PRD.md Feature Intent B: v3.6 Runtime Contract Harness + Deployment Container Cut**.
+Complete deployment pipeline refresh aligned to **PRD.md Feature Intent B: v3.8 Runtime Contract Harness + Deployment Container Cut**.
 
 ### Core Artifacts
 
 | Artifact | Status | Path | Purpose |
 |----------|--------|------|---------|
 | Enhanced CI/CD Workflow | ✅ Complete | `.github/workflows/deploy.yml` | Version + contract validation in deployment |
-| v3.6 Topology Overlay | ✅ Complete | `deploy/compose/docker-compose.v3.6.yml` | Lane-aware service topology |
-| v3.6 Container Build | ✅ Complete | `deploy/containers/mea-v3.6/Dockerfile` | Multi-stage build with contract validation |
+| v3.8 Topology Overlay | ✅ Complete | `deploy/compose/docker-compose.v3.8.yml` | Lane-aware service topology |
+| v3.8 Container Build | ✅ Complete | `deploy/containers/mea-v3.8/Dockerfile` | Multi-stage build with contract validation |
 | Enhanced Deploy Script | ✅ Complete | `deploy/deploy.sh` | Runtime contract preservation + validation |
-| Verification Script | ✅ Complete | `deploy/verify-v3.6.sh` | 10-point pre-deployment checklist |
-| Documentation Update | ✅ Complete | `deploy/README.md` | Full v3.6+ semantics documented |
+| Verification Script | ✅ Complete | `deploy/verify-v3.8.sh` | 10-point pre-deployment checklist |
+| Documentation Update | ✅ Complete | `deploy/README.md` | Full v3.8+ semantics documented |
 | Patch Summary | ✅ Complete | `deploy/PATCH_SUMMARY.md` | Detailed change log and migration guide |
 
 ---
@@ -31,7 +31,7 @@ Complete deployment pipeline refresh aligned to **PRD.md Feature Intent B: v3.6 
 
 ```bash
 cd deploy
-./verify-v3.6.sh
+./verify-v3.8.sh
 ```
 
 **Expected Output:**
@@ -40,7 +40,7 @@ Passed:   32
 Warnings: 2
 Failed:   0
 
-✓ All checks passed. v3.6 deployment ready.
+✓ All checks passed. v3.8 deployment ready.
 ```
 
 ### 2. Deploy to Staging
@@ -65,11 +65,11 @@ Failed:   0
 # Update VERSION.json
 # Add runtime contract bundle to contracts/runtime/
 # Tag and push
-git tag v0.3.6
-git push origin v0.3.6
+git tag v0.3.8
+git push origin v0.3.8
 
 # GitHub Actions runs:
-# - Kernel version check (>= 3.6)
+# - Kernel version check (>= 3.8)
 # - Contract bundle validation
 # - Docker Compose topology validation
 # - Service health verification
@@ -81,7 +81,7 @@ git push origin v0.3.6
 
 ### New
 - ✨ Runtime contract validation in CI/CD pipeline
-- ✨ v3.6 Docker Compose topology overlay
+- ✨ v3.8 Docker Compose topology overlay
 - ✨ Contract preservation in backups
 - ✨ Pre-deployment verification script
 - ✨ Lane-aware service configuration
@@ -89,7 +89,7 @@ git push origin v0.3.6
 ### Enhanced
 - 🔄 deploy.sh now validates kernel version and contracts
 - 🔄 GitHub Actions workflow includes version + contract checks
-- 🔄 Documentation updated with v3.6 semantics
+- 🔄 Documentation updated with v3.8 semantics
 - 🔄 Health checks now verify contract accessibility
 
 ### Unchanged
@@ -108,8 +108,8 @@ git push origin v0.3.6
 1. **Update VERSION.json**
    ```json
    {
-     "kernel_version": "3.6",
-     "package_version": "0.3.6",
+     "kernel_version": "3.8",
+     "package_version": "0.3.8",
      "release_channel": "stable",
      "compatibility": {
        "replay_schema": 1,
@@ -126,7 +126,7 @@ git push origin v0.3.6
 
 ### Optional 🔄
 
-- Update `.env.staging` and `.env.production` to set new v3.6 variables:
+- Update `.env.staging` and `.env.production` to set new v3.8 variables:
   ```bash
   RUNTIME_CONTRACT_VALIDATION=true
   CHECKPOINT_ENABLED=true
@@ -141,13 +141,13 @@ git push origin v0.3.6
 
 ```bash
 # 1. Verify configuration
-./verify-v3.6.sh
+./verify-v3.8.sh
 
 # 2. Test Docker Compose validation
-docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.6.yml config
+docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.8.yml config
 
-# 3. Test v3.6 Dockerfile build
-docker build -f deploy/containers/mea-v3.6/Dockerfile --target v3.6-control-plane -t mea:test .
+# 3. Test v3.8 Dockerfile build
+docker build -f deploy/containers/mea-v3.8/Dockerfile --target v3.8-control-plane -t mea:test .
 
 # 4. Test deploy script
 ./deploy.sh staging
@@ -193,38 +193,38 @@ docker compose logs -f worker | grep -i "checkpoint"
 
 **Symptom:**
 ```
-[WARN] Runtime contract bundle not found. Aero contracts are optional for v3.6.0.
+[WARN] Runtime contract bundle not found. Aero contracts are optional for v3.8.0.
 ```
 
 **Solution:**
 - Add `contracts/runtime/agent_runtime_contract_bundle.schema.json` to repository
 - Or verify file path if it exists
 
-### Issue: "Kernel version is 3.5.2 (expected 3.6+)"
+### Issue: "Kernel version is 3.5.2 (expected 3.8+)"
 
 **Symptom:**
 ```
-[FAIL] Kernel version is 3.5.2 (expected 3.6+)
+[FAIL] Kernel version is 3.5.2 (expected 3.8+)
 ```
 
 **Solution:**
-- Update `VERSION.json` kernel_version to "3.6"
+- Update `VERSION.json` kernel_version to "3.8"
 - Commit and push changes
 
 ### Issue: Docker Compose topology validation fails
 
 **Symptom:**
 ```
-[FAIL] v3.6 compose overlay validation failed
+[FAIL] v3.8 compose overlay validation failed
 ```
 
 **Solution:**
 ```bash
 # Check syntax errors
-docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.6.yml config
+docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.8.yml config
 
 # Review compose file
-cat deploy/compose/docker-compose.v3.6.yml
+cat deploy/compose/docker-compose.v3.8.yml
 ```
 
 ### Issue: Health check fails post-deployment
@@ -255,11 +255,11 @@ docker compose restart control_plane
 ```
 deploy/
 ├── compose/
-│   └── docker-compose.v3.6.yml          # v3.6 topology overlay
+│   └── docker-compose.v3.8.yml          # v3.8 topology overlay
 ├── containers/
-│   └── mea-v3.6/
-│       └── Dockerfile                   # v3.6 multi-stage build
-├── verify-v3.6.sh                       # Pre-deployment checklist
+│   └── mea-v3.8/
+│       └── Dockerfile                   # v3.8 multi-stage build
+├── verify-v3.8.sh                       # Pre-deployment checklist
 └── PATCH_SUMMARY.md                     # Detailed change log
 ```
 
@@ -267,24 +267,24 @@ deploy/
 
 ```
 .github/workflows/
-└── deploy.yml                           # Enhanced with v3.6 validation
+└── deploy.yml                           # Enhanced with v3.8 validation
 
 deploy/
 ├── deploy.sh                            # Runtime contract validation
-├── README.md                            # v3.6+ documentation
+├── README.md                            # v3.8+ documentation
 └── (other scripts unchanged)
 ```
 
 ### Unchanged Files
 
 ```
-docker-compose.yml                       # Still valid for v3.5.2 and v3.6
+docker-compose.yml                       # Still valid for v3.5.2 and v3.8
 Dockerfile                               # Still valid
 control_plane/Dockerfile                 # Still valid
 worker/Dockerfile                        # Still valid
 mcp_server/Dockerfile                    # Still valid
 deploy/K8S.md                            # Still valid
-deploy/DEPLOYMENT.md                     # Still valid (now covers v3.6)
+deploy/DEPLOYMENT.md                     # Still valid (now covers v3.8)
 deploy/RUNBOOK.md                        # Still valid
 ```
 
@@ -292,7 +292,7 @@ deploy/RUNBOOK.md                        # Still valid
 
 ## Architecture Overview
 
-### v3.6 Deployment Topology
+### v3.8 Deployment Topology
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -336,7 +336,7 @@ deploy/RUNBOOK.md                        # Still valid
 └─────────────────────────────────────────────────────────┘
 ```
 
-### Event Flow (v3.6+)
+### Event Flow (v3.8+)
 
 ```
 request.received
@@ -393,13 +393,13 @@ The deployment pipeline is ready for these code changes (from PRD Workstreams 2-
 - **Deployment ready**: Yes ✅
 
 ### Workstream 3: Containerization (Already Done)
-- **Add**: v3.6 Dockerfile ✅
-- **Add**: v3.6 Compose overlay ✅
+- **Add**: v3.8 Dockerfile ✅
+- **Add**: v3.8 Compose overlay ✅
 - **Update**: Base Dockerfile (optional) ✅
 
 ### Workstream 4: Versioning (Manual Required)
-- **Update**: VERSION.json → Set kernel version to 3.6 ⚠️
-- **Update**: pyproject.toml → Set package version to 0.3.6 ⚠️
+- **Update**: VERSION.json → Set kernel version to 3.8 ⚠️
+- **Update**: pyproject.toml → Set package version to 0.3.8 ⚠️
 - **Update**: CHANGELOG.md → Record release notes ⚠️
 
 ### Workstream 5: Verification (Test Changes)
@@ -415,7 +415,7 @@ The deployment pipeline is ready for these code changes (from PRD Workstreams 2-
 
 ```bash
 # Check deployment health daily
-./verify-v3.6.sh
+./verify-v3.8.sh
 
 # Monitor event ledger
 docker compose exec postgres psql -U mea -c "SELECT COUNT(*) FROM runtime_events;"
@@ -427,14 +427,14 @@ docker compose exec postgres psql -U mea -c "DELETE FROM runtime_events WHERE cr
 ### Updates
 
 ```bash
-# To update v3.6 deployment:
+# To update v3.8 deployment:
 git pull origin main
-./verify-v3.6.sh
+./verify-v3.8.sh
 ./deploy.sh staging
 
 # To update production:
-git tag v0.3.6.1
-git push origin v0.3.6.1
+git tag v0.3.8
+git push origin v0.3.8
 # GitHub Actions handles rest
 ```
 
@@ -444,7 +444,7 @@ git push origin v0.3.6.1
 
 ### Where to Find Information
 
-- **Architecture**: `deploy/README.md` → "Runtime Contracts (v3.6+)" section
+- **Architecture**: `deploy/README.md` → "Runtime Contracts (v3.8+)" section
 - **Operations**: `deploy/RUNBOOK.md` → "Common Operations" section
 - **Troubleshooting**: `deploy/RUNBOOK.md` → "Troubleshooting" section
 - **Deployment Guide**: `deploy/DEPLOYMENT.md` → Full procedure
@@ -454,7 +454,7 @@ git push origin v0.3.6.1
 
 ```bash
 # Pre-deployment check
-./verify-v3.6.sh
+./verify-v3.8.sh
 
 # Deploy
 ./deploy.sh staging
@@ -476,12 +476,12 @@ docker compose logs -f <service>
 
 ## Sign-Off
 
-✅ **Deployment pipeline v3.6 patch is complete and tested.**
+✅ **Deployment pipeline v3.8 patch is complete and tested.**
 
 **Deliverables:**
-- Enhanced GitHub Actions workflow with v3.6 validation
-- v3.6 Docker Compose topology overlay
-- v3.6 multi-stage Dockerfile with contract validation
+- Enhanced GitHub Actions workflow with v3.8 validation
+- v3.8 Docker Compose topology overlay
+- v3.8 multi-stage Dockerfile with contract validation
 - Enhanced deployment scripts with contract preservation
 - Comprehensive verification script
 - Complete documentation update
@@ -489,15 +489,15 @@ docker compose logs -f <service>
 **Status**: Ready for staging deployment and code team integration.
 
 **Next Actions**:
-1. Update VERSION.json (kernel: 3.6, package: 0.3.6)
+1. Update VERSION.json (kernel: 3.8, package: 0.3.8)
 2. Add runtime contract bundle
-3. Run `./verify-v3.6.sh` to confirm readiness
+3. Run `./verify-v3.8.sh` to confirm readiness
 4. Deploy to staging: `./deploy.sh staging`
 5. Code team: Implement runtime event emission (Workstream 2)
 
 ---
 
-**Patch Author**: Gordon (Docker Specialist)  
-**Date**: April 5, 2026  
-**Reference**: PRD.md Feature Intent B, CURRENT_STATE.md  
+**Patch Author**: Gordon (Docker Specialist)
+**Date**: April 5, 2026
+**Reference**: PRD.md Feature Intent B, CURRENT_STATE.md
 **Status**: ✅ COMPLETE

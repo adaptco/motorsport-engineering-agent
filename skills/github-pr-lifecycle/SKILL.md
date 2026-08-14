@@ -7,7 +7,7 @@ description: Standardize GitHub pull request lifecycle operations for this repos
 
 ## Required flow
 1. Create or update PR.
-2. Run `scripts/github_pr_lifecycle.sh normalize <pr_number> v3.6.3`.
+2. Run `scripts/github_pr_lifecycle.sh normalize <pr_number> v3.8`.
 3. Run review follow-up via `scripts/github_pr_api.sh post-yeet-followup <pr_number> "<test command>"`.
 4. Resolve review conversations and re-run checks.
 5. Merge with squash strategy when checks are green.

@@ -1,6 +1,6 @@
 # Open Blockers (April 7, 2026 - V3.5.1 Baseline)
 
-## P0/P1 - V3.6 Update Readiness
+## P0/P1 - V3.8 Release Alignment Readiness
 
 1. **Deprecated FastAPI Startup Hooks (RESOLVED)**
 - Resolution: Migrated `on_event` hooks to `lifespan` context manager in `control_plane/app.py`.
