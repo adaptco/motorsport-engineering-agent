@@ -1,0 +1,1 @@
+export function render(m){m.innerHTML=`<div class="panel"><div class="panel-body"><div class="page-header"><div><h1 class="page-title">VIEW NOT FOUND</h1><div class="page-subtitle">Select a primary engineering workspace.</div></div></div><a class="button button--primary" href="#/mission-control">Mission Control</a></div></div>`}

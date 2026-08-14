@@ -1,0 +1,1 @@
+import {esc} from "../lib/utils.js";export function statusPill(status="NONE"){const key=String(status).toLowerCase();return `<span class="severity-badge severity-${["critical","warning","advisory","info"].includes(key)?key:"none"}">${esc(status)}</span>`}

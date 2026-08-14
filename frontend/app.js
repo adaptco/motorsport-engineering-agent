@@ -1,0 +1,6 @@
+import {emit,on} from "./lib/events.js";import {initRouter,navigate} from "./lib/router.js";import {initKeyboard,registerShortcut} from "./lib/keyboard.js";import {get} from "./lib/api.js";import {startPolling,stopAllPolling} from "./lib/polling.js";
+const mount=document.getElementById("content-root"),health=document.getElementById("health-indicator"),status=document.getElementById("status-message");
+function setHealth(ok){health.className=`health-pill health-pill--${ok?"ok":"bad"}`;health.textContent=ok?"● ONLINE":"● OFFLINE"}
+async function healthCheck(){try{const data=await get("/healthz",{timeout:4000});setHealth(true);status.textContent=`kernel ${data.kernel_version||"—"}`}catch(e){setHealth(false);status.textContent=e.message||"backend unavailable"}}
+function boot(){initKeyboard();[["Ctrl+1","mission-control"],["Ctrl+2","aero-studio"],["Ctrl+3","race-engineering"],["Ctrl+4","operations"]].forEach(([k,r])=>registerShortcut(k,()=>navigate(r)));registerShortcut("Ctrl+r",()=>location.reload());document.getElementById("refresh-button").onclick=healthCheck;on("router:change",({route})=>{status.textContent=`view ${route.replaceAll("-"," ")}`});startPolling("global-health",healthCheck,5000);healthCheck();emit("app:ready")}
+boot();initRouter(mount);window.addEventListener("beforeunload",()=>stopAllPolling());

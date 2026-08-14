@@ -1,0 +1,1 @@
+import {createScatterPlot} from "../lib/charts.js";export function mountBranchScatter(container,points){return createScatterPlot(container,{points,xLabel:"CD",yLabel:"CL"})}
