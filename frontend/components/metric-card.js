@@ -1,0 +1,1 @@
+export function metricCard(label,value,delta="",spark=null){return `<div class="metric-cell"><div class="metric-label">${label}</div><div class="metric-value">${value}</div><div class="metric-delta">${delta}</div>${spark?`<div class="sparkline" data-spark='${JSON.stringify(spark)}' style="height:24px;margin-top:5px"></div>`:""}</div>`}

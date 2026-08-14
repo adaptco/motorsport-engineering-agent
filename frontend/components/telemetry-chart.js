@@ -1,0 +1,1 @@
+import {createLineChart} from "../lib/charts.js";export function mountTelemetry(container,series){return createLineChart(container,{series})}

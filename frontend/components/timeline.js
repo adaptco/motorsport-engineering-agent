@@ -1,0 +1,1 @@
+import {esc} from "../lib/utils.js";export function timeline(items=[]){return `<div class="timeline">${items.map(x=>`<div class="timeline-block"><strong>${esc(x.label)}</strong><span>${esc(x.meta||"")}</span></div>`).join("")}</div>`}

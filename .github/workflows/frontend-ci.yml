@@ -1,0 +1,84 @@
+name: mea-frontend-full-stack-ci
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  frontend-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install backend dependencies
+        run: uv sync --extra dev
+      - name: Check frontend JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r file; do
+            node --check "$file"
+          done < <(find frontend -name '*.js' -type f | sort)
+      - name: Run frontend/backend contract tests
+        run: uv run pytest tests/frontend/test_frontend_contract.py -q
+      - name: Verify control-plane imports and frontend routes
+        run: |
+          uv run python - <<'PY'
+          from control_plane.app import app
+
+          mounted_paths = {
+              getattr(route, "path", None)
+              for route in app.routes
+              if getattr(route, "path", None)
+          }
+          openapi_paths = set(app.openapi().get("paths", {}))
+          paths = mounted_paths | openapi_paths
+          required = {
+              "/",
+              "/healthz",
+              "/healthz/dependencies",
+              "/runtime/sessions",
+              "/runtime-state/snapshot",
+              "/aero/runs",
+          }
+          missing = required - paths
+          if missing:
+              raise SystemExit(f"missing control-plane routes: {sorted(missing)}")
+          print(f"verified {len(paths)} control-plane routes")
+          PY
+      - name: Validate Frontend JS Syntax
+        run: |
+          node --check frontend/app.js
+      - name: Run Frontend/Backend Contract Tests
+        run: |
+          uv run pytest tests/test_runtime_contract_bundle.py tests/test_anp_contract_bundle.py
+
+  frontend-container-smoke:
+    runs-on: ubuntu-latest
+    needs: frontend-contract
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build control-plane image with frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          target: control_plane
+          load: true
+          tags: mea-control-plane:frontend-ci
+          cache-from: type=gha
+      - name: Verify frontend assets are in the image
+        run: |
+          test "$(docker run --rm mea-control-plane:frontend-ci sh -lc 'test -f /app/frontend/index.html && test -f /app/frontend/app.js && echo ok')" = ok
+          docker run --rm mea-control-plane:frontend-ci python -m py_compile /app/control_plane/routes/session.py

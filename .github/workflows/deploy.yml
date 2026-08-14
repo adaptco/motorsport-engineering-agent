@@ -26,7 +26,7 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  MIN_KERNEL_VERSION: "3.6.3"
+  MIN_KERNEL_VERSION: "3.8"
 
 jobs:
   validate-version:
@@ -71,7 +71,7 @@ jobs:
           echo "✓ Runtime contract bundle found"
           
           if [ ! -f "contracts/aero/aero_simulation_state.schema.json" ]; then
-            echo "WARN: Aero simulation contract not found (optional for v3.6.3)"
+            echo "WARN: Aero simulation contract not found (optional for v3.8)"
           fi
 
   build-and-push:
@@ -137,11 +137,11 @@ jobs:
       - name: Validate docker-compose.yml
         run: docker compose -f docker-compose.yml config > /dev/null
 
-      - name: Validate v3.6.3 compose (if exists)
+      - name: Validate v3.8 compose (if exists)
         run: |
-          if [ -f "deploy/compose/docker-compose.v3.6.yml" ]; then
-            docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.6.yml config > /dev/null
-            echo "✓ v3.6.3 compose topology validated"
+          if [ -f "deploy/compose/docker-compose.v3.8.yml" ]; then
+            docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.8.yml config > /dev/null
+            echo "✓ v3.8 compose topology validated"
           fi
 
   deploy-staging:

@@ -1,0 +1,1 @@
+.chart-container{position:relative;width:100%;height:260px;background:linear-gradient(180deg,#0b0e13,#080a0e);border:var(--border);border-radius:var(--radius-s);overflow:hidden}.chart-container canvas{width:100%;height:100%;display:block}
