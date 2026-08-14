@@ -1,5 +1,8 @@
 name: mea-frontend-full-stack-ci
 
+permissions:
+  contents: read
+
 on:
   pull_request:
   push:
