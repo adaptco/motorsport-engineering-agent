@@ -57,6 +57,14 @@ jobs:
         run: |
           uv run pytest tests/ -v --cov=control_plane,worker,mcp_server --cov-report=xml --cov-report=term
 
+      - name: Enforce execution-kernel coverage
+        if: matrix.python-version == '3.11'
+        run: |
+          uv run pytest -q tests/orchestrator \
+            --cov=services.orchestrator \
+            --cov-report=term-missing \
+            --cov-fail-under=90
+
       - name: Security audit (pip-audit)
         run: |
           uv run --with pip-audit pip-audit
