@@ -61,6 +61,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONPATH=/app
 
 COPY control_plane/ ./control_plane/
+COPY services/ ./services/
 COPY ingest/ ./ingest/
 COPY shared/ ./shared/
 COPY contracts/ ./contracts/
