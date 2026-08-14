@@ -1,4 +1,10 @@
 ## v3.8 / 0.3.8
+
+- aligned active deployment topology, container artifacts, hosting metadata, lifecycle defaults, and operator documentation to the V3.8 baseline
+- regenerated the dependency lock against package version `0.3.8` and restored cross-repository deployment-link integrity
+- extended Mission Control with bounded runtime-log intake, session/debrief review, runtime-state and job inspection, plus API discovery
+- added the additive execution-control command and lease contract without replacing existing runtime-event or orchestrator authorities
+
 1. Version Manifest & Release Metadata Synchronization
 Unified Kernel & Package Semver: Updated and synchronized the kernel version (3.8) and package version (0.3.8) across VERSION.json, pyproject.toml, README.md, and CHANGELOG.md.
 

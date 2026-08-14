@@ -175,7 +175,7 @@ Update image and perform rolling update:
 ```bash
 # Update image
 kubectl set image deployment/control-plane \
-  control-plane=your-registry/control-plane:v0.3.6
+  control-plane=your-registry/control-plane:v0.3.8
 
 # Monitor rollout
 kubectl rollout status deployment/control-plane
@@ -469,7 +469,7 @@ kubectl logs deployment/control-plane
 ```bash
 # Update image
 kubectl set image deployment/control-plane \
-  control-plane=your-registry/control-plane:v0.3.6
+  control-plane=your-registry/control-plane:v0.3.8
 
 # Monitor
 kubectl rollout status deployment/control-plane

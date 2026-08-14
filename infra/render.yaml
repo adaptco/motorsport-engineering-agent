@@ -21,9 +21,9 @@ services:
       - key: MEA_RUNTIME_ROLE
         value: control-plane
       - key: KERNEL_VERSION
-        value: 3.6.1
+        value: 3.8
       - key: PACKAGE_VERSION
-        value: 0.3.6.1
+        value: 0.3.8
       - key: MCP_SERVER_URL
         fromService:
           name: mea-mcp-server
@@ -86,9 +86,9 @@ services:
       - key: MEA_RUNTIME_ROLE
         value: mcp-server
       - key: KERNEL_VERSION
-        value: 3.6.1
+        value: 3.8
       - key: PACKAGE_VERSION
-        value: 0.3.6.1
+        value: 0.3.8
       - key: MCP_SHARED_BEARER_TOKEN
         generateValue: true
       - key: DATABASE_URL

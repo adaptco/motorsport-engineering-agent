@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# V3.6 Deployment Verification Script
+# V3.8 Deployment Verification Script
 # Validates runtime contracts, event order, and deployment topology
 
 RED='\033[0;31m'
@@ -45,20 +45,16 @@ else
     kernel_version=$(python -c "import json; print(json.load(open('VERSION.json'))['kernel_version'])" 2>/dev/null || echo "")
     package_version=$(python -c "import json; print(json.load(open('VERSION.json'))['package_version'])" 2>/dev/null || echo "")
     
-    if [[ "$kernel_version" == "3.6" ]]; then
-        check_pass "Kernel version is 3.6"
-    elif [[ "$kernel_version" =~ ^3\.[6-9] ]]; then
-        check_warn "Kernel version is $kernel_version (3.6+)"
+    if [[ "$kernel_version" == "3.8" ]]; then
+        check_pass "Kernel version is 3.8"
     else
-        check_fail "Kernel version is $kernel_version (expected 3.6+)"
+        check_fail "Kernel version is $kernel_version (expected 3.8)"
     fi
     
-    if [[ "$package_version" == "0.3.6" ]]; then
-        check_pass "Package version is 0.3.6"
-    elif [[ "$package_version" =~ ^0\.3\.[6-9] ]]; then
-        check_warn "Package version is $package_version (0.3.6+)"
+    if [[ "$package_version" == "0.3.8" ]]; then
+        check_pass "Package version is 0.3.8"
     else
-        check_fail "Package version is $package_version (expected 0.3.6+)"
+        check_fail "Package version is $package_version (expected 0.3.8)"
     fi
 fi
 
@@ -119,7 +115,7 @@ if [ -f "contracts/aero/aero_simulation_state.schema.json" ]; then
         check_fail "Aero simulation contract has invalid JSON"
     fi
 else
-    check_warn "Aero simulation contract not found (optional for v3.6.0)"
+    check_warn "Aero simulation contract not found (optional for v3.8.0)"
 fi
 
 # ============================================================
@@ -143,17 +139,17 @@ else
     check_fail "Root Dockerfile not found"
 fi
 
-if [ -f "deploy/containers/mea-v3.6/Dockerfile" ]; then
-    check_pass "v3.6 Dockerfile found"
+if [ -f "deploy/containers/mea-v3.8/Dockerfile" ]; then
+    check_pass "v3.8 Dockerfile found"
     
-    # Check for v3.6 base
-    if grep -q "as v3.6-base" deploy/containers/mea-v3.6/Dockerfile; then
-        check_pass "v3.6 base image defined"
+    # Check for v3.8 base
+    if grep -q "as v3.8-base" deploy/containers/mea-v3.8/Dockerfile; then
+        check_pass "v3.8 base image defined"
     else
-        check_fail "v3.6 base image not defined"
+        check_fail "v3.8 base image not defined"
     fi
 else
-    check_warn "v3.6 Dockerfile not found (optional for initial deployment)"
+    check_warn "v3.8 Dockerfile not found (optional for initial deployment)"
 fi
 
 # ============================================================
@@ -161,14 +157,25 @@ fi
 # ============================================================
 log_header "Docker Compose Topology"
 
+compose_available=false
+if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    compose_available=true
+else
+    check_warn "Docker Compose is unavailable; runtime configuration checks are skipped locally"
+fi
+
 if [ -f "docker-compose.yml" ]; then
     check_pass "docker-compose.yml exists"
     
-    # Validate compose
-    if docker compose -f docker-compose.yml config > /dev/null 2>&1; then
-        check_pass "docker-compose.yml is valid"
+    # Validate compose when the local runtime is available.
+    if [ "$compose_available" = true ]; then
+        if docker compose -f docker-compose.yml config > /dev/null 2>&1; then
+            check_pass "docker-compose.yml is valid"
+        else
+            check_fail "docker-compose.yml validation failed"
+        fi
     else
-        check_fail "docker-compose.yml validation failed"
+        check_warn "docker-compose.yml runtime validation skipped"
     fi
     
     # Check services
@@ -184,16 +191,20 @@ else
     check_fail "docker-compose.yml not found"
 fi
 
-if [ -f "deploy/compose/docker-compose.v3.6.yml" ]; then
-    check_pass "v3.6 compose overlay found"
+if [ -f "deploy/compose/docker-compose.v3.8.yml" ]; then
+    check_pass "v3.8 compose overlay found"
     
-    if docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.6.yml config > /dev/null 2>&1; then
-        check_pass "v3.6 compose overlay is valid"
+    if [ "$compose_available" = true ]; then
+        if docker compose -f docker-compose.yml -f deploy/compose/docker-compose.v3.8.yml config > /dev/null 2>&1; then
+            check_pass "v3.8 compose overlay is valid"
+        else
+            check_fail "v3.8 compose overlay validation failed"
+        fi
     else
-        check_fail "v3.6 compose overlay validation failed"
+        check_warn "v3.8 compose overlay runtime validation skipped"
     fi
 else
-    check_warn "v3.6 compose overlay not found (optional)"
+    check_warn "v3.8 compose overlay not found (optional)"
 fi
 
 # ============================================================
@@ -206,10 +217,14 @@ for env in "${envs[@]}"; do
     if [ -f "deploy/compose/$env.yml" ]; then
         check_pass "Environment override for '$env' found"
         
-        if docker compose -f docker-compose.yml -f "deploy/compose/$env.yml" config > /dev/null 2>&1; then
-            check_pass "Environment override for '$env' is valid"
+        if [ "$compose_available" = true ]; then
+            if docker compose -f docker-compose.yml -f "deploy/compose/$env.yml" config > /dev/null 2>&1; then
+                check_pass "Environment override for '$env' is valid"
+            else
+                check_fail "Environment override for '$env' validation failed"
+            fi
         else
-            check_fail "Environment override for '$env' validation failed"
+            check_warn "Environment override for '$env' runtime validation skipped"
         fi
     else
         check_fail "Environment override for '$env' not found"
@@ -313,7 +328,7 @@ echo ""
 
 if [ $FAILED -eq 0 ]; then
     if [ $WARNINGS -eq 0 ]; then
-        echo -e "${GREEN}✓ All checks passed. v3.6 deployment ready.${NC}"
+        echo -e "${GREEN}✓ All checks passed. v3.8 deployment ready.${NC}"
         exit 0
     else
         echo -e "${YELLOW}⚠ Checks passed with warnings. Review above and proceed with caution.${NC}"

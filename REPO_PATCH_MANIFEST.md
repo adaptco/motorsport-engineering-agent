@@ -1,10 +1,10 @@
-# Repo patch manifest for MEA V3.6
+# Repo patch manifest for MEA V3.8
 
 ## Add
 - contracts/runtime/agent_runtime_contract_bundle.schema.json
 - contracts/runtime/README.md
-- deploy/containers/mea-v3.6/Dockerfile
-- deploy/compose/docker-compose.v3.6.yml
+- deploy/containers/mea-v3.8/Dockerfile
+- deploy/compose/docker-compose.v3.8.yml
 - docs/REPO_SNAPSHOT_2026-04-07.md
 - tests/test_runtime_contract_bundle.py
 - tests/test_runtime_event_order.py

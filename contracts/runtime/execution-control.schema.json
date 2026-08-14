@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adaptco.dev/mea/contracts/runtime/execution-control.schema.json",
+  "title": "MEA Execution Control Contract",
+  "description": "Additive command and lease contracts that complement the runtime event bundle and orchestrator run envelope without redefining them.",
+  "oneOf": [
+    {"$ref": "#/$defs/ExecutionCommand"},
+    {"$ref": "#/$defs/ExecutionLease"}
+  ],
+  "$defs": {
+    "Identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "ExecutionCommand": {
+      "type": "object",
+      "required": [
+        "command_id",
+        "command_type",
+        "run_id",
+        "payload",
+        "issued_at"
+      ],
+      "properties": {
+        "command_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "command_type": {
+          "type": "string",
+          "enum": ["SCHEDULE", "CANCEL", "PAUSE", "RESUME", "CHECKPOINT"]
+        },
+        "run_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "payload": {
+          "type": "object"
+        },
+        "issued_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "principal_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "authz_scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "idempotency_key": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ExecutionLease": {
+      "type": "object",
+      "required": [
+        "lease_id",
+        "run_id",
+        "agent_id",
+        "acquired_at",
+        "ttl_seconds"
+      ],
+      "properties": {
+        "lease_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "run_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "agent_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "acquired_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ttl_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 86400
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "released", "expired"]
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
