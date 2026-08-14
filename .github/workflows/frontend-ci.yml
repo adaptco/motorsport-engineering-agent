@@ -36,7 +36,13 @@ jobs:
           uv run python - <<'PY'
           from control_plane.app import app
 
-          paths = set(app.openapi().get("paths", {}))
+          mounted_paths = {
+              getattr(route, "path", None)
+              for route in app.routes
+              if getattr(route, "path", None)
+          }
+          openapi_paths = set(app.openapi().get("paths", {}))
+          paths = mounted_paths | openapi_paths
           required = {
               "/",
               "/healthz",
