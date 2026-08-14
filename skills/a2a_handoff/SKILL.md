@@ -1,12 +1,11 @@
 ---
 name: motorsport-a2a-handoff
-version: 1
+description: Normalize asynchronous multi-agent handoffs by persisting workflow position and resumable session context outside conversation history.
+contract_version: "1.0"
+policy_scope: write
 source_of_truth:
   - PRD.md
   - PROGRESS.md
-purpose: >-
-  Normalize asynchronous multi-agent handoffs for the Motorsport Engineering Agent
-  by persisting workflow position and resumable session context outside conversation history.
 ---
 
 # Motorsport A2A Handoff Skill

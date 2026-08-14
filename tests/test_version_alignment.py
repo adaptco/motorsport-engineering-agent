@@ -50,12 +50,12 @@ def test_readme_kernel_version_matches_version_manifest() -> None:
 def test_load_version_info_falls_back_when_manifest_missing(tmp_path: Path, monkeypatch) -> None:
     shared_version.load_version_info.cache_clear()
     monkeypatch.setattr(shared_version, "_version_file_path", lambda: tmp_path / "VERSION.json")
-    monkeypatch.setattr(shared_version, "package_version", lambda _name: "0.3.4")
+    monkeypatch.setattr(shared_version, "package_version", lambda _name: "0.3.8")
 
     version_info = shared_version.load_version_info()
 
-    assert version_info.package_version == "0.3.4"
-    assert version_info.kernel_version == "3.4"
+    assert version_info.package_version == "0.3.8"
+    assert version_info.kernel_version == "3.8"
     assert version_info.release_channel == "unknown"
     shared_version.load_version_info.cache_clear()
 
@@ -83,7 +83,7 @@ def test_load_version_info_falls_back_when_manifest_missing_fields(
 ) -> None:
     shared_version.load_version_info.cache_clear()
     partial_manifest = tmp_path / "VERSION.json"
-    partial_manifest.write_text('{"kernel_version": "3.4"}', encoding="utf-8")
+    partial_manifest.write_text('{"kernel_version": "3.8"}', encoding="utf-8")
 
     monkeypatch.setattr(shared_version, "_version_file_path", lambda: partial_manifest)
     monkeypatch.setattr(shared_version, "package_version", lambda _name: "0.5.1")

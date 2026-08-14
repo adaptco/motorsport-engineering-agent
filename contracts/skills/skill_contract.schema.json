@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adaptco.dev/mea/contracts/skills/skill_contract.schema.json",
+  "title": "MEA Governed Skill Contract",
+  "description": "Versioned metadata required for a governed MEA SKILL.md capability.",
+  "type": "object",
+  "required": ["name", "description", "contract_version"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{2,63}$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 500
+    },
+    "contract_version": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*\\.[0-9]+$"
+    },
+    "source_of_truth": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "policy_scope": {
+      "type": "string",
+      "enum": ["advisory", "read", "write", "execute"]
+    }
+  },
+  "additionalProperties": true
+}

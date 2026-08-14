@@ -54,8 +54,6 @@ services:
         sync: false
       - key: RENDER_BLUEPRINT_MODE
         value: governance
-      - key: MEA_COMPILED_WORKFLOW_PLAN_PATH
-        value: /opt/render/project/src/configs/compiled_workflow_plan.yaml
       - key: MEA_RUNTIME_KERNEL_STATE_BACKEND
         value: postgres+sqlite
       - key: MEA_VERIFICATION_MIDDLEWARE_REQUIRED
@@ -100,8 +98,6 @@ services:
           name: mea-kv
           type: keyvalue
           property: connectionString
-      - key: MEA_COMPILED_WORKFLOW_PLAN_PATH
-        value: /opt/render/project/src/configs/compiled_workflow_plan.yaml
       - key: MEA_MCP_TOOL_REGISTRY_MODE
         value: effect-typed
       - key: MEA_VERIFICATION_MIDDLEWARE_REQUIRED
@@ -150,8 +146,6 @@ services:
         value: "false"
       - key: MAX_PATCH_LINES
         value: "1200"
-      - key: MEA_COMPILED_WORKFLOW_PLAN_PATH
-        value: /opt/render/project/src/configs/compiled_workflow_plan.yaml
       - key: MEA_RUNTIME_KERNEL_STATE_BACKEND
         value: postgres+sqlite
       - key: MEA_VERIFICATION_MIDDLEWARE_REQUIRED
@@ -195,8 +189,6 @@ services:
           property: connectionString
       - key: SESSION_LEDGER_DB_PATH
         value: /var/tmp/mea/session-ledger.sqlite3
-      - key: MEA_COMPILED_WORKFLOW_PLAN_PATH
-        value: /opt/render/project/src/configs/compiled_workflow_plan.yaml
       - key: MEA_VERIFICATION_MIDDLEWARE_REQUIRED
         value: "true"
       - key: MEA_FAIL_CLOSED

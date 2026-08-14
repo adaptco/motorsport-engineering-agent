@@ -7,16 +7,15 @@
 from worker.background_workers import run_task_reconciliation_loop
 
 state = run_task_reconciliation_loop(
-    session_id="release-v3.6",
-    workflow_id="ralph-wiggum",
+    session_id="release-v3.8",
+    workflow_id="v3.8-release-gate",
     task_files=[
-        "TASK-004_DEPENDENCY_MANAGEMENT_FINDINGS.md",
-        "TASK-005_DOCUMENTATION_AUDIT_FINDINGS.md",
-        "TASK-006_DATABASE_STATE_MANAGEMENT_FINDINGS.md",
-        "TASK-007_OPERATIONAL_HARDENING_FINDINGS.md",
+        "PRD.md",
+        "PROGRESS.md",
+        "docs/ops/V3_8_PRODUCTION_READINESS.md",
     ],
     task_ledger_path="TASK_LEDGER.md",
-    mcp_prd_path="mcp_v1_runtime_bundle/PRD.md",
+    mcp_prd_path="PRD.md",
     completed_acceptance_criteria=[],
     max_iterations=10,
     sleep_seconds=0,

@@ -1,6 +1,11 @@
 ---
 name: agent-ralph-wiggum
-description: Persist and reconcile long-running task closure loops for this repository. Use when Codex needs to repeatedly assess markdown task findings, `TASK_LEDGER.md`, and MCP PRD acceptance criteria while checkpointing workflow progress in `worker/background_workers.py` until all tracked actions are complete.
+description: Persist and reconcile evidence-backed task closure loops while checkpointing workflow progress until all tracked actions are complete.
+contract_version: "1.0"
+policy_scope: write
+source_of_truth:
+  - PRD.md
+  - TASK_LEDGER.md
 ---
 
 # Agent Ralph Wiggum
@@ -12,10 +17,11 @@ Track open checklist items and PRD acceptance criteria as durable workflow state
 
 ## Workflow
 
-1. Gather task sources:
-- Findings docs such as `TASK-004_DEPENDENCY_MANAGEMENT_FINDINGS.md`
+1. Gather the V3.8 task sources:
+- `PRD.md`
+- `PROGRESS.md`
 - `TASK_LEDGER.md`
-- MCP PRD such as `mcp_v1_runtime_bundle/PRD.md`
+- `docs/ops/V3_8_PRODUCTION_READINESS.md`
 
 2. Build reconciliation state using:
 - `reconcile_remaining_actions(...)` to produce actionable open items

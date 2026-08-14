@@ -13,7 +13,7 @@ from ingest.logs.util import flatten_mat_dict
 def parse_pi_mat(path: Path) -> ParsedLog:
     if path.suffix.lower() == ".pds":
         raise RuntimeError(
-            "Native Pi .pds decoding is not included in v3.5. Use Pi Toolbox Pro MAT export for initial testing."
+            "Native Pi .pds decoding is not included in V3.8. Use Pi Toolbox Pro MAT export for initial testing."
         )
     raw = loadmat(path)
     frame = flatten_mat_dict(raw)

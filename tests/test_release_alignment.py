@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import tomllib
 from pathlib import Path
 
@@ -19,7 +20,7 @@ def test_v38_release_metadata_is_consistent() -> None:
     assert (ROOT / ".git-commit-sha").read_text(encoding="utf-8").strip().startswith("v3.8")
 
 
-def test_v38_deployment_artifacts_replace_active_v36_paths() -> None:
+def test_v38_deployment_artifacts_are_the_only_versioned_deployment_cut() -> None:
     compose_v38 = ROOT / "deploy" / "compose" / "docker-compose.v3.8.yml"
     container_v38 = ROOT / "deploy" / "containers" / "mea-v3.8" / "Dockerfile"
     verification_v38 = ROOT / "deploy" / "verify-v3.8.sh"
@@ -27,9 +28,12 @@ def test_v38_deployment_artifacts_replace_active_v36_paths() -> None:
     assert compose_v38.is_file()
     assert container_v38.is_file()
     assert verification_v38.is_file()
-    assert not (ROOT / "deploy" / "compose" / "docker-compose.v3.6.yml").exists()
-    assert not (ROOT / "deploy" / "containers" / "mea-v3.6").exists()
-    assert not (ROOT / "deploy" / "verify-v3.6.sh").exists()
+    versioned_compose_files = list((ROOT / "deploy" / "compose").glob("docker-compose.v3.*.yml"))
+    versioned_container_dirs = list((ROOT / "deploy" / "containers").glob("mea-v3.*"))
+    versioned_verification_scripts = list((ROOT / "deploy").glob("verify-v3.*.sh"))
+    assert versioned_compose_files == [compose_v38]
+    assert versioned_container_dirs == [ROOT / "deploy" / "containers" / "mea-v3.8"]
+    assert versioned_verification_scripts == [verification_v38]
 
     assert 'MEA_VERSION: "3.8"' in compose_v38.read_text(encoding="utf-8")
     assert 'MEA_KERNEL_VERSION: "3.8"' in compose_v38.read_text(encoding="utf-8")
@@ -51,8 +55,8 @@ def test_active_release_docs_and_automation_target_v38() -> None:
     ]
     for path in active_files:
         content = path.read_text(encoding="utf-8")
-        assert "v3.6" not in content.lower(), path
-        assert "0.3.6" not in content, path
+        assert not re.search(r"(?i)\\bv3\\.(?:[0-7])(?:\\.\\d+)?\\b", content), path
+        assert not re.search(r"\\b0\\.3\\.(?:[0-7])(?:\\.\\d+)?\\b", content), path
 
     deploy_readme = (ROOT / "deploy" / "README.md").read_text(encoding="utf-8")
     assert "[PRD.md](../PRD.md)" in deploy_readme

@@ -1,6 +1,11 @@
 ---
 name: github-pr-lifecycle
-description: Standardize GitHub pull request lifecycle operations for this repository. Use when opening or maintaining PRs to apply version labels, post normalized review/update comments, and enforce squash-merge readiness using scripts/github_pr_lifecycle.sh and scripts/github_pr_api.sh.
+description: Standardize pull-request lifecycle operations, including normalized review updates and evidence-backed squash-merge readiness.
+contract_version: "1.0"
+policy_scope: write
+source_of_truth:
+  - scripts/github_pr_lifecycle.sh
+  - scripts/github_pr_api.sh
 ---
 
 # GitHub PR Lifecycle

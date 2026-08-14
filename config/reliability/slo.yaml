@@ -1,0 +1,23 @@
+schema_version: "1.0"
+release: "3.8"
+observability:
+  required_dimensions:
+    - run_id
+    - agent_id
+    - lane
+service_level_objectives:
+  - service: control-plane
+    availability_target_percent: 99.9
+    error_budget_percent: 0.1
+    error_budget_minutes_30d: 43.2
+  - service: mcp-server
+    availability_target_percent: 99.9
+    error_budget_percent: 0.1
+    error_budget_minutes_30d: 43.2
+  - service: backend-worker
+    availability_target_percent: 99.5
+    error_budget_percent: 0.5
+    error_budget_minutes_30d: 216.0
+rollback:
+  command: "./deploy/rollback.sh <backup_directory>"
+  incident_playbook: "docs/ops/V3_8_PRODUCTION_READINESS.md"
