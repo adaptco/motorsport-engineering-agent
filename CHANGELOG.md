@@ -1,6 +1,6 @@
 # Changelog
 
-## V3.8 / 0.3.8
+## v3.8 / 0.3.8
 
 MEA V3.8 consolidates the repository into a single supported release baseline.
 
