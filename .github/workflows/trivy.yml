@@ -32,13 +32,13 @@ jobs:
 
       - name: Build an image from Dockerfile
         run: |
-          docker build -t mea-mcp-server:latest --target mcp_server .
+          docker build -t mea-mcp-server:3.8 --target mcp_server .
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
         with:
           scan-type: 'image'
-          image-ref: 'mea-mcp-server:latest'
+          image-ref: 'mea-mcp-server:3.8'
           ignore-unfixed: true
           format: 'sarif'
           template: '@/contrib/sarif.tpl'
