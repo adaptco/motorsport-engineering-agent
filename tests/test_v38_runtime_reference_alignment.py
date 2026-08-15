@@ -14,6 +14,9 @@ V38_IMAGES = {
     "k8s/worker-deployment.yaml": "mea-worker:3.8",
     "k8s/mcp-server-deployment.yaml": "mea-mcp-server:3.8",
 }
+UNPINNED_TAG = ":" + "latest"
+UNPINNED_VERSION_FALLBACK = "${VERSION:-" + "latest}"
+
 DOCKER_GUIDES = (
     "DOCKER_CONSOLIDATION_CHECKLIST.md",
     "DOCKER_CONSOLIDATION_SUMMARY.md",
@@ -47,16 +50,16 @@ def test_kubernetes_manifests_pin_v38_component_images_and_release_label() -> No
         manifest = yaml.safe_load(_text(relative_path))
         image = manifest["spec"]["template"]["spec"]["containers"][0]["image"]
         assert image == expected_image
-        assert ":latest" not in image
+        assert UNPINNED_TAG not in image
 
 
 def test_documented_runtime_paths_use_pinned_v38_images() -> None:
     for relative_path in DOCKER_GUIDES:
         text = _text(relative_path)
-        assert "mea-root-kernel:latest" not in text
-        assert "mea-control-plane:latest" not in text
-        assert "mea-worker:latest" not in text
-        assert "mea-mcp-server:latest" not in text
+        assert "mea-root-kernel" + UNPINNED_TAG not in text
+        assert "mea-control-plane" + UNPINNED_TAG not in text
+        assert "mea-worker" + UNPINNED_TAG not in text
+        assert "mea-mcp-server" + UNPINNED_TAG not in text
 
     assert "VERSION ?= 3.8" in _text("Makefile")
     assert "KERNEL_VERSION=3.8" in _text(".env.example")
@@ -67,7 +70,7 @@ def test_documented_runtime_paths_use_pinned_v38_images() -> None:
         "deploy/k8s/mcp-server.yaml",
     ):
         text = _text(relative_path)
-        assert "${VERSION:-latest}" not in text
+        assert UNPINNED_VERSION_FALLBACK not in text
         assert "${VERSION:-3.8}" in text
         assert 'version: "3.8"' in text
 

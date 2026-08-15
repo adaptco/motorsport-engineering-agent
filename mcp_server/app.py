@@ -5,6 +5,7 @@ import os
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from mcp_api import router as mcp_contract_router
 from mcp_server.routes import runtime_state_router
 from mcp_tools.mea_ci_guardrail import run_mea_ci_guardrail
 from shared.models import A2AInvokeRequest, A2AInvokeResponse, MCPProviderStatus, MCPToolCall
@@ -24,6 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(runtime_state_router)
+app.include_router(mcp_contract_router)
 
 PROVIDER_ENV = {
     "openai": "OPENAI_API_KEY",

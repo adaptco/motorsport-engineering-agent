@@ -76,6 +76,11 @@ services:
     cpus: "1"
     environment:
       PYTHONUNBUFFERED: "1"
+      MCP_SERVER_BASE_URL: http://mcp_server:7000
+    volumes:
+      - ./tests/fixtures:/integration-fixtures:ro
+      - ./.mea_tmp/integration-output:/integration-output
+      - ./.mea_tmp/runtime-logs:/app/runtime_logs
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
       interval: 30s
@@ -119,6 +124,9 @@ services:
     cpus: "1"
     environment:
       PYTHONUNBUFFERED: "1"
+      SESSION_LEDGER_DB_PATH: /runtime-state/session-ledger.db
+    volumes:
+      - ./.mea_tmp/mcp-runtime:/runtime-state
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7000/healthz"]
       interval: 30s

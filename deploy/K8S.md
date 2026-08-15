@@ -191,7 +191,7 @@ Run migrations before deployment:
 ```bash
 # Via kubectl run
 kubectl run migrate \
-  --image=your-registry/control-plane:latest \
+  --image=your-registry/control-plane:3.8 \
   --restart=Never \
   -it \
   -- alembic upgrade head

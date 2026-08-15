@@ -6,7 +6,7 @@ set -euo pipefail
 
 CLUSTER="${1:-minikube}"
 NAMESPACE="${2:-default}"
-VERSION="${3:-latest}"
+VERSION="${3:-3.8}"
 REGISTRY="${REGISTRY:-ghcr.io}"
 IMAGE_NAME="${IMAGE_NAME:-adaptco/motorsport-engineering-agent}"
 export REGISTRY IMAGE_NAME VERSION

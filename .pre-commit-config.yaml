@@ -1,0 +1,13 @@
+minimum_pre_commit_version: "3.7.0"
+default_language_version:
+  python: python3
+
+repos:
+  - repo: local
+    hooks:
+      - id: mea-v38-runtime-reference-guard
+        name: reject stale MEA V3.x and latest runtime references
+        entry: python scripts/check_v38_runtime_references.py
+        language: python
+        types: [text]
+        pass_filenames: true

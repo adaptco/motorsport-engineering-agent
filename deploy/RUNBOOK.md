@@ -584,8 +584,8 @@ kubectl delete pods --field-selector=status.phase=Succeeded -A
 docker compose pull
 docker image prune -a
 
-# Kubernetes
-kubectl set image deployment/* $(kubectl get deployment -o jsonpath='{.items[*].metadata.name}')=$(kubectl get deployment -o jsonpath='{.items[*].spec.template.spec.containers[0].image}'):latest
+# Kubernetes: use an explicit V3.8 release tag
+kubectl set image deployment/control-plane control-plane=your-registry/control-plane:3.8
 ```
 
 ### Monitor Metrics

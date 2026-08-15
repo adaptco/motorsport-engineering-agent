@@ -5,7 +5,9 @@
 1. Use Python 3.11+.
 2. Install dependencies with `uv`:
    - `uv sync --extra dev`
-3. Copy `.env.example` to `.env` and set local values.
+3. Install the repository hooks:
+   - `uv run pre-commit install`
+4. Copy `.env.example` to `.env` and set local values.
 
 ## Local Run
 
@@ -22,6 +24,9 @@ Run these before opening a PR:
 - `uv run pytest -q`
 - `uv run ruff check .`
 - `uv run mypy control_plane worker shared`
+- `uv run pre-commit run --all-files`
+
+The V3.8 runtime-reference hook rejects deprecated MEA V3.x product references and unpinned `latest` MEA image tags. Use explicit V3.8 values: kernel `3.8`, package `0.3.8`, and component image tags ending in `:3.8`.
 
 ## PR Guidelines
 
