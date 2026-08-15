@@ -59,8 +59,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install test dependencies
+        run: |
+          uv sync --extra dev --locked
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Prepare live integration paths
+        run: |
+          mkdir -p .mea_tmp/integration-output .mea_tmp/runtime-logs .mea_tmp/mcp-runtime
 
       - name: Build all services
         run: |
@@ -69,22 +85,31 @@ jobs:
       - name: Start full stack
         run: |
           docker compose up -d
-          echo "Waiting for services to stabilize..."
-          sleep 10
 
-      - name: Check service health
+      - name: Wait for V3.8 service health
         run: |
-          echo "Control Plane status:"
-          docker compose ps control_plane
-          echo ""
-          echo "Worker status:"
-          docker compose ps worker
-          echo ""
-          echo "MCP Server status:"
-          docker compose ps mcp_server
-          echo ""
-          echo "Checking control plane endpoint..."
-          docker compose exec -T control_plane curl -f http://localhost:8000/healthz || true
+          for endpoint in http://127.0.0.1:8000/healthz http://127.0.0.1:7000/healthz; do
+            for attempt in $(seq 1 30); do
+              if curl --fail --silent --show-error "$endpoint"; then
+                break
+              fi
+              if [ "$attempt" -eq 30 ]; then
+                echo "Service did not become healthy: $endpoint"
+                docker compose ps
+                exit 1
+              fi
+              sleep 2
+            done
+          done
+
+      - name: Run V3.8 live-stack telemetry and MCP integration tests
+        env:
+          MEA_RUN_INTEGRATION_TESTS: "1"
+          MEA_CONTROL_PLANE_URL: http://127.0.0.1:8000
+          MEA_MCP_SERVER_URL: http://127.0.0.1:7000
+          MEA_INTEGRATION_HOST_OUTPUT_DIR: .mea_tmp/integration-output
+        run: |
+          uv run pytest -v tests/integration/test_live_stack_v38.py
 
       - name: Collect logs on failure
         if: failure()
