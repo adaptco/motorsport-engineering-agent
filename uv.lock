@@ -942,7 +942,7 @@ dev = [
 requires-dist = [
     { name = "click", specifier = ">=8.3.3" },
     { name = "cryptography", specifier = ">=50.0.0" },
-    { name = "fastapi", specifier = ">=0.115.0" },
+    { name = "fastapi", specifier = ">=0.141.1" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28.1" },
     { name = "idna", specifier = ">=3.15" },
     { name = "jsonschema", specifier = ">=4.23.0" },
