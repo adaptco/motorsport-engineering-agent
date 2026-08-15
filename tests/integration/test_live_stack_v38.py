@@ -170,8 +170,17 @@ def test_live_stack_mcp_contract_and_agent_handoff_state() -> None:
                     "task_id": "telemetry-replay",
                     "title": "Validate telemetry replay",
                     "state": "running",
-                    "assigned_agent": "coder",
                     "source": "planner-handoff",
+                },
+            },
+            {
+                "idempotency_key": "live-stack-assignment",
+                "session_id": handoff_session,
+                "event_type": "assignment_upsert",
+                "payload": {
+                    "task_id": "telemetry-replay",
+                    "agent_id": "coder",
+                    "updated_by": "planner",
                 },
             },
             {
@@ -201,7 +210,7 @@ def test_live_stack_mcp_contract_and_agent_handoff_state() -> None:
                 params={"session_id": handoff_session},
             )
         )
-        assert snapshot["last_seq"] == 3
+        assert snapshot["last_seq"] == 4
         assert snapshot["agents"]["planner"]["branch"] == "main"
         assert snapshot["agents"]["coder"]["branch"] == "main"
         assert snapshot["tasks"]["telemetry-replay"]["assigned_agent"] == "coder"
@@ -213,4 +222,4 @@ def test_live_stack_mcp_contract_and_agent_handoff_state() -> None:
                 params={"session_id": handoff_session, "after_seq": 1},
             )
         )
-        assert [event["seq"] for event in replayed_events["events"]] == [2, 3]
+        assert [event["seq"] for event in replayed_events["events"]] == [2, 3, 4]
