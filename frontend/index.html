@@ -1,8 +1,189 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MEA Motorsport Engineering</title>
-<link rel="stylesheet" href="/static/design.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MEA Mission Control</title>
+  <meta name="application-name" content="MEA Motorsport Engineering">
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/design.css">
 </head>
-<body><div id="app-shell" class="app-shell"><header class="top-nav" id="top-nav"><div class="brand"><span class="brand-mark">▸</span><span>MEA</span><span class="version">v3.8</span></div><nav id="nav-tabs" class="nav-tabs" aria-label="Primary"><a class="nav-tab" href="#/mission-control" data-route="mission-control"><span>01</span> Mission Control</a><a class="nav-tab" href="#/aero-studio" data-route="aero-studio"><span>02</span> Aero Studio</a><a class="nav-tab" href="#/race-engineering" data-route="race-engineering"><span>03</span> Race Engineering</a><a class="nav-tab" href="#/operations" data-route="operations"><span>04</span> Ops</a></nav><div class="top-actions"><span id="health-indicator" class="health-pill health-pill--unknown">● CHECK</span><button class="icon-button" id="refresh-button" title="Refresh">↻</button></div></header><main id="content-root" class="content-root" tabindex="-1"></main><footer class="status-bar"><span>KEYS <kbd>Ctrl</kbd>+<kbd>1</kbd>–<kbd>4</kbd></span><span id="status-message">Initializing</span><span>API <code id="api-origin">same-origin</code></span></footer></div><script type="module" src="/static/app.js"></script></body></html>
+<body>
+  <header>
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <div style="width:32px;height:32px;background:var(--accent);border-radius:4px;display:grid;place-items:center;color:#000;font-weight:800;">M</div>
+      <h1>MEA Mission Control <span style="color:var(--accent);font-size:0.85rem;">v3.8</span></h1>
+    </div>
+    <div class="badge">Kernel Active</div>
+  </header>
+
+  <nav>
+    <button data-tab="dashboard" data-route="mission-control" class="active">Dashboard</button>
+    <button data-tab="runtime" data-route="runtime">Runtime Logs</button>
+    <button data-tab="ingest" data-route="ingest">Ingest</button>
+    <button data-tab="jobs" data-route="jobs">Jobs</button>
+    <button data-tab="state" data-route="state">State Ledger</button>
+    <button data-tab="docs" data-route="docs">API Docs</button>
+    <span hidden data-route="aero-studio"></span>
+    <span hidden data-route="race-engineering"></span>
+    <span hidden data-route="operations"></span>
+  </nav>
+
+  <main>
+    <!-- Dashboard -->
+    <section id="tab-dashboard" class="tab-panel">
+      <div class="grid-3" id="health-grid">
+        <div class="panel"><div class="spinner"></div> Loading health...</div>
+      </div>
+      <div class="panel">
+        <h2>Quick Actions</h2>
+        <div class="grid-3">
+          <div>
+            <p style="margin-bottom:0.5rem;">Parse a runtime log (CSV/TXT) for HITL review.</p>
+            <a href="/static/hitl_runtime_logs.html" target="_blank" class="action" style="display:inline-block;text-decoration:none;">Open Legacy HITL UI</a>
+          </div>
+          <div>
+            <p style="margin-bottom:0.5rem;">Normalize native telemetry export.</p>
+            <button class="action" onclick="setTab('ingest')">Go to Ingest</button>
+          </div>
+          <div>
+            <p style="margin-bottom:0.5rem;">Inspect forensic ledger replay.</p>
+            <button class="action" onclick="setTab('state')">Go to State</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Runtime Logs -->
+    <section id="tab-runtime" class="tab-panel hidden">
+      <div class="panel">
+        <h2>Upload Runtime Log <span data-loading="upload" class="spinner hidden"></span></h2>
+        <div id="upload-drop" class="upload-drop">
+          <p>Drop CSV/TXT here or click to browse</p>
+          <input type="file" id="upload-input" class="hidden" accept=".csv,.txt">
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Saved Sessions <span data-loading="sessions" class="spinner hidden"></span></h2>
+        <table id="sessions-table"><thead><tr><th>Session ID</th><th>Filename</th><th>Rows</th><th>Columns</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div id="session-debrief"></div>
+      <div class="panel hidden" id="session-detail-panel">
+        <h2>Session Payload</h2>
+        <pre id="session-detail" class="json"></pre>
+      </div>
+    </section>
+
+    <!-- Ingest -->
+    <section id="tab-ingest" class="tab-panel hidden">
+      <div class="panel">
+        <h2>Ingest Sources <span data-loading="ingest" class="spinner hidden"></span></h2>
+        <table id="ingest-table"><thead><tr><th>Vendor</th><th>Extensions</th><th>Status</th><th>Notes</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="panel">
+        <h2>Normalize Native Log <span data-loading="ingest-run" class="spinner hidden"></span></h2>
+        <div class="grid-2">
+          <div><label>Input Path</label><input id="ingest-input-path" placeholder="tests/fixtures/sample_export.csv"></div>
+          <div><label>Output Dir</label><input id="ingest-output-dir" placeholder=".mea_tmp/normalized"></div>
+          <div><label>Vendor Hint</label>
+            <select id="ingest-vendor">
+              <option value="">Auto-detect</option>
+              <option value="motec">Motec</option>
+              <option value="iracing">iRacing</option>
+              <option value="aim">AIM</option>
+              <option value="vbox">VBOX</option>
+              <option value="pi">Pi</option>
+              <option value="haltech">Haltech</option>
+              <option value="aem">AEM</option>
+              <option value="csv_export">CSV Export</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:flex-end;"><button class="action" onclick="submitIngest()">Normalize</button></div>
+        </div>
+        <div id="ingest-result" style="margin-top:1rem;"></div>
+      </div>
+    </section>
+
+    <!-- Jobs -->
+    <section id="tab-jobs" class="tab-panel hidden">
+      <div class="panel">
+        <h2>Query Job <span data-loading="job" class="spinner hidden"></span></h2>
+        <div style="display:flex;gap:0.5rem;">
+          <input id="job-id-input" placeholder="job-id">
+          <button class="action" onclick="loadJob()">Fetch</button>
+        </div>
+        <div id="job-result" style="margin-top:1rem;"></div>
+      </div>
+      <div class="panel">
+        <h2>Queue Fix-CI <span data-loading="fixci" class="spinner hidden"></span></h2>
+        <div class="grid-2">
+          <div><label>Repo</label><input id="fixci-repo" placeholder="owner/repo"></div>
+          <div><label>Branch</label><input id="fixci-branch" placeholder="main"></div>
+          <div class="grid-2" style="grid-column:1/-1;">
+            <div><label>Patch</label><textarea id="fixci-patch" rows="4" placeholder="diff content..."></textarea></div>
+          </div>
+        </div>
+        <button class="action" style="margin-top:0.5rem;" onclick="submitFixCI()">Queue Job</button>
+        <div id="fixci-result" style="margin-top:1rem;"></div>
+      </div>
+    </section>
+
+    <!-- State Ledger -->
+    <section id="tab-state" class="tab-panel hidden">
+      <div class="panel">
+        <h2>Runtime State <span data-loading="state" class="spinner hidden"></span></h2>
+        <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+          <input id="state-session-id" placeholder="session-id" value="default">
+          <button class="action" onclick="loadRuntimeState()">Load Snapshot</button>
+        </div>
+        <div id="state-detail"></div>
+      </div>
+      <div class="panel">
+        <h2>Append Event <span data-loading="state-post" class="spinner hidden"></span></h2>
+        <div class="grid-3">
+          <div><label>Event Type</label>
+            <select id="state-event-type">
+              <option value="agent_upsert">agent_upsert</option>
+              <option value="task_upsert">task_upsert</option>
+              <option value="assignment_upsert">assignment_upsert</option>
+              <option value="heartbeat">heartbeat</option>
+            </select>
+          </div>
+          <div><label>Idempotency Key</label><input id="state-idempotency-key" placeholder="auto"></div>
+          <div><label>Payload JSON</label><input id="state-payload" placeholder='{"agent_id":"a1","runtime":"local"}'></div>
+        </div>
+        <button class="action" style="margin-top:0.5rem;" onclick="postRuntimeEvent()">Append</button>
+      </div>
+    </section>
+
+    <!-- API Docs -->
+    <section id="tab-docs" class="tab-panel hidden">
+      <div class="panel">
+        <h2>API Surface</h2>
+        <table>
+          <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>GET</td><td>/healthz</td><td>Liveness</td></tr>
+            <tr><td>GET</td><td>/healthz/dependencies</td><td>DB + ledger readiness</td></tr>
+            <tr><td>POST</td><td>/runtime/logs/parse</td><td>Upload CSV/TXT log</td></tr>
+            <tr><td>GET</td><td>/runtime/sessions</td><td>List parsed sessions</td></tr>
+            <tr><td>GET</td><td>/runtime/sessions/{id}</td><td>Session payload</td></tr>
+            <tr><td>GET</td><td>/runtime/sessions/{id}/debrief</td><td>Operator debrief</td></tr>
+            <tr><td>GET</td><td>/ingest/sources</td><td>List ingest parsers</td></tr>
+            <tr><td>POST</td><td>/ingest/normalize</td><td>Normalize native file</td></tr>
+            <tr><td>POST</td><td>/repos/fix-ci</td><td>Queue CI-fix job</td></tr>
+            <tr><td>GET</td><td>/jobs/{job_id}</td><td>Job status</td></tr>
+            <tr><td>GET</td><td>/jobs/{job_id}/trace</td><td>Job trace</td></tr>
+            <tr><td>GET</td><td>/runtime-state/snapshot</td><td>State snapshot</td></tr>
+            <tr><td>GET</td><td>/runtime-state/events</td><td>Event stream</td></tr>
+            <tr><td>POST</td><td>/runtime-state/events</td><td>Append event</td></tr>
+            <tr><td>POST</td><td>/agent/decision</td><td>Queue agent decision</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

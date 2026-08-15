@@ -132,10 +132,10 @@ def _cors_allowed_origins() -> list[str]:
 app = FastAPI(title="MEA Control Plane", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_cors_allowed_origins(),
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Accept", "Authorization", "Content-Type", "x-request-id"],
+    allow_origins=["*"],  # tighten to ["http://localhost:8000"] in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 app.include_router(github_router)
 app.include_router(session_router)
@@ -214,15 +214,14 @@ def get_agent_manager_window():
 
 
 @app.get("/api/routes", include_in_schema=False)
-def list_routes() -> dict[str, list[dict[str, str]]]:
-    """Return a read-only index of documented control-plane operations for operator tooling."""
-    routes = [
-        {"method": method.upper(), "path": path}
-        for path, operations in app.openapi()["paths"].items()
-        for method in operations
-        if method.lower() in {"delete", "get", "patch", "post", "put"}
-    ]
-    return {"routes": sorted(routes, key=lambda route: (route["path"], route["method"]))}
+def list_routes():
+    """Discovery endpoint for frontend and CLI tooling."""
+    routes = []
+    for path, operations in app.openapi().get("paths", {}).items():
+        for method in operations:
+            if method.upper() != "HEAD":
+                routes.append({"method": method.upper(), "path": path})
+    return {"routes": sorted(routes, key=lambda x: x["path"])}
 
 
 @app.get("/healthz")

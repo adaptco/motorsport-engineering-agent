@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/identity/tool-permit.v1.json",
+  "title": "ToolPermit",
+  "type": "object",
+  "required": ["permit_id", "agent_id", "tool_name", "scope", "granted_at"],
+  "properties": {
+    "permit_id": { "type": "string", "format": "uuid" },
+    "agent_id": { "type": "string" },
+    "tool_name": { "type": "string" },
+    "scope": { "type": "string", "enum": ["read", "write", "admin"] },
+    "granted_at": { "type": "string", "format": "date-time" },
+    "constraints": { "type": "object" }
+  },
+  "additionalProperties": false
+}

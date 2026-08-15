@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/runtime/execution-run.v1.json",
+  "title": "ExecutionRun",
+  "type": "object",
+  "required": ["run_id", "session_id", "status", "created_at"],
+  "properties": {
+    "run_id": { "type": "string", "format": "uuid" },
+    "session_id": { "type": "string" },
+    "status": { "type": "string", "enum": ["pending", "scheduled", "running", "completed", "failed", "cancelled"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "lease_id": { "type": ["string", "null"] },
+    "receipt_hash": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

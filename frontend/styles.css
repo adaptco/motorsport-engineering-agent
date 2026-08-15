@@ -1,0 +1,162 @@
+:root {
+  --bg-primary: #0b0c10;
+  --bg-secondary: #1f2833;
+  --bg-tertiary: #2a3a4a;
+  --accent: #66fcf1;
+  --accent-warn: #ff6b6b;
+  --accent-ok: #45a049;
+  --text-primary: #c5c6c7;
+  --text-heading: #ffffff;
+  --border: #37474f;
+  --radius: 6px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+header h1 { color: var(--text-heading); font-size: 1.25rem; letter-spacing: 0.05em; }
+header .badge {
+  background: var(--bg-tertiary);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+nav {
+  background: var(--bg-secondary);
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 2rem;
+  border-bottom: 1px solid var(--border);
+}
+nav button {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  transition: all 0.15s;
+}
+nav button:hover { background: var(--bg-tertiary); }
+nav button.active {
+  background: var(--bg-tertiary);
+  border-color: var(--accent);
+  color: var(--text-heading);
+}
+
+main { padding: 1.5rem 2rem; max-width: 1400px; margin: 0 auto; }
+.panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow);
+}
+.panel h2 {
+  color: var(--text-heading);
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+@media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+.status-indicator {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}
+.status-ok { background: var(--accent-ok); box-shadow: 0 0 6px var(--accent-ok); }
+.status-warn { background: #ffc107; box-shadow: 0 0 6px #ffc107; }
+.status-err { background: var(--accent-warn); box-shadow: 0 0 6px var(--accent-warn); }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+th, td {
+  text-align: left;
+  padding: 0.625rem;
+  border-bottom: 1px solid var(--border);
+}
+th { color: var(--text-heading); font-weight: 600; }
+tr:hover td { background: rgba(102,252,241,0.04); }
+
+input, select, textarea {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+button.action {
+  background: var(--accent);
+  color: #000;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  cursor: pointer;
+}
+button.action:hover { filter: brightness(1.1); }
+button.action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.upload-drop {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.upload-drop:hover, .upload-drop.dragover { border-color: var(--accent); }
+
+pre.json {
+  background: var(--bg-primary);
+  padding: 1rem;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+}
+
+.hidden { display: none !important; }
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

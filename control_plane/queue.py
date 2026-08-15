@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 from collections import deque
+from typing import Any
 
 try:
     import redis  # type: ignore
@@ -15,7 +16,7 @@ from shared.circuit_breaker import CircuitBreaker
 
 QUEUE_NAME = "mea.jobs"
 APP_ENV = os.environ.get("APP_ENV", "development").strip().lower()
-_fallback_default = "false" if APP_ENV in {"prod", "production"} else "true"
+_fallback_default = "true" if not os.environ.get("REDIS_URL") else ("false" if APP_ENV in {"prod", "production"} else "true")
 QUEUE_ALLOW_IN_MEMORY_FALLBACK = os.environ.get(
     "QUEUE_ALLOW_IN_MEMORY_FALLBACK", _fallback_default
 ).strip().lower() in {
@@ -25,6 +26,7 @@ QUEUE_ALLOW_IN_MEMORY_FALLBACK = os.environ.get(
 }
 _memory_queue: deque[str] = deque()
 _redis_breaker = CircuitBreaker.from_env("REDIS")
+r: Any = None
 
 if redis is not None:
     try:

@@ -38,7 +38,7 @@ def create_installation_token(installation_id: int) -> str:
             timeout=30,
         )
         resp.raise_for_status()
-        return resp.json()["token"]
+        return str(resp.json()["token"])
 
     attempts = max(1, GITHUB_API_MAX_RETRIES)
     last_exc: Exception | None = None
