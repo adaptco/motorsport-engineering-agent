@@ -77,6 +77,7 @@ jobs:
       - name: Prepare live integration paths
         run: |
           mkdir -p .mea_tmp/integration-output .mea_tmp/runtime-logs .mea_tmp/mcp-runtime
+          sudo chown -R 5678:5678 .mea_tmp/integration-output .mea_tmp/runtime-logs .mea_tmp/mcp-runtime
 
       - name: Build all services
         run: |
