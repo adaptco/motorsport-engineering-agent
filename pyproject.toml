@@ -62,6 +62,7 @@ exclude = "(^\\.venv/|^\\.mea_tmp/|^runtime_logs/|^control_plane/)"
 
 [dependency-groups]
 dev = [
+    "pre-commit>=4.6.2",
     "types-jsonschema>=4.26.0.20260518",
     "types-pyyaml>=6.0.12.20260724",
 ]

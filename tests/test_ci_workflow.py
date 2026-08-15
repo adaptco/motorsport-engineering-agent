@@ -36,6 +36,15 @@ def test_mea_kernel_ci_uses_latest_runtime_toolchain() -> None:
     assert lint_and_test_job["strategy"]["matrix"]["python-version"] == ["3.11", "3.13"]
 
 
+def test_mea_kernel_ci_enforces_the_v38_precommit_policy() -> None:
+    workflow = _load_workflow("ci.yml")
+    steps = workflow["jobs"]["lint-and-test"]["steps"]
+    guard_step = next(
+        step for step in steps if step.get("name") == "Enforce V3.8 runtime-reference policy"
+    )
+    assert guard_step["run"].strip() == "uv run pre-commit run --all-files --show-diff-on-failure"
+
+
 def test_container_build_workflow_defines_build_images_job() -> None:
     workflow = _load_workflow("container-build.yml")
     build_job_steps = workflow["jobs"]["build-images"]["steps"]
@@ -72,3 +81,18 @@ def test_k8s_manifests_target_ci_published_image_tags() -> None:
     assert "${REGISTRY}/${IMAGE_NAME}:control-plane-${VERSION:-3.8}" in control_plane_manifest
     assert "${REGISTRY}/${IMAGE_NAME}:worker-${VERSION:-3.8}" in worker_manifest
     assert "${REGISTRY}/${IMAGE_NAME}:mcp-server-${VERSION:-3.8}" in mcp_manifest
+
+
+def test_docker_compose_workflow_runs_v38_live_stack_suite() -> None:
+    workflow = _load_workflow("docker-compose-integration-test.yml")
+    full_stack_steps = workflow["jobs"]["docker-compose-full-stack"]["steps"]
+    live_suite_step = next(
+        step
+        for step in full_stack_steps
+        if step.get("name") == "Run V3.8 live-stack telemetry and MCP integration tests"
+    )
+    assert live_suite_step["env"]["MEA_RUN_INTEGRATION_TESTS"] == "1"
+    assert (
+        live_suite_step["run"].strip()
+        == "uv run pytest -v tests/integration/test_live_stack_v38.py"
+    )

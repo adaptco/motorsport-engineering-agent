@@ -1,0 +1,3 @@
+{"session_id":"live-stack-telemetry","driver_id":"integration-driver","track_id":"integration-circuit","car_id":"integration-gt4","timestamp_ns":0,"tick":0,"channels":{"Throttle":0.25,"Brake":0.0,"Speed":25.0}}
+{"session_id":"live-stack-telemetry","driver_id":"integration-driver","track_id":"integration-circuit","car_id":"integration-gt4","timestamp_ns":16666667,"tick":1,"channels":{"Throttle":0.5,"Brake":0.0,"Speed":28.0}}
+{"session_id":"live-stack-telemetry","driver_id":"integration-driver","track_id":"integration-circuit","car_id":"integration-gt4","timestamp_ns":33333334,"tick":2,"channels":{"Throttle":0.7,"Brake":0.0,"Speed":31.0}}

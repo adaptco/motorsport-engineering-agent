@@ -11,7 +11,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import APIRouter, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 AGENT_IDS = Literal["planner", "researcher", "coder", "reviewer", "tester"]
@@ -138,6 +138,7 @@ def _collect_unique(values: list[list[str]]) -> list[str]:
     return seen
 
 
+router = APIRouter()
 app = FastAPI(title="MEA MCP Contract Stub")
 
 
@@ -146,7 +147,7 @@ def healthz() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.get("/mcp/info", response_model=MCPInfoResponse)
+@router.get("/mcp/info", response_model=MCPInfoResponse)
 def mcp_info() -> MCPInfoResponse:
     config = load_config()
     return MCPInfoResponse(
@@ -162,12 +163,12 @@ def mcp_info() -> MCPInfoResponse:
     )
 
 
-@app.get("/mcp/agents", response_model=list[MCPAgentContract])
+@router.get("/mcp/agents", response_model=list[MCPAgentContract])
 def mcp_agents() -> list[MCPAgentContract]:
     return load_config().agents
 
 
-@app.post("/mcp/invoke", response_model=MCPInvokeResponse)
+@router.post("/mcp/invoke", response_model=MCPInvokeResponse)
 def mcp_invoke(
     request: MCPInvokeRequest,
     authorization: str | None = Header(default=None),
@@ -190,3 +191,6 @@ def mcp_invoke(
         accepted_at=datetime.now(UTC),
         message="MCP contract stub accepted the invocation. Wire a real executor to replace this synthetic receipt.",
     )
+
+
+app.include_router(router)

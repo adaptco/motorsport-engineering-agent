@@ -27,3 +27,31 @@ def test_a2a_invoke_returns_scaffold_metadata(monkeypatch):
     body = response.json()
     assert body["status"] == "scaffolded"
     assert body["required_env"] == "OPENAI_API_KEY"
+
+
+def test_deployed_mcp_server_exposes_v38_contract_routes() -> None:
+    info = client.get("/mcp/info")
+    assert info.status_code == 200, info.text
+    assert info.json()["version"] == "3.8"
+    assert info.json()["package_version"] == "0.3.8"
+
+    agents = client.get("/mcp/agents")
+    assert agents.status_code == 200, agents.text
+    assert {agent["agent_id"] for agent in agents.json()} == {
+        "planner",
+        "researcher",
+        "coder",
+        "reviewer",
+        "tester",
+    }
+
+    invoked = client.post(
+        "/mcp/invoke",
+        json={
+            "agent_id": "planner",
+            "capability": "plan",
+            "resource_uri": "repo://PRD.md",
+        },
+    )
+    assert invoked.status_code == 200, invoked.text
+    assert invoked.json()["status"] == "queued"

@@ -6,7 +6,7 @@ set -euo pipefail
 # Validates runtime contracts before deployment
 
 ENVIRONMENT="${1:-staging}"
-VERSION="${2:-latest}"
+VERSION="${2:-3.8}"
 REGISTRY="${REGISTRY:-ghcr.io}"
 IMAGE_NAME="${IMAGE_NAME:-adaptco/motorsport-engineering-agent}"
 export REGISTRY IMAGE_NAME VERSION
@@ -76,8 +76,8 @@ if [[ "$kernel_version" != "3.8" ]]; then
     exit 1
 fi
 
-# Pull latest images for the target environment overlay
-log_info "Pulling latest images..."
+# Pull explicitly versioned images for the target environment overlay
+log_info "Pulling V3.8-pinned images..."
 docker compose -f docker-compose.yml -f "deploy/compose/$ENVIRONMENT.yml" pull
 
 # Validate compose files
