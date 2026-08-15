@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/events/event-envelope.v1.json",
+  "title": "EventEnvelope",
+  "type": "object",
+  "required": ["envelope_id", "event_type", "payload", "timestamp_ns"],
+  "properties": {
+    "envelope_id": { "type": "string", "format": "uuid" },
+    "event_type": { "type": "string" },
+    "payload": { "type": "object" },
+    "timestamp_ns": { "type": "integer", "minimum": 0 },
+    "source": { "type": "string" },
+    "trace_id": { "type": "string" }
+  },
+  "additionalProperties": false
+}

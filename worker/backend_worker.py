@@ -53,7 +53,7 @@ except ModuleNotFoundError:
                         payload = {"message": raw}
                 return _FallbackResponse(http_error.code, payload)
 
-    requests = _FallbackRequests()
+    requests = _FallbackRequests()  # type: ignore[no-redef,assignment]
 
 from control_plane.queue import dequeue
 from worker import github_app_client as gh

@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/runtime/execution-attempt.v1.json",
+  "title": "ExecutionAttempt",
+  "type": "object",
+  "required": ["attempt_id", "run_id", "agent_id", "status"],
+  "properties": {
+    "attempt_id": { "type": "string", "format": "uuid" },
+    "run_id": { "type": "string" },
+    "agent_id": { "type": "string" },
+    "status": { "type": "string", "enum": ["queued", "leased", "executing", "succeeded", "failed", "timeout"] },
+    "started_at": { "type": ["string", "null"], "format": "date-time" },
+    "finished_at": { "type": ["string", "null"], "format": "date-time" },
+    "tool_receipts": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

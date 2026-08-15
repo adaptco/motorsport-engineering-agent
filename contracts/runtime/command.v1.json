@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/runtime/command.v1.json",
+  "title": "RuntimeCommand",
+  "type": "object",
+  "required": ["command_id", "command_type", "payload", "issued_at"],
+  "properties": {
+    "command_id": { "type": "string", "format": "uuid" },
+    "command_type": { "type": "string", "enum": ["SCHEDULE", "CANCEL", "PAUSE", "RESUME", "CHECKPOINT"] },
+    "payload": { "type": "object" },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "principal_id": { "type": "string" },
+    "authz_scope": { "type": "string" }
+  },
+  "additionalProperties": false
+}

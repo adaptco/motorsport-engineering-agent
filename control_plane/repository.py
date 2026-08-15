@@ -23,27 +23,42 @@ SESSION_LEDGER_DB_PATH = os.environ.get(
     "SESSION_LEDGER_DB_PATH", str(default_session_ledger_path())
 )
 
+_LOCAL_JOBS: dict[str, dict[str, Any]] = {}
+_ALLOW_LOCAL_JOB_FALLBACK = os.environ.get("MEA_ALLOW_LOCAL_JOB_FALLBACK", "true" if not os.environ.get("DATABASE_URL") else "false").lower() in {"1", "true", "yes"}
+
 
 def create_job(job_type: str, repo_slug: str, base_branch: str, payload: dict) -> str:
-    with get_conn() as conn, conn.cursor() as cur:
-        job_id = str(uuid.uuid4())
-        trace_id = str(uuid.uuid4())
-        cur.execute(
-            """
-            INSERT INTO jobs (job_id, job_type, repo_slug, base_branch, status, phase, request_payload, trace_id)
-            VALUES (%s, %s, %s, %s, 'queued', 'accepted', %s::jsonb, %s)
-            """,
-            (job_id, job_type, repo_slug, base_branch, json.dumps(payload), trace_id),
-        )
-        cur.execute(
-            "INSERT INTO traces (trace_id, job_id, trace_name) VALUES (%s, %s, %s)",
-            (trace_id, job_id, f"{job_type}:{repo_slug}"),
-        )
-        cur.execute(
-            "INSERT INTO job_events (job_id, level, event_type, payload) VALUES (%s, 'INFO', 'job.accepted', %s::jsonb)",
-            (job_id, json.dumps({"repo": repo_slug, "branch": base_branch})),
-        )
-        return job_id
+    job_id = str(uuid.uuid4())
+    trace_id = str(uuid.uuid4())
+    try:
+        with get_conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO jobs (job_id, job_type, repo_slug, base_branch, status, phase, request_payload, trace_id)
+                VALUES (%s, %s, %s, %s, 'queued', 'accepted', %s::jsonb, %s)
+                """,
+                (job_id, job_type, repo_slug, base_branch, json.dumps(payload), trace_id),
+            )
+            cur.execute(
+                "INSERT INTO traces (trace_id, job_id, trace_name) VALUES (%s, %s, %s)",
+                (trace_id, job_id, f"{job_type}:{repo_slug}"),
+            )
+            cur.execute(
+                "INSERT INTO job_events (job_id, level, event_type, payload) VALUES (%s, 'INFO', 'job.accepted', %s::jsonb)",
+                (job_id, json.dumps({"repo": repo_slug, "branch": base_branch})),
+            )
+    except Exception:
+        if not _ALLOW_LOCAL_JOB_FALLBACK:
+            raise
+        _LOCAL_JOBS[job_id] = {
+            "job_id": job_id,
+            "status": "queued",
+            "phase": "accepted",
+            "pr_url": None,
+            "trace_id": trace_id,
+            "summary": None,
+        }
+    return job_id
 
 
 def update_job_phase(
@@ -80,22 +95,27 @@ def update_job_phase(
 
 
 def get_job(job_id: str):
-    with get_conn() as conn, conn.cursor() as cur:
-        cur.execute(
-            "SELECT job_id, status, phase, github_pr_url, trace_id, result_payload FROM jobs WHERE job_id=%s",
-            (job_id,),
-        )
-        row = cur.fetchone()
-        if not row:
-            return None
-        return {
-            "job_id": str(row[0]),
-            "status": row[1],
-            "phase": row[2],
-            "pr_url": row[3],
-            "trace_id": str(row[4]) if row[4] else None,
-            "summary": (row[5] or {}).get("summary") if row[5] else None,
-        }
+    try:
+        with get_conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT job_id, status, phase, github_pr_url, trace_id, result_payload FROM jobs WHERE job_id=%s",
+                (job_id,),
+            )
+            row = cur.fetchone()
+            if not row:
+                return None
+            return {
+                "job_id": str(row[0]),
+                "status": row[1],
+                "phase": row[2],
+                "pr_url": row[3],
+                "trace_id": str(row[4]) if row[4] else None,
+                "summary": (row[5] or {}).get("summary") if row[5] else None,
+            }
+    except Exception:
+        if not _ALLOW_LOCAL_JOB_FALLBACK:
+            raise
+        return _LOCAL_JOBS.get(job_id)
 
 
 def list_trace(job_id: str):

@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/identity/capability-claim.v1.json",
+  "title": "CapabilityClaim",
+  "type": "object",
+  "required": ["claim_id", "agent_id", "capabilities", "issued_at"],
+  "properties": {
+    "claim_id": { "type": "string", "format": "uuid" },
+    "agent_id": { "type": "string" },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["read:telemetry", "write:session", "invoke:mcp", "replay:ledger", "decision:agent"] }
+    },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "additionalProperties": false
+}

@@ -8,7 +8,7 @@ import re
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 STATE_DIR = Path(os.environ.get("A2A_WORKFLOW_STATE_DIR", ".mea_tmp/workflow_state"))
 MAX_HISTORY = int(os.environ.get("A2A_WORKFLOW_STATE_MAX_HISTORY", "50"))
@@ -61,7 +61,7 @@ def load_workflow_state(session_id: str, workflow_id: str) -> dict[str, Any] | N
     data = json.loads(path.read_text(encoding="utf-8"))
     if data.get("session_id") != session_id or data.get("workflow_id") != workflow_id:
         raise ValueError("Persisted workflow state identity mismatch")
-    return data
+    return cast(dict[str, Any], data)
 
 
 def persist_workflow_state(state: dict[str, Any]) -> dict[str, Any]:

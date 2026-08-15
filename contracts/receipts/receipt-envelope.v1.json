@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/receipts/receipt-envelope.v1.json",
+  "title": "ReceiptEnvelope",
+  "type": "object",
+  "required": ["receipt_id", "receipt_type", "session_id", "state_hash", "logical_clock"],
+  "properties": {
+    "receipt_id": { "type": "string", "format": "uuid" },
+    "receipt_type": { "type": "string" },
+    "session_id": { "type": "string" },
+    "state_hash": { "type": "string" },
+    "logical_clock": { "type": "integer", "minimum": 0 },
+    "prev_hash": { "type": ["string", "null"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "principal_id": { "type": "string" },
+    "cmd_vector": { "type": "object" },
+    "payload": { "type": "object" }
+  },
+  "additionalProperties": false
+}

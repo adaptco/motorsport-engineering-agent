@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/events/runtime-events.v1.json",
+  "title": "RuntimeEvents",
+  "type": "object",
+  "required": ["schema_version", "events"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "v1" },
+    "events": {
+      "type": "array",
+      "items": { "$ref": "event-envelope.v1.json" }
+    }
+  },
+  "additionalProperties": false
+}
