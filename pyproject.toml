@@ -32,7 +32,7 @@ dev = [
   "httpx>=0.28.1",
   "ruff>=0.15.12",
   "mypy>=2.3.0",
-  "pandas-stubs>=1.5.3",
+  "pandas-stubs>=3.0.5.260730",
 ]
 
 [tool.setuptools]
